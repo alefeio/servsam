@@ -3,6 +3,7 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
 import {
   getDemoDatasetSnapshot,
+  getSeedDemoDataset,
   subscribeDemoDataset,
 } from "@/lib/demo/dataset-store";
 import {
@@ -15,7 +16,7 @@ export function useDemoDataset() {
   const dataset = useSyncExternalStore(
     subscribeDemoDataset,
     getDemoDatasetSnapshot,
-    () => getDemoDatasetSnapshot(),
+    getSeedDemoDataset,
   );
 
   const periods = useMemo(() => getAvailablePeriods(dataset), [dataset]);

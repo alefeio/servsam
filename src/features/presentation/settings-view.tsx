@@ -4,14 +4,15 @@ import { useSyncExternalStore } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { demoProfiles } from "@/data/demo/demo-profiles";
 import { PresentationPageHeader } from "@/features/presentation/presentation-page-header";
-import { getDemoSession } from "@/lib/demo/session-core";
+import { getDemoSessionRaw, parseDemoSession, subscribeToDemoSession } from "@/lib/demo/session-core";
 
 function useDemoSession() {
-  return useSyncExternalStore(
-    () => () => undefined,
-    () => getDemoSession(),
+  const rawSession = useSyncExternalStore(
+    subscribeToDemoSession,
+    getDemoSessionRaw,
     () => null,
   );
+  return parseDemoSession(rawSession);
 }
 
 export function SettingsView() {

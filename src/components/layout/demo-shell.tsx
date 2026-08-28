@@ -7,16 +7,17 @@ import { Button } from "@/components/ui/button";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { DEMO_ENVIRONMENT_BANNER } from "@/lib/content/constants";
 import { demoNavItems } from "@/data/demo/planned-modules";
-import { clearDemoSession, getDemoSession } from "@/lib/demo/session-core";
+import { clearDemoSession, getDemoSessionRaw, parseDemoSession, subscribeToDemoSession } from "@/lib/demo/session-core";
 import { restoreDemoData } from "@/lib/demo/dataset-store";
 import { cn } from "@/lib/utils";
 
 function useDemoSessionSnapshot() {
-  return useSyncExternalStore(
-    () => () => undefined,
-    () => getDemoSession(),
+  const rawSession = useSyncExternalStore(
+    subscribeToDemoSession,
+    getDemoSessionRaw,
     () => null,
   );
+  return parseDemoSession(rawSession);
 }
 
 export function DemoSidebar() {

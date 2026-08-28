@@ -28,6 +28,18 @@ export function getDemoSession(): DemoSession | null {
   return parseDemoSession(window.localStorage.getItem(DEMO_SESSION_STORAGE_KEY));
 }
 
+export function getDemoSessionRaw(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return window.localStorage.getItem(DEMO_SESSION_STORAGE_KEY);
+}
+
+export function subscribeToDemoSession(onStoreChange: () => void): () => void {
+  window.addEventListener("storage", onStoreChange);
+  return () => window.removeEventListener("storage", onStoreChange);
+}
+
 export function saveDemoSession(session: DemoSession): void {
   window.localStorage.setItem(DEMO_SESSION_STORAGE_KEY, JSON.stringify(session));
 }
