@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SERVSAM
 
-## Getting Started
+Site institucional e sistema interno demonstrativo da SERVSAM - Serviços de Saneamento e Meio Ambiente.
 
-First, run the development server:
+Esta fase valida arquitetura de informação, interface, terminologia e fluxos. Não é o sistema definitivo, não usa banco de dados e não processa dados reais de clientes.
+
+## Stack
+
+- Next.js 16 (App Router)
+- React 19 e TypeScript strict
+- Tailwind CSS v4 e shadcn/ui
+- Zod, Lucide React
+- Vitest, Testing Library e Playwright
+
+## Instalação
+
+```bash
+npm install
+```
+
+## Execução
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Se o visual aparecer sem estilos (HTML cru), pare todos os servidores Next.js locais e reinicie com cache limpo:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev:clean
+```
 
-## Learn More
+Para produção local:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run start:fresh
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+> **Importante:** não rode `npm run dev` e `npm run start` ao mesmo tempo. Os dois compartilham a pasta `.next` e isso pode invalidar os arquivos CSS servidos ao navegador.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Comandos
 
-## Deploy on Vercel
+| Comando | Uso |
+| --- | --- |
+| `npm run dev` | servidor de desenvolvimento |
+| `npm run dev:clean` | limpa `.next` e inicia o dev |
+| `npm run build` | build de produção local |
+| `npm run build:clean` | limpa `.next` e gera build |
+| `npm run start` | servir o build (exige build válido) |
+| `npm run start:fresh` | build limpo + servidor de produção |
+| `npm run clean` | remove cache `.next` |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript |
+| `npm test` | testes unitários e de componente |
+| `npm run test:e2e` | smoke tests Playwright |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Credenciais da demonstração
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- E-mail: `direcao@demo.servsam.local`
+- Senha: `servsam-demo`
+
+A senha não é um segredo. Ela aparece na tela de login e existe só como fixture. A sessão fica no navegador e não representa autenticação de produção.
+
+Acesso: `/demonstracao/login`
+
+## Estrutura
+
+```text
+src/app/(public)          rotas institucionais
+src/app/(demo)            login, shell e dashboard
+src/data/official         conteúdo verificado ou de briefing
+src/data/demo             ficção explícita
+src/lib/repositories      fronteira para futura API
+src/features              domínio (institucional, auth demo, dashboard)
+docs/                     sprints, conteúdo, arquitetura e épicas futuras
+```
+
+## Limitações
+
+- Sem banco, Prisma, API real ou envio de e-mail.
+- Formulário de orçamento é simulado.
+- Dashboard usa snapshot fictício.
+- Módulos além de Visão geral estão planejados, não implementados.
+- Homologação não deve ser indexada.
+- Fluxo mobile de campo não faz parte desta etapa.
+
+## Conteúdo
+
+Informações institucionais vêm do site atual e de registros públicos. Cases, artigos, clientes e indicadores são fictícios e marcados na interface. Veja `docs/content/content-inventory.md`.

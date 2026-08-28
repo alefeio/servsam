@@ -1,0 +1,90 @@
+import { createProvenance } from "@/lib/content/provenance";
+import type { DemoProposalItem } from "@/types/demo-entities";
+
+const provenance = createProvenance({
+  sourceType: "DEMO_FICTIONAL",
+  notes: "Item de proposta fictício para composição de valor demonstrativo.",
+});
+
+export const demoProposalItems: DemoProposalItem[] = [
+  {
+    id: "pitem-001",
+    proposalId: "prop-001",
+    description: "Higienização de reservatórios superiores",
+    quantity: 2,
+    unitPrice: 3200,
+    provenance,
+  },
+  {
+    id: "pitem-002",
+    proposalId: "prop-001",
+    description: "Desinfecção complementar",
+    quantity: 1,
+    unitPrice: 2000,
+    provenance,
+  },
+  {
+    id: "pitem-003",
+    proposalId: "prop-003",
+    description: "Saneamento industrial mensal",
+    quantity: 12,
+    unitPrice: 1540,
+    provenance,
+  },
+  {
+    id: "pitem-004",
+    proposalId: "prop-004",
+    description: "Desinsetização de áreas comuns",
+    quantity: 1,
+    unitPrice: 5200,
+    provenance,
+  },
+  {
+    id: "pitem-005",
+    proposalId: "prop-007",
+    description: "Controle integrado de pragas",
+    quantity: 1,
+    unitPrice: 22100,
+    provenance,
+  },
+  {
+    id: "pitem-006",
+    proposalId: "prop-008",
+    description: "Plano preventivo ampliado",
+    quantity: 1,
+    unitPrice: 6700,
+    provenance,
+  },
+  {
+    id: "pitem-007",
+    proposalId: "prop-011",
+    description: "Renovação anual sanitização",
+    quantity: 1,
+    unitPrice: 19800,
+    provenance,
+  },
+  {
+    id: "pitem-008",
+    proposalId: "prop-010",
+    description: "Perfuração poço monitoramento",
+    quantity: 1,
+    unitPrice: 31500,
+    provenance,
+  },
+  {
+    id: "pitem-009",
+    proposalId: "prop-012",
+    description: "Higienização reservatórios esportivos",
+    quantity: 3,
+    unitPrice: 3730,
+    provenance,
+  },
+  {
+    id: "pitem-010",
+    proposalId: "prop-009",
+    description: "Higienização caixas escolares",
+    quantity: 4,
+    unitPrice: 1200,
+    provenance,
+  },
+];

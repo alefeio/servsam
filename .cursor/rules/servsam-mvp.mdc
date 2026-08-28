@@ -1,0 +1,38 @@
+---
+description: Regras do MVP SERVSAM - escopo, dados, arquitetura e testes
+alwaysApply: true
+---
+
+# MVP SERVSAM
+
+Duas experiências: site institucional público (responsivo) e sistema demonstrativo desktop-first (>= 1024px). Esta fase valida navegação, linguagem e fluxos. Não é o sistema definitivo.
+
+## Escopo da fase atual
+
+- Implemente apenas a sprint ativa (hoje: Sprint 1).
+- Não implemente Sprints 2 a 7 nem o mobile de campo.
+- Rotas futuras devem exibir estado "Módulo planejado", nunca 404 nem telas falsas.
+
+## Proibido nesta fase
+
+Banco, Prisma, API real, auth de produção, RBAC real, WhatsApp/e-mail/ERP reais, dados de clientes reais, PWA/offline, geolocalização, câmera, assinatura, "Minha agenda" de técnico, ou qualquer jornada mobile de campo.
+
+## Dados
+
+- Código em inglês; interface em pt-BR.
+- Conteúdo só em `src/data/` (official vs demo). Nunca espalhar copy no JSX.
+- Todo conteúdo relevante tem `provenance` (`sourceType`, `isFictional`, `needsClientValidation`).
+- Ficção sempre visível: "Dados demonstrativos" / "Caso demonstrativo fictício".
+- Não inventar clientes reais, avaliações, faturamento, economia ou índices.
+- Certificações: listar com "Informado no site atual - documentação pendente de validação". Sem números, selos ou validade.
+
+## Arquitetura
+
+- Next.js App Router, TypeScript strict, sem `any`.
+- Server Components por padrão; Client Components só para interação.
+- Dados via repositórios em `src/lib/repositories`. Sem `fetch` em páginas.
+- Regras de negócio fora de páginas e de componentes de apresentação.
+
+## Testes
+
+Após mudanças relevantes: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`. Não declare sucesso sem evidência.
