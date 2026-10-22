@@ -1,29 +1,30 @@
 import { ButtonLink } from "@/components/ui/button-link";
 import { Section } from "@/components/layout/section";
-import { company } from "@/data/official/company";
 import { contactInfo } from "@/data/official/contact";
+import { closingCta } from "@/data/official/home";
 
 export function FinalCta() {
   return (
-    <Section tone="navy">
+    <Section tone="navy" className="py-14 md:py-20">
       <div className="max-w-3xl">
         <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
-          Solicite um orçamento técnico
+          {closingCta.title}
         </h2>
-        <p className="mt-4 text-primary-foreground/80">
-          Conte a necessidade do seu condomínio, empresa ou instituição. O
-          envio pelo site é demonstrativo nesta etapa; você também pode falar
-          pelo WhatsApp {contactInfo.whatsappDisplay}.
-        </p>
+        <p className="mt-4 text-primary-foreground/80">{closingCta.description}</p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <ButtonLink href="/contato" className="bg-teal hover:bg-teal/90">
-            Solicitar orçamento
+          <ButtonLink href={closingCta.primaryHref} className="bg-teal hover:bg-teal/90">
+            {closingCta.primaryLabel}
           </ButtonLink>
-          <ButtonLink href="/servicos" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10">
-            Conhecer serviços
+          <ButtonLink
+            href={`https://wa.me/${contactInfo.whatsappE164}`}
+            target="_blank"
+            rel="noreferrer"
+            variant="outline"
+            className="border-white/30 bg-transparent text-white hover:bg-white/10"
+          >
+            {closingCta.secondaryLabel}
           </ButtonLink>
         </div>
-        <p className="mt-6 text-sm text-primary-foreground/70">{company.tagline}</p>
       </div>
     </Section>
   );

@@ -71,43 +71,40 @@ export const trainings: Training[] = [
   },
 ];
 
+const homeDifferentiatorProvenance = createProvenance({
+  sourceType: "BRIEFING_REQUIREMENT",
+  needsClientValidation: true,
+  notes:
+    "Diferenciais da home alinhados à operação descrita em 22/10/2026. Sem alegação de certificação comprovada.",
+});
+
 export const whyChooseItems: WhyChooseItem[] = [
   {
-    id: "paraense-origin",
-    title: "Origem paraense",
+    id: "organized-execution",
+    title: "Execução organizada",
     description:
-      "Empresa nacional que nasceu no Pará, com atuação próxima aos contextos da região.",
-    provenance: companyProvenance.copy,
+      "O serviço sai com escopo, local e atendimento definidos antes da equipe ir a campo.",
+    provenance: homeDifferentiatorProvenance,
   },
   {
-    id: "technical-work",
-    title: "Atuação técnica",
+    id: "traceability",
+    title: "Informação acompanhada",
     description:
-      "Serviços de saneamento, água e controle ambiental conduzidos com linguagem técnica e responsabilidade operacional.",
-    provenance: companyProvenance.copy,
+      "Da proposta à conclusão, os dados do serviço ficam ligados ao mesmo atendimento.",
+    provenance: homeDifferentiatorProvenance,
   },
   {
-    id: "trained-team",
-    title: "Equipe treinada",
+    id: "technical-documentation",
+    title: "Documentação técnica",
     description:
-      "Profissionais treinados nas normas exigidas pelos órgãos de fiscalização e controle.",
+      "Relatório e certificado entram na entrega quando o tipo de serviço pede esses documentos.",
+    provenance: homeDifferentiatorProvenance,
+  },
+  {
+    id: "prepared-team",
+    title: "Equipe preparada",
+    description:
+      "A atuação segue o preparo da atividade, como altura, espaço confinado e controle de pragas, quando o serviço exige.",
     provenance: companyProvenance.team,
-  },
-  {
-    id: "service-range",
-    title: "Variedade de serviços",
-    description:
-      "Portfólio que reúne água, saneamento, sanitização e controle de pragas.",
-    provenance: companyProvenance.copy,
-  },
-  {
-    id: "segments",
-    title: "Diferentes segmentos",
-    description:
-      "Atendimento pensado para condomínios, empresas, escolas, clínicas, indústrias e setor público.",
-    provenance: createProvenance({
-      sourceType: "BRIEFING_REQUIREMENT",
-      notes: "Segmentos definidos no briefing do MVP.",
-    }),
   },
 ];

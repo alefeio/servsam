@@ -7,7 +7,7 @@ test("home opens", async ({ page }) => {
   expect(response?.ok()).toBeTruthy();
   await expect(
     page.getByRole("heading", {
-      name: "Soluções técnicas para ambientes mais seguros e operações mais confiáveis.",
+      name: "Serviços técnicos, da avaliação à entrega.",
     }),
   ).toBeVisible();
 });

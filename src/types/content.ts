@@ -49,6 +49,12 @@ export type CommercialProcessStep = Provenanced<{
   description: string;
 }>;
 
+export type TechnicalDeliverable = Provenanced<{
+  id: string;
+  title: string;
+  description: string;
+}>;
+
 export type Training = Provenanced<{
   id: string;
   name: string;

@@ -3,40 +3,45 @@ import type { CommercialProcessStep } from "@/types/content";
 
 const processProvenance = createProvenance({
   sourceType: "BRIEFING_REQUIREMENT",
-  notes: "Processo comercial demonstrativo definido para a Sprint 1. Não representa SLA contratual.",
+  needsClientValidation: true,
+  notes:
+    "Jornada pública revisada em 22/10/2026. Vai até a documentação da entrega. Não inclui financeiro nem histórico interno. Não é prazo contratual.",
 });
 
 export const commercialProcessSteps: CommercialProcessStep[] = [
   {
     id: "understand",
     order: 1,
-    title: "Entender a necessidade",
-    description:
-      "Conversamos sobre o ambiente, o tipo de serviço e as condições do local.",
-    provenance: processProvenance,
-  },
-  {
-    id: "evaluate",
-    order: 2,
-    title: "Avaliar o serviço",
-    description:
-      "A equipe técnica analisa o escopo adequado para a demanda apresentada.",
+    title: "Entendemos a necessidade",
+    description: "Identificamos local, serviço e condições do atendimento.",
     provenance: processProvenance,
   },
   {
     id: "propose",
-    order: 3,
-    title: "Apresentar proposta",
-    description:
-      "A proposta reúne serviços, condições comerciais e prazos para alinhamento.",
+    order: 2,
+    title: "Apresentamos a proposta",
+    description: "Escopo, valores, condições e prazo.",
     provenance: processProvenance,
   },
   {
     id: "schedule",
+    order: 3,
+    title: "Programamos o atendimento",
+    description: "Organizamos a data e a execução do serviço.",
+    provenance: processProvenance,
+  },
+  {
+    id: "execute",
     order: 4,
-    title: "Programar atendimento",
-    description:
-      "Com a proposta aprovada, o atendimento é organizado em data e horário combinados.",
+    title: "Executamos o serviço",
+    description: "A equipe realiza os procedimentos previstos.",
+    provenance: processProvenance,
+  },
+  {
+    id: "document",
+    order: 5,
+    title: "Documentamos a entrega",
+    description: "Relatório, registros e certificado, quando aplicáveis.",
     provenance: processProvenance,
   },
 ];

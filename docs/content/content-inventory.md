@@ -7,7 +7,7 @@ Acesso de referência: 28/08/2026.
 | Marca | SERVSAM - Serviços de Saneamento e Meio Ambiente | Site atual | https://servsam.com.br/ | VERIFIED_CURRENT_SITE | Header, footer, metadata | Não | Identidade visual textual |
 | Logomarca horizontal | `public/brand/logo-servsam-horizontal.png` | Arquivo enviado pelo cliente | - | VERIFIED_CURRENT_SITE | Header, footer, sidebar demo | Não | Versão horizontal |
 | Logomarca vertical | `public/brand/logo-servsam-vertical.png` | Arquivo enviado pelo cliente | - | VERIFIED_CURRENT_SITE | Login da demonstração | Não | Versão original/vertical |
-| Proposta-base | Soluções técnicas em saneamento, água e controle de pragas. | Estratégia/Sprint 1 | https://servsam.com.br/ | VERIFIED_CURRENT_SITE | Home, footer | Sim | Adaptação do posicionamento |
+| Proposta-base | Serviços técnicos de saneamento e controle ambiental, da avaliação à entrega | Revisão da home em 22/10/2026 | https://servsam.vercel.app/ | BRIEFING_REQUIREMENT | Home | Sim | A tagline do rodapé permanece a do site atual |
 | Texto institucional | Empresa nacional que nasceu no Pará... | Site atual | https://servsam.com.br/ | VERIFIED_CURRENT_SITE | Home, Sobre | Sim | Redação alinhada ao site atual |
 | Equipe | Profissionais qualificados e treinados... | Site atual | https://servsam.com.br/ | VERIFIED_CURRENT_SITE | Sobre | Sim | Imagem IA v1 em `/images/about/equipe-base.jpg` — validar uso |
 | Treinamentos | espaços confinados, altura, energia elétrica, pragas | Site atual | https://servsam.com.br/ | VERIFIED_CURRENT_SITE | Sobre | Sim | Sem certificados anexos |
