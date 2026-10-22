@@ -2,7 +2,9 @@
 
 **Status:** FUTURE / NOT CONTRACTED
 
-Esta épica não faz parte do MVP atual e não deve entrar em arquivos de sprint ativa.
+Fora da V1 e fora das Sprints 9 a 20. Ver `docs/architecture/v1/scope.md`. Não entra na sprint ativa.
+
+Google Calendar não faz parte desta épica. Se um dia houver calendário externo, ele integra com a agenda SERVSAM e não a substitui.
 
 O fluxo mobile da equipe de campo está fora desta etapa. Não implementar agora:
 

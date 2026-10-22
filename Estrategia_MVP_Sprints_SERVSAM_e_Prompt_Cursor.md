@@ -1,3 +1,5 @@
+> **Histórico (28/08/2026).** Planejamento e prompt da Sprint 1. As Sprints 1 a 7 foram concluídas no demo. A especificação viva está em `docs/architecture/v1/` e o backlog em `docs/product-backlog.md`. Não usar este arquivo como instrução da sprint ativa.
+
 # Estratégia do MVP SERVSAM em sprints
 
 ## Site institucional + sistema integrado demonstrável, sem fluxo mobile de campo

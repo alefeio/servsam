@@ -1,5 +1,7 @@
 # Pendências para produção
 
+> A fila de implementação deixou de ser esta lista solta. Desde a Sprint 8, o que entra na V1, o que fica para V1.1 e o que está fora estão em `docs/architecture/v1/scope.md` e em `docs/product-backlog.md` (Sprints 9 a 20). O texto abaixo permanece como aceite do que o demo das Sprints 1 a 7 não é.
+
 Lista explícita do que **não** faz parte do MVP demonstrativo entregue nas Sprints 1–7.
 
 ## Autenticação e segurança
