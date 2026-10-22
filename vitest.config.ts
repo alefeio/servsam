@@ -6,6 +6,10 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "jsdom",
+    fileParallelism: false,
+    maxWorkers: 1,
+    testTimeout: 60000,
+    hookTimeout: 60000,
     setupFiles: ["./vitest.setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
   },

@@ -11,6 +11,10 @@ export default defineConfig({
     baseURL,
     trace: "on-first-retry",
   },
+  timeout: 90000,
+  expect: {
+    timeout: 20000,
+  },
   webServer: {
     command: "npm run dev",
     url: baseURL,

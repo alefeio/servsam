@@ -1,0 +1,100 @@
+import { headers } from "next/headers";
+import { auth, GENERIC_LOGIN_ERROR } from "@/lib/platform/auth";
+import { writeAudit } from "@/lib/platform/audit";
+import { getPrisma } from "@/lib/db/prisma";
+
+export type LoginResult = { ok: true } | { ok: false; message: string };
+
+export async function authenticate(email: string, password: string): Promise<LoginResult> {
+  const normalized = email.trim().toLowerCase();
+  const requestHeaders = await headers();
+
+  try {
+    const signedIn = await auth.api.signInEmail({
+      body: { email: normalized, password },
+      headers: requestHeaders,
+    });
+    const userId = signedIn.user.id;
+    const user = await getPrisma().user.findUnique({
+      where: { id: userId },
+      select: { id: true, organizationId: true, isActive: true },
+    });
+
+    if (!user?.isActive) {
+      await auth.api.signOut({ headers: requestHeaders });
+      if (user) {
+        await writeAudit({
+          organizationId: user.organizationId,
+          actorUserId: null,
+          action: "LOGIN_FAILURE",
+          entityType: "User",
+          entityId: user.id,
+          metadata: { reason: "inactive" },
+        });
+      }
+      return { ok: false, message: GENERIC_LOGIN_ERROR };
+    }
+
+    await writeAudit({
+      organizationId: user.organizationId,
+      actorUserId: user.id,
+      action: "LOGIN_SUCCESS",
+      entityType: "User",
+      entityId: user.id,
+      metadata: {},
+    });
+    return { ok: true };
+  } catch {
+    await recordFailure(normalized);
+    return { ok: false, message: GENERIC_LOGIN_ERROR };
+  }
+}
+
+async function recordFailure(email: string): Promise<void> {
+  const user = await getPrisma().user.findUnique({
+    where: { email },
+    select: { id: true, organizationId: true, isActive: true },
+  });
+  const organizationId = user?.organizationId ?? (await fallbackOrganizationId());
+  if (!organizationId) return;
+
+  await writeAudit({
+    organizationId,
+    actorUserId: null,
+    action: "LOGIN_FAILURE",
+    entityType: "User",
+    entityId: user?.id ?? null,
+    metadata: { reason: user && !user.isActive ? "inactive" : "rejected" },
+  });
+}
+
+async function fallbackOrganizationId(): Promise<string | null> {
+  const organization = await getPrisma().organization.findUnique({
+    where: { slug: "servsam" },
+    select: { id: true },
+  });
+  return organization?.id ?? null;
+}
+
+export async function endSession(): Promise<void> {
+  const requestHeaders = await headers();
+  const session = await auth.api.getSession({ headers: requestHeaders });
+  const userId = session?.user.id ?? null;
+  if (userId) {
+    const user = await getPrisma().user.findUnique({
+      where: { id: userId },
+      select: { organizationId: true },
+    });
+    if (user) {
+      await writeAudit({
+        organizationId: user.organizationId,
+        actorUserId: userId,
+        action: "LOGOUT",
+        entityType: "User",
+        entityId: userId,
+        metadata: {},
+      });
+    }
+  }
+  await auth.api.signOut({ headers: requestHeaders });
+}

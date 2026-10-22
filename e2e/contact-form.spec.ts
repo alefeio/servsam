@@ -9,7 +9,7 @@ test("contact form shows simulated success", async ({ page }) => {
   await page.getByLabel("Tipo de serviço").selectOption({ label: "Desratização" });
   await page.getByLabel("Cidade").fill("Belém");
   await page.getByLabel("Mensagem").fill("Preciso de uma avaliação técnica do térreo.");
-  await page.getByLabel(/Autorizo o uso demonstrativo/).check();
+  await page.getByRole("checkbox", { name: /Autorizo o uso demonstrativo/ }).check();
   await page.getByRole("button", { name: "Enviar solicitação demonstrativa" }).click();
   await expect(
     page.getByRole("heading", { name: "Solicitação registrada nesta demonstração" }),

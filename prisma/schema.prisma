@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Organização única da V1. Não há UI de multiempresa.
+model Organization {
+  id        String   @id
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+  roles     Role[]
+  auditLogs AuditLog[]
+
+  @@map("organization")
+}
+
+/// Conta de acesso. Papéis ficam em UserRole, não num enum neste registro.
+model User {
+  id             String    @id
+  name           String
+  email          String
+  emailVerified  Boolean   @default(false)
+  image          String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  isActive       Boolean   @default(true)
+  createdAt      DateTime
+  updatedAt      DateTime
+  sessions       Session[]
+  accounts       Account[]
+  userRoles      UserRole[]
+  auditLogs      AuditLog[] @relation("AuditActor")
+  roleGrants     RolePermission[] @relation("PermissionGrantActor")
+  roleAssignments UserRole[] @relation("RoleAssignActor")
+
+  @@unique([email])
+  @@index([organizationId])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Role {
+  id             String           @id
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  code           String
+  name           String
+  description    String
+  isSystem       Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  userRoles      UserRole[]
+  rolePermissions RolePermission[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@map("role")
+}
+
+model Permission {
+  id              String           @id
+  key             String           @unique
+  description     String
+  createdAt       DateTime         @default(now())
+  rolePermissions RolePermission[]
+
+  @@map("permission")
+}
+
+model UserRole {
+  id           String   @id
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId       String
+  role         Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedAt   DateTime @default(now())
+  assignedById String?
+  assignedBy   User?    @relation("RoleAssignActor", fields: [assignedById], references: [id])
+
+  @@unique([userId, roleId])
+  @@index([roleId])
+  @@map("user_role")
+}
+
+model RolePermission {
+  id           String     @id
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  grantedAt    DateTime   @default(now())
+  grantedById  String?
+  grantedBy    User?      @relation("PermissionGrantActor", fields: [grantedById], references: [id])
+
+  @@unique([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permission")
+}
+
+model AuditLog {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  actorUserId    String?
+  actor          User?        @relation("AuditActor", fields: [actorUserId], references: [id])
+  action         String
+  entityType     String
+  entityId       String?
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_log")
+}
