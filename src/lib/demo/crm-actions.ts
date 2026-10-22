@@ -38,6 +38,7 @@ export const PROPOSAL_STATUS_LABELS: Record<ProposalStatus, string> = {
   accepted: "Aceita",
   rejected: "Recusada",
   expired: "Expirada",
+  cancelled: "Cancelada",
 };
 
 export const KANBAN_STAGES: OpportunityStage[] = [

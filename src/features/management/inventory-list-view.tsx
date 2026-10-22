@@ -29,8 +29,8 @@ export function InventoryListView() {
   return (
     <div className="space-y-6">
       <ManagementPageHeader
-        title="Estoque"
-        description="Saldo, mínimo, validade e movimentações fictícias vinculadas a ordens de serviço."
+        title="Produtos e almoxarifado"
+        description="Nome comercial, princípio ativo, registro, lote, validade e saldo. A saída ligada à OS é só visual."
       />
 
       <div className="grid gap-4 md:grid-cols-2">

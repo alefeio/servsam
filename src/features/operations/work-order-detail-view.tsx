@@ -83,9 +83,28 @@ export function WorkOrderDetailView({ workOrderId }: WorkOrderDetailViewProps) {
                 </p>
               ) : null}
               <p>
+                <span className="text-muted-foreground">Tipo:</span>{" "}
+                {workOrder.serviceTypeLabel ?? "Não classificado neste fixture"}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Veículo:</span>{" "}
+                {workOrder.vehicleLabel ?? "Não escalado neste fixture"}
+              </p>
+              <p>
                 <span className="text-muted-foreground">Equipe:</span>{" "}
                 {workOrder.teamAliases.join(", ")}
               </p>
+              {workOrder.scheduleStatusLabel ? (
+                <p>
+                  <span className="text-muted-foreground">Agenda:</span>{" "}
+                  {workOrder.scheduleStatusLabel}
+                </p>
+              ) : null}
+              {!unit && workOrder.addressLabel ? (
+                <p>
+                  <span className="text-muted-foreground">Endereço:</span> {workOrder.addressLabel}
+                </p>
+              ) : null}
               <p>
                 <span className="text-muted-foreground">Responsável:</span>{" "}
                 {workOrder.technicianAlias}
@@ -198,10 +217,41 @@ export function WorkOrderDetailView({ workOrderId }: WorkOrderDetailViewProps) {
                   Cancelar OS
                 </Button>
               ) : null}
+              <Link
+                href={`/demonstracao/ordens-servico/${workOrder.id}/execucao`}
+                className="inline-flex h-9 items-center justify-center rounded-md bg-teal px-4 text-sm font-medium text-white"
+              >
+                Abrir execução
+              </Link>
+              {dataset.photoReports
+                .filter((report) => report.workOrderId === workOrder.id)
+                .map((report) => (
+                  <Link
+                    key={report.id}
+                    href={`/demonstracao/relatorios/fotograficos/${report.id}`}
+                    className="text-sm font-medium text-navy hover:text-teal"
+                  >
+                    Ver relatório fotográfico
+                  </Link>
+                ))}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Termo e prévia</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p className="text-muted-foreground">
+            O termo de execução e o aceite ficam na tela de execução. Esta caixa só mostra como o PDF seria anunciado.
+          </p>
+          <p className="rounded-md border border-dashed border-teal/50 px-3 py-6 text-center text-xs tracking-[0.18em] text-teal/80 uppercase">
+            Prévia demonstrativa da OS — não é o PDF oficial
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

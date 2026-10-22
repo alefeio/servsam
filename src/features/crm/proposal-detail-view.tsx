@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DemoPageHeader } from "@/features/crm/demo-page-header";
@@ -24,6 +25,7 @@ type ProposalDetailViewProps = {
 
 export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
   const { dataset, mutate } = useDemoDatasetStore();
+  const [previewNote, setPreviewNote] = useState<string | null>(null);
   const proposal = dataset.proposals.find((item) => item.id === proposalId);
 
   if (!proposal) {
@@ -98,7 +100,51 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
               <span className="font-semibold text-navy">
                 {formatCurrencyBrl(itemsTotal)}
               </span>
+              {proposal.discountAmount ? (
+                <span className="text-muted-foreground">
+                  {" "}
+                  · desconto {formatCurrencyBrl(proposal.discountAmount)}
+                </span>
+              ) : null}
             </p>
+            {proposal.paymentTerms ? (
+              <dl className="mt-4 grid gap-2 text-sm md:grid-cols-2">
+                <div>
+                  <dt className="text-muted-foreground">Pagamento</dt>
+                  <dd>{proposal.paymentTerms}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Entrada</dt>
+                  <dd>{proposal.downPayment}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Prazo de execução</dt>
+                  <dd>{proposal.executionDeadline}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Taxa de cancelamento</dt>
+                  <dd>{proposal.cancellationFee}</dd>
+                </div>
+                <div className="md:col-span-2">
+                  <dt className="text-muted-foreground">Condições</dt>
+                  <dd>{proposal.commercialConditions}</dd>
+                </div>
+              </dl>
+            ) : null}
+            <p className="mt-4 rounded-md border border-dashed border-teal/50 px-3 py-6 text-center text-xs tracking-[0.2em] text-teal/80 uppercase">
+              Marca d&apos;água demonstrativa — prévia, não é o PDF oficial
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3"
+              onClick={() =>
+                setPreviewNote("Prévia exibida nesta tela. Nenhum PDF oficial foi gerado.")
+              }
+            >
+              Gerar prévia (demo)
+            </Button>
+            {previewNote ? <p className="mt-2 text-sm text-muted-foreground">{previewNote}</p> : null}
           </CardContent>
         </Card>
 
@@ -110,6 +156,9 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
             <p>
               <span className="text-muted-foreground">Status:</span>{" "}
               {PROPOSAL_STATUS_LABELS[proposal.status]}
+            </p>
+            <p className="text-muted-foreground">
+              Caminho principal: rascunho, enviada e aprovada. Recusada, expirada e cancelada também existem nesta demonstração.
             </p>
             <p>
               <span className="text-muted-foreground">Valor cadastrado:</span>{" "}
@@ -130,6 +179,16 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
                 >
                   {client.alias}
                 </Link>
+              </p>
+            ) : null}
+            {proposal.observations ? (
+              <p>
+                <span className="text-muted-foreground">Observações:</span> {proposal.observations}
+              </p>
+            ) : null}
+            {proposal.status === "accepted" ? (
+              <p className="rounded-md bg-secondary px-3 py-2">
+                Proposta aprovada. O próximo passo demonstrativo é o agendamento e a ordem de serviço.
               </p>
             ) : null}
             {opportunity ? (

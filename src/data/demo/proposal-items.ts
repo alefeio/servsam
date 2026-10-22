@@ -87,4 +87,20 @@ export const demoProposalItems: DemoProposalItem[] = [
     unitPrice: 1200,
     provenance,
   },
+  {
+    id: "pitem-011",
+    proposalId: "prop-005",
+    description: "Higienização de reservatórios — RSV",
+    quantity: 2,
+    unitPrice: 4200,
+    provenance,
+  },
+  {
+    id: "pitem-012",
+    proposalId: "prop-005",
+    description: "Desinfecção complementar dos reservatórios inferiores",
+    quantity: 1,
+    unitPrice: 1800,
+    provenance,
+  },
 ];

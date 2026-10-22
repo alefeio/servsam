@@ -38,10 +38,78 @@ export function ClientDetailView({ clientId }: ClientDetailViewProps) {
     <div className="space-y-6">
       <DemoPageHeader
         title={client.alias}
-        description="Ficha demonstrativa do cliente com unidades, oportunidades e contratos fictícios."
+        description="Prontuário demonstrativo: cadastro, relacionamento e histórico ligado à proposta, à OS e aos documentos."
         backHref="/demonstracao/clientes"
         backLabel="Clientes"
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Dados cadastrais</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-2 text-sm md:grid-cols-2">
+          <p><span className="text-muted-foreground">Razão social:</span> {client.legalName ?? client.alias}</p>
+          <p><span className="text-muted-foreground">Nome fantasia:</span> {client.tradeName ?? "Não informado neste fixture"}</p>
+          <p><span className="text-muted-foreground">CNPJ/CPF:</span> {client.documentNumber ?? "Não informado neste fixture"}</p>
+          <p><span className="text-muted-foreground">Relacionamento:</span> {client.relationshipKind === "one_off" ? "Cliente avulso" : client.relationshipKind === "contract" ? "Cliente com contrato" : "Não classificado neste fixture"}</p>
+          <p><span className="text-muted-foreground">E-mail:</span> {client.email ?? "—"}</p>
+          <p><span className="text-muted-foreground">Telefone:</span> {client.phone ?? "—"}</p>
+          <p><span className="text-muted-foreground">Responsável:</span> {client.responsibleName ?? "—"}</p>
+          <p className="md:col-span-2"><span className="text-muted-foreground">Endereço:</span> {units[0] ? `${units[0].address}, ${units[0].city}` : "Sem unidade neste fixture"}</p>
+          <p><span className="text-muted-foreground">Segmento:</span> {client.segment} · {client.city}</p>
+          {client.notes ? <p className="md:col-span-2"><span className="text-muted-foreground">Observações:</span> {client.notes}</p> : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Histórico</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ol className="space-y-3 border-l border-teal/40 pl-4 text-sm">
+            {proposals.map((proposal) => (
+              <li key={proposal.id}>
+                <Link href={`/demonstracao/comercial/propostas/${proposal.id}`} className="font-medium text-navy hover:text-teal">
+                  Proposta {proposal.code}
+                </Link>
+                <span className="text-muted-foreground"> · {PROPOSAL_STATUS_LABELS[proposal.status]}</span>
+              </li>
+            ))}
+            {workOrders.map((workOrder) => (
+              <li key={workOrder.id}>
+                <Link href={`/demonstracao/ordens-servico/${workOrder.id}`} className="font-medium text-navy hover:text-teal">
+                  {workOrder.code} · {workOrder.serviceName}
+                </Link>
+                <span className="text-muted-foreground"> · {WORK_ORDER_STATUS_LABELS[workOrder.status]} · {workOrder.scheduledAt.slice(0, 10)}</span>
+              </li>
+            ))}
+            {dataset.photoReports.filter((report) => report.clientId === clientId).map((report) => (
+              <li key={report.id}>
+                <Link href={`/demonstracao/relatorios/fotograficos/${report.id}`} className="font-medium text-navy hover:text-teal">
+                  Relatório fotográfico
+                </Link>
+                <span className="text-muted-foreground"> · {report.title}</span>
+              </li>
+            ))}
+            {dataset.certificates.filter((certificate) => certificate.clientId === clientId).map((certificate) => (
+              <li key={certificate.id}>
+                <Link href={`/demonstracao/certificados/${certificate.id}`} className="font-medium text-navy hover:text-teal">
+                  Certificado {certificate.number}
+                </Link>
+                <span className="text-muted-foreground"> · {certificate.status === "issued" ? "Emitido" : "Prévia"}</span>
+              </li>
+            ))}
+            {dataset.financialTransactions.filter((item) => item.clientId === clientId).slice(0, 4).map((item) => (
+              <li key={item.id}>
+                <Link href="/demonstracao/financeiro" className="font-medium text-navy hover:text-teal">
+                  Financeiro · {item.description}
+                </Link>
+                <span className="text-muted-foreground"> · {formatCurrencyBrl(item.amount)}</span>
+              </li>
+            ))}
+          </ol>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

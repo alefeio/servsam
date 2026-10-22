@@ -1,10 +1,20 @@
 import type { Provenanced } from "@/types/provenance";
 
+export type DemoRelationshipKind = "one_off" | "contract";
+
 export type DemoClient = Provenanced<{
   id: string;
   alias: string;
   segment: string;
   city: string;
+  legalName?: string;
+  tradeName?: string;
+  documentNumber?: string;
+  email?: string;
+  phone?: string;
+  responsibleName?: string;
+  notes?: string;
+  relationshipKind?: DemoRelationshipKind;
 }>;
 
 export type DemoClientUnit = Provenanced<{
@@ -53,7 +63,8 @@ export type ProposalStatus =
   | "sent"
   | "accepted"
   | "rejected"
-  | "expired";
+  | "expired"
+  | "cancelled";
 
 export type DemoProposal = Provenanced<{
   id: string;
@@ -64,6 +75,13 @@ export type DemoProposal = Provenanced<{
   value: number;
   sentAt?: string;
   validUntil?: string;
+  discountAmount?: number;
+  paymentTerms?: string;
+  downPayment?: string;
+  executionDeadline?: string;
+  commercialConditions?: string;
+  cancellationFee?: string;
+  observations?: string;
 }>;
 
 export type DemoProposalItem = Provenanced<{
@@ -109,6 +127,10 @@ export type DemoWorkOrder = Provenanced<{
   planningChecklist: DemoWorkOrderChecklistItem[];
   completedAt?: string;
   notes?: string;
+  serviceTypeLabel?: string;
+  vehicleLabel?: string;
+  addressLabel?: string;
+  scheduleStatusLabel?: string;
 }>;
 
 export type ContractStatus = "active" | "expiring" | "expired";
@@ -131,6 +153,7 @@ export type DemoContract = Provenanced<{
   periodicity: ContractPeriodicity;
   monthlyValue: number;
   adjustmentIndex: string;
+  servicesSummary?: string;
   nextAdjustmentDate?: string;
   status: ContractStatus;
   scheduledVisits: DemoContractVisit[];
@@ -156,6 +179,14 @@ export type DemoProduct = Provenanced<{
   minimumStock: number;
   expiryDate?: string;
   lotCode?: string;
+  tradeName?: string;
+  activeIngredient?: string;
+  chemicalGroup?: string;
+  manufacturer?: string;
+  anvisaRegistration?: string;
+  antidote?: string;
+  technicalSheet?: string;
+  fispq?: string;
 }>;
 
 export type StockMovementType = "inbound" | "outbound" | "adjustment";
@@ -212,6 +243,68 @@ export type DemoFinancialTransaction = Provenanced<{
   dueDate: string;
   paidAt?: string;
   categoryId: "water-sanitation" | "environmental-pest";
+  billingStatus?: "open" | "paid" | "overdue" | "negotiated";
+  installmentLabel?: string;
+}>;
+
+export type DemoEmployeeDocument = {
+  label: string;
+  status: string;
+  expiresAt?: string;
+};
+
+export type DemoEmployee = Provenanced<{
+  id: string;
+  name: string;
+  role: string;
+  phone: string;
+  documents: DemoEmployeeDocument[];
+  trainings?: string[];
+  warnings: string[];
+}>;
+
+export type DemoCertificate = Provenanced<{
+  id: string;
+  number: string;
+  clientId: string;
+  workOrderId: string;
+  certificateType: string;
+  serviceName: string;
+  issuedAt?: string;
+  validUntil?: string;
+  status: "draft" | "issued";
+  productId: string;
+  technicalResponsible: string;
+  licenses: string[];
+}>;
+
+export type DemoPhotoReport = Provenanced<{
+  id: string;
+  clientId: string;
+  workOrderId: string;
+  title: string;
+  technicalDescription: string;
+  beforeCondition: string;
+  afterCondition: string;
+  observations: string;
+  nr33: string;
+  nr35: string;
+  photoSrcs: string[];
+  clientResponsible: string;
+  technicalResponsible: string;
+}>;
+
+export type DemoServiceExecution = Provenanced<{
+  id: string;
+  workOrderId: string;
+  startedAt?: string;
+  finishedAt?: string;
+  clientResponsible: string;
+  acceptance: string;
+  observations: string;
+  checklist: DemoWorkOrderChecklistItem[];
+  usedMaterials: DemoWorkOrderPlannedMaterial[];
+  photoSrcs: string[];
 }>;
 
 export type DemoDataset = Provenanced<{
@@ -228,4 +321,8 @@ export type DemoDataset = Provenanced<{
   stockMovements: DemoStockMovement[];
   publicTenders: DemoPublicTender[];
   financialTransactions: DemoFinancialTransaction[];
+  employees: DemoEmployee[];
+  certificates: DemoCertificate[];
+  photoReports: DemoPhotoReport[];
+  serviceExecutions: DemoServiceExecution[];
 }>;

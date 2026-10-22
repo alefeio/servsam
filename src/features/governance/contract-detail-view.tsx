@@ -74,6 +74,11 @@ export function ContractDetailView({ contractId }: ContractDetailViewProps) {
               <span className="text-muted-foreground">Valor mensal:</span>{" "}
               {formatCurrencyBrl(contract.monthlyValue)}
             </p>
+            {contract.servicesSummary ? (
+              <p className="md:col-span-2">
+                <span className="text-muted-foreground">Serviços:</span> {contract.servicesSummary}
+              </p>
+            ) : null}
             <p>
               <span className="text-muted-foreground">Índice de reajuste:</span>{" "}
               {contract.adjustmentIndex}

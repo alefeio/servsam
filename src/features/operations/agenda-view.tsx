@@ -11,7 +11,7 @@ import {
   getWorkOrdersInRange,
 } from "@/lib/demo/operations-actions";
 
-type AgendaMode = "week" | "month";
+type AgendaMode = "day" | "week" | "month";
 
 const DEMO_REFERENCE = new Date("2026-08-28T12:00:00");
 
@@ -62,6 +62,13 @@ export function AgendaView() {
   const [referenceDate, setReferenceDate] = useState(DEMO_REFERENCE);
 
   const range = useMemo(() => {
+    if (mode === "day") {
+      const start = new Date(referenceDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(referenceDate);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
     if (mode === "week") {
       return {
         start: startOfWeek(referenceDate),
@@ -88,7 +95,9 @@ export function AgendaView() {
 
   function shiftPeriod(direction: -1 | 1) {
     const next = new Date(referenceDate);
-    if (mode === "week") {
+    if (mode === "day") {
+      next.setDate(next.getDate() + direction);
+    } else if (mode === "week") {
       next.setDate(next.getDate() + direction * 7);
     } else {
       next.setMonth(next.getMonth() + direction);
@@ -97,19 +106,29 @@ export function AgendaView() {
   }
 
   const rangeLabel =
-    mode === "week"
-      ? `${range.start.toLocaleDateString("pt-BR")} — ${range.end.toLocaleDateString("pt-BR")}`
-      : referenceDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    mode === "day"
+      ? referenceDate.toLocaleDateString("pt-BR")
+      : mode === "week"
+        ? `${range.start.toLocaleDateString("pt-BR")} — ${range.end.toLocaleDateString("pt-BR")}`
+        : referenceDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
   return (
     <div className="space-y-6">
       <OperationsPageHeader
         title="Agenda"
-        description="Visão administrativa semanal e mensal dos serviços agendados. Gestão desktop, sem jornada de técnico em campo."
+        description="Visão diária, semanal e mensal. Cada compromisso mostra serviço, cliente, endereço, horário, equipe e veículo. Google Calendar não está ligado."
       />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="inline-flex rounded-lg border border-border p-1">
+          <Button
+            type="button"
+            size="sm"
+            variant={mode === "day" ? "default" : "ghost"}
+            onClick={() => setMode("day")}
+          >
+            Diária
+          </Button>
           <Button
             type="button"
             size="sm"
@@ -170,7 +189,12 @@ export function AgendaView() {
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {item.code} · {client?.alias ?? "Cliente demo"} ·{" "}
-                        {WORK_ORDER_STATUS_LABELS[item.status]}
+                        {item.scheduleStatusLabel ?? WORK_ORDER_STATUS_LABELS[item.status]}
+                        {item.vehicleLabel ? ` · ${item.vehicleLabel}` : ""}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {item.addressLabel ?? "Endereço na ficha da OS"} ·{" "}
+                        {item.teamAliases.join(", ")}
                       </p>
                     </div>
                     <Link

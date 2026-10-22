@@ -12,8 +12,9 @@ import {
   filterFinancialTransactions,
   getFinancePeriodKeys,
 } from "@/lib/demo/management-actions";
+import { DEMO_REFERENCE_DATE, daysUntil } from "@/lib/demo/compliance-actions";
 import { formatCurrencyBrl } from "@/lib/utils/format";
-import type { FinancialTransactionType } from "@/types/demo-entities";
+import type { DemoFinancialTransaction, FinancialTransactionType } from "@/types/demo-entities";
 
 export function FinanceView() {
   const { dataset } = useDemoDatasetStore();
@@ -34,11 +35,22 @@ export function FinanceView() {
   const categoryName = (id: string) =>
     serviceCategories.find((item) => item.id === id)?.name ?? id;
 
+  const openHorizon = dataset.financialTransactions.filter(
+    (item) => !item.paidAt && item.billingStatus !== "negotiated" && item.type !== "expense",
+  );
+  const dueWithin = (days: number) =>
+    openHorizon
+      .filter((item) => {
+        const remaining = daysUntil(item.dueDate, DEMO_REFERENCE_DATE);
+        return remaining >= 0 && remaining <= days;
+      })
+      .reduce((sum, item) => sum + item.amount, 0);
+
   return (
     <div className="space-y-6">
       <ManagementPageHeader
         title="Financeiro gerencial"
-        description="Faturamento, recebimentos, valores em aberto e atraso — dados fictícios com filtros por período, cliente e serviço."
+        description="Contratos, recebíveis, parcelas e situação. Visão de 30, 60 e 90 dias a partir de 28/08/2026. Não é contabilidade nem cobrança real."
       />
 
       <Card>
@@ -155,6 +167,34 @@ export function FinanceView() {
         </Card>
       </div>
 
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Até 30 dias</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold text-navy">{formatCurrencyBrl(dueWithin(30))}</p>
+            <p className="mt-1 text-sm text-muted-foreground">Em aberto, com vencimento na janela.</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Até 60 dias</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold text-navy">{formatCurrencyBrl(dueWithin(60))}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Até 90 dias</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold text-navy">{formatCurrencyBrl(dueWithin(90))}</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>{summary.transactionCount} lançamentos no filtro</CardTitle>
@@ -169,6 +209,7 @@ export function FinanceView() {
                   <th className="py-2 pr-4 font-medium">Tipo</th>
                   <th className="py-2 pr-4 font-medium">Serviço</th>
                   <th className="py-2 pr-4 font-medium">Vencimento</th>
+                  <th className="py-2 pr-4 font-medium">Situação</th>
                   <th className="py-2 pr-4 font-medium">Valor</th>
                   <th className="py-2 font-medium">Vínculos</th>
                 </tr>
@@ -180,7 +221,7 @@ export function FinanceView() {
                   );
                   return (
                     <tr key={transaction.id} className="border-b border-border/70">
-                      <td className="py-3 pr-4">{transaction.description}</td>
+                      <td className="py-3 pr-4">{transaction.description}{transaction.installmentLabel ? ` · ${transaction.installmentLabel}` : ""}</td>
                       <td className="py-3 pr-4">{client?.alias ?? "—"}</td>
                       <td className="py-3 pr-4">
                         {FINANCIAL_TYPE_LABELS[transaction.type]}
@@ -190,6 +231,7 @@ export function FinanceView() {
                         {categoryName(transaction.categoryId)}
                       </td>
                       <td className="py-3 pr-4">{transaction.dueDate}</td>
+                      <td className="py-3 pr-4">{billingSituation(transaction)}</td>
                       <td className="py-3 pr-4">
                         {formatCurrencyBrl(transaction.amount)}
                       </td>
@@ -224,4 +266,11 @@ export function FinanceView() {
       </Card>
     </div>
   );
+}
+
+function billingSituation(transaction: DemoFinancialTransaction): string {
+  if (transaction.billingStatus === "negotiated") return "Negociado";
+  if (transaction.paidAt) return "Pago";
+  if (daysUntil(transaction.dueDate, DEMO_REFERENCE_DATE) < 0) return "Vencido";
+  return "Em aberto";
 }

@@ -65,6 +65,9 @@ export type DashboardMetrics = {
   openProposals: number;
   conversionRate: number;
   scheduledServices: number;
+  servicesToday: number;
+  servicesThisWeek: number;
+  certificatesToIssue: number;
   expiringContracts: number;
   delinquencyAmount: number;
   documentsNearExpiry: number;

@@ -12,6 +12,12 @@ import { demoProposals } from "@/data/demo/proposals";
 import { demoPublicTenders } from "@/data/demo/public-tenders";
 import { demoStockMovements } from "@/data/demo/stock-movements";
 import { demoWorkOrders } from "@/data/demo/work-orders";
+import {
+  demoCertificates,
+  demoEmployees,
+  demoPhotoReports,
+  demoServiceExecutions,
+} from "@/data/demo/visual-records";
 import type { DemoDataset } from "@/types/demo-entities";
 
 export const seedDemoDataset: DemoDataset = {
@@ -28,9 +34,13 @@ export const seedDemoDataset: DemoDataset = {
   stockMovements: demoStockMovements,
   publicTenders: demoPublicTenders,
   financialTransactions: demoFinancialTransactions,
+  employees: demoEmployees,
+  certificates: demoCertificates,
+  photoReports: demoPhotoReports,
+  serviceExecutions: demoServiceExecutions,
   provenance: createProvenance({
     sourceType: "DEMO_FICTIONAL",
     notes:
-      "Massa demonstrativa coerente das Sprints 2–6. Indicadores e fluxos derivam destes fixtures.",
+      "Massa demonstrativa coerente. A Sprint 10 acrescenta a jornada visual do Hotel Amazonas Plaza, ainda só no navegador.",
   }),
 };

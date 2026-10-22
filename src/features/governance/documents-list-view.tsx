@@ -54,10 +54,26 @@ export function DocumentsListView() {
     <div className="space-y-6">
       <GovernancePageHeader
         title="Documentos e compliance"
-        description="Validade, responsável demonstrativo e alertas de 90, 60 e 30 dias antes do vencimento."
+        description="Repositório visual de propostas, OS, relatórios, certificados, contratos, notificações, licenças e documentação técnica. Alertas de 90, 60 e 30 dias continuam derivados das datas fictícias."
         backHref="/demonstracao/contratos"
         backLabel="Contratos"
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Onde cada peça aparece</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
+          <Link href="/demonstracao/comercial/propostas" className="text-navy hover:text-teal">Propostas</Link>
+          <Link href="/demonstracao/ordens-servico" className="text-navy hover:text-teal">Ordens de serviço</Link>
+          <Link href="/demonstracao/relatorios/fotograficos" className="text-navy hover:text-teal">Relatórios fotográficos</Link>
+          <Link href="/demonstracao/certificados" className="text-navy hover:text-teal">Certificados</Link>
+          <Link href="/demonstracao/contratos" className="text-navy hover:text-teal">Contratos</Link>
+          <Link href="/demonstracao/colaboradores" className="text-navy hover:text-teal">ASO, NR-33 e NR-35</Link>
+          <Link href="/demonstracao/estoque" className="text-navy hover:text-teal">Fichas e FISPQ de produtos</Link>
+          <Link href="/demonstracao/clientes/client-hotel-amazonas" className="text-navy hover:text-teal">Histórico do cliente-guia</Link>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card>

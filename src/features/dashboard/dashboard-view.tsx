@@ -3,6 +3,7 @@ import { DemoContentBanner } from "@/features/institutional/demo-content-banner"
 import { formatCurrencyBrl } from "@/lib/utils/format";
 import type { DashboardMetrics } from "@/types/demo";
 import { formatPeriodLabel } from "@/lib/demo/metrics";
+import Link from "next/link";
 
 type DashboardViewProps = {
   metrics: DashboardMetrics;
@@ -17,17 +18,14 @@ export function DashboardView({
   periodKey,
   onPeriodChange,
 }: DashboardViewProps) {
-  const maxRevenue = Math.max(...metrics.revenueByMonth.map((item) => item.amount), 1);
-  const maxCategory = Math.max(...metrics.salesByCategory.map((item) => item.amount), 1);
-  const maxFunnel = Math.max(...metrics.funnel.map((item) => item.count), 1);
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Visão geral</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Indicadores derivados da massa demonstrativa de {metrics.periodLabel}.
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            O que precisa de atenção agora na operação demonstrativa. A data de
+            referência desta massa é 28/08/2026.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -50,104 +48,40 @@ export function DashboardView({
       </div>
 
       <p className="rounded-lg border border-teal/30 bg-secondary px-4 py-3 text-sm">
-        Os indicadores abaixo são fictícios e derivados exclusivamente da massa
-        demonstrativa. Não representam faturamento, produtividade ou resultados
-        reais da SERVSAM.
+        Números fictícios, derivados da massa demonstrativa. Nada aqui é faturamento
+        ou pendência real da SERVSAM.
       </p>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <MetricCard
-          title="Faturamento do mês"
-          value={formatCurrencyBrl(metrics.billingMonth)}
-        />
-        <MetricCard title="Propostas em aberto" value={String(metrics.openProposals)} />
-        <MetricCard title="Taxa de conversão" value={`${metrics.conversionRate}%`} />
-        <MetricCard
-          title="Serviços agendados"
-          value={String(metrics.scheduledServices)}
-        />
-        <MetricCard
-          title="Contratos a vencer"
-          value={String(metrics.expiringContracts)}
-        />
-        <MetricCard
-          title="Inadimplência"
-          value={formatCurrencyBrl(metrics.delinquencyAmount)}
-        />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard title="Serviços de hoje" value={String(metrics.servicesToday)} />
+        <MetricCard title="Serviços da semana" value={String(metrics.servicesThisWeek)} />
+        <MetricCard title="OS abertas" value={String(metrics.scheduledServices)} />
+        <MetricCard title="Propostas pendentes" value={String(metrics.openProposals)} />
+        <MetricCard title="Certificados a emitir" value={String(metrics.certificatesToIssue)} />
+        <MetricCard title="Contratos a vencer" value={String(metrics.expiringContracts)} />
+        <MetricCard title="Financeiro em atraso" value={formatCurrencyBrl(metrics.delinquencyAmount)} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Receita por mês</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {metrics.revenueByMonth.map((item) => (
-              <BarRow
-                key={item.month}
-                label={item.label}
-                value={formatCurrencyBrl(item.amount)}
-                ratio={item.amount / maxRevenue}
-              />
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Vendas por categoria</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {metrics.salesByCategory.map((item) => (
-              <BarRow
-                key={item.categoryId}
-                label={item.categoryName}
-                value={formatCurrencyBrl(item.amount)}
-                ratio={item.amount / maxCategory}
-              />
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Funil comercial</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {metrics.funnel.map((stage) => (
-              <BarRow
-                key={stage.stage}
-                label={stage.label}
-                value={String(stage.count)}
-                ratio={stage.count / maxFunnel}
-              />
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Produtividade (fictícia)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              {metrics.productivityRanking.map((item) => (
-                <li
-                  key={item.technicianAlias}
-                  className="flex items-center justify-between rounded-lg border border-border p-3 text-sm"
+      <Card>
+        <CardHeader>
+          <CardTitle>Próximas ações</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="grid gap-3 md:grid-cols-2">
+            {NEXT_ACTIONS.map((action) => (
+              <li key={action.href}>
+                <Link
+                  href={action.href}
+                  className="block rounded-lg border border-border p-3 hover:border-teal"
                 >
-                  <span>{item.technicianAlias}</span>
-                  <span className="font-medium">
-                    {item.completedOrders} OS concluídas
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
+                  <p className="font-medium text-navy">{action.label}</p>
+                  <p className="text-sm text-muted-foreground">{action.detail}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -202,27 +136,35 @@ function MetricCard({ title, value }: { title: string; value: string }) {
   );
 }
 
-function BarRow({
-  label,
-  value,
-  ratio,
-}: {
-  label: string;
-  value: string;
-  ratio: number;
-}) {
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-sm">
-        <span>{label}</span>
-        <span className="font-medium text-navy">{value}</span>
-      </div>
-      <div className="h-2 rounded-full bg-muted">
-        <div
-          className="h-2 rounded-full bg-teal"
-          style={{ width: `${Math.max(ratio * 100, 4)}%` }}
-        />
-      </div>
-    </div>
-  );
-}
+const NEXT_ACTIONS = [
+  {
+    href: "/demonstracao/clientes/client-hotel-amazonas",
+    label: "Abrir o Hotel Amazonas Plaza",
+    detail: "Cliente-guia da apresentação, com proposta, OS, relatório e financeiro ligados.",
+  },
+  {
+    href: "/demonstracao/ordens-servico/os-demo-04/execucao",
+    label: "Confirmar o serviço de hoje",
+    detail: "Execução em andamento na torre de hóspedes, veículo F2.",
+  },
+  {
+    href: "/demonstracao/certificados/cert-hotel-001",
+    label: "Revisar o atestado pendente",
+    detail: "Prévia do certificado. O modelo oficial ainda depende de aprovação.",
+  },
+  {
+    href: "/demonstracao/financeiro",
+    label: "Cobrar a parcela em aberto",
+    detail: "Parcela 2/2 da proposta DEMO-005 e uma renegociação demonstrativa.",
+  },
+  {
+    href: "/demonstracao/colaboradores/emp-bruno",
+    label: "Documento de colaborador vencendo",
+    detail: "ASO vencido e NR-33 pendente no cadastro fictício de Bruno.",
+  },
+  {
+    href: "/demonstracao/contratos",
+    label: "Contratos próximos do vencimento",
+    detail: "A lista de contratos mostra vigência, periodicidade e reajuste.",
+  },
+];

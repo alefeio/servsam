@@ -38,6 +38,41 @@ function isDemoDataset(value: unknown): value is DemoDataset {
   );
 }
 
+function mergeById<T extends { id: string }>(stored: T[] | undefined, seed: T[]): T[] {
+  if (!stored) return seed;
+  const seedById = new Map(seed.map((item) => [item.id, item]));
+  const merged = stored.map((item) => {
+    const base = seedById.get(item.id);
+    return base ? { ...base, ...item } : item;
+  });
+  const ids = new Set(merged.map((item) => item.id));
+  for (const item of seed) {
+    if (!ids.has(item.id)) merged.push(item);
+  }
+  return merged;
+}
+
+/** Completa campos e registros da validação visual sem apagar o que o navegador já alterou. */
+export function hydrateDemoDataset(dataset: DemoDataset): DemoDataset {
+  const seed = seedDemoDataset;
+  return {
+    ...seed,
+    ...dataset,
+    clients: mergeById(dataset.clients, seed.clients),
+    proposals: mergeById(dataset.proposals, seed.proposals),
+    proposalItems: mergeById(dataset.proposalItems, seed.proposalItems),
+    workOrders: mergeById(dataset.workOrders, seed.workOrders),
+    products: mergeById(dataset.products, seed.products),
+    contracts: mergeById(dataset.contracts, seed.contracts),
+    financialTransactions: mergeById(dataset.financialTransactions, seed.financialTransactions),
+    employees: mergeById(dataset.employees, seed.employees),
+    certificates: mergeById(dataset.certificates, seed.certificates),
+    photoReports: mergeById(dataset.photoReports, seed.photoReports),
+    serviceExecutions: mergeById(dataset.serviceExecutions, seed.serviceExecutions),
+    provenance: dataset.provenance ?? seed.provenance,
+  };
+}
+
 export function getSeedDemoDataset(): DemoDataset {
   return seedDemoDataset;
 }
@@ -57,7 +92,7 @@ export function getDemoDatasetSnapshot(): DemoDataset {
     if (!isDemoDataset(parsed)) {
       return seedDemoDataset;
     }
-    return parsed;
+    return hydrateDemoDataset(parsed);
   } catch {
     return seedDemoDataset;
   }

@@ -25,7 +25,7 @@ export function SettingsView() {
     <div className="space-y-6">
       <PresentationPageHeader
         title="Configurações"
-        description="Representação de perfis e preferências do ambiente demonstrativo. Sem RBAC, banco ou autenticação de produção."
+        description="Identidade visual, textos e modelos para a apresentação. Usuários e permissões reais ficam em /sistema e não são duplicados aqui."
       />
 
       <Card>
@@ -87,15 +87,16 @@ export function SettingsView() {
 
       <Card>
         <CardHeader>
-          <CardTitle>O que não está configurável nesta fase</CardTitle>
+          <CardTitle>Identidade e modelos</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          <ul className="list-inside list-disc space-y-1">
-            <li>Permissões reais por módulo (RBAC)</li>
-            <li>Usuários, senhas ou políticas de segurança de produção</li>
-            <li>Integrações fiscais, bancárias ou de e-mail</li>
-            <li>Personalização de marca além dos logos já integrados</li>
-          </ul>
+        <CardContent className="grid gap-3 text-sm md:grid-cols-2">
+          <p><span className="text-muted-foreground">Empresa:</span> SERVSAM — dados institucionais do site, ainda sem ficha editável.</p>
+          <p><span className="text-muted-foreground">Logo:</span> arquivos já usados no topo. Troca de arquivo fica para depois da aprovação.</p>
+          <p><span className="text-muted-foreground">Marca d&apos;água:</span> a prévia da proposta mostra um texto demonstrativo, não o selo oficial.</p>
+          <p><span className="text-muted-foreground">Licenças e responsável técnico:</span> aparecem no certificado como pendentes de validação.</p>
+          <p><span className="text-muted-foreground">Assinaturas:</span> espaço reservado no relatório e no certificado. Sem captura.</p>
+          <p><span className="text-muted-foreground">Produtos e textos padrão:</span> o hipoclorito fictício e as condições da DEMO-005 são o exemplo.</p>
+          <p className="md:col-span-2"><span className="text-muted-foreground">Usuários e permissões:</span> a administração real está em /sistema. Os cartões acima são só o perfil fictício desta demonstração.</p>
         </CardContent>
       </Card>
     </div>

@@ -114,6 +114,7 @@ export const demoContracts: DemoContract[] = [
     periodicity: "semiannual",
     monthlyValue: 3260,
     adjustmentIndex: "IPCA (demonstrativo)",
+    servicesSummary: "Higienização de reservatórios superiores e inferiores, duas vezes ao ano.",
     status: "active",
     scheduledVisits: [
       {

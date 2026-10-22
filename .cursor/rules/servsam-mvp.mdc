@@ -1,38 +1,53 @@
 ---
-description: Regras do MVP SERVSAM - escopo, dados, arquitetura e testes
+description: Regras do SERVSAM - demo entregue, sprint ativa e limites da V1
 alwaysApply: true
 ---
 
-# MVP SERVSAM
+# SERVSAM
 
-Duas experiências: site institucional público (responsivo) e sistema demonstrativo desktop-first (>= 1024px). Esta fase valida navegação, linguagem e fluxos. Não é o sistema definitivo.
+Duas experiências convivem no mesmo app: site institucional público (responsivo) e sistema demonstrativo desktop-first (>= 1024px). As Sprints 1 a 7 entregaram esse MVP. Ele valida navegação, linguagem e fluxos. Não é o sistema de produção.
+
+A especificação viva da V1 está em `docs/architecture/v1/`. A sprint ativa está em `docs/product-backlog.md`.
 
 ## Escopo da fase atual
 
-- Implemente apenas a sprint ativa (hoje: Sprint 1).
-- Não implemente Sprints 2 a 7 nem o mobile de campo.
-- Rotas futuras devem exibir estado "Módulo planejado", nunca 404 nem telas falsas.
+- Sprints 1 a 7 estão concluídas. Não apague o site, o demo nem o CRM (leads, oportunidades, Kanban).
+- A Sprint 8 (arquitetura e documentação da V1) está entregue.
+- A Sprint 9 (fundação de `/sistema`: PostgreSQL, Prisma, autenticação, usuários, papéis, permissões e auditoria de plataforma) está entregue e deve continuar íntegra.
+- A Sprint 10 é validação visual e funcional em `/demonstracao`. Não implemente Customer nem os outros domínios de negócio no Prisma.
+- A fila original das Sprints 10 a 20 (clientes reais em diante) fica congelada até o cliente aprovar as telas. Não a renumere e não comece a Sprint 11.
+- Não refatore a UI de forma ampla fora do que a apresentação da Sprint 10 precisar.
+- Não crie rotas de produção antecipadas. O demo existente permanece em fixture e `localStorage`.
+- Mobile de campo continua fora de contrato. Ver `docs/future/mobile-field-epic.md` e `docs/architecture/v1/scope.md`.
 
-## Proibido nesta fase
+## Proibido até a sprint que for dona do item
 
-Banco, Prisma, API real, auth de produção, RBAC real, WhatsApp/e-mail/ERP reais, dados de clientes reais, PWA/offline, geolocalização, câmera, assinatura, "Minha agenda" de técnico, ou qualquer jornada mobile de campo.
+O schema de plataforma (`Organization`, `User`, `Role`, `Permission`, `AuditLog` e as tabelas de sessão) já existe. Não crie as entidades de negócio da V1. A Sprint 10 mostra esses domínios só na demonstração.
+
+Sempre fora até a sprint ou o contrato próprio: WhatsApp/e-mail/ERP reais, dados de clientes reais, PWA/offline, geolocalização, câmera, NF-e, portal externo do cliente, ou qualquer jornada mobile de campo. O demo em `/demonstracao` continua em fixture e `localStorage`, separado da sessão de `/sistema`.
+
+O fluxo mestre da V1 está documentado. Não o implemente fora da sprint que o backlog atribui a cada passo.
 
 ## Dados
 
 - Código em inglês; interface em pt-BR.
-- Conteúdo só em `src/data/` (official vs demo). Nunca espalhar copy no JSX.
+- Conteúdo do demo e do site só em `src/data/` (official vs demo). Nunca espalhar copy no JSX.
 - Todo conteúdo relevante tem `provenance` (`sourceType`, `isFictional`, `needsClientValidation`).
 - Ficção sempre visível: "Dados demonstrativos" / "Caso demonstrativo fictício".
 - Não inventar clientes reais, avaliações, faturamento, economia ou índices.
-- Certificações: listar com "Informado no site atual - documentação pendente de validação". Sem números, selos ou validade.
+- Certificações públicas: listar com "Informado no site atual - documentação pendente de validação". Sem números, selos ou validade.
+- Perfis Administrativo, Gerência, Financeiro e Diretoria são sementes de RBAC da V1, não os perfis fictícios Direção e Compliance do login demo.
 
 ## Arquitetura
 
 - Next.js App Router, TypeScript strict, sem `any`.
 - Server Components por padrão; Client Components só para interação.
-- Dados via repositórios em `src/lib/repositories`. Sem `fetch` em páginas.
+- Dados do demo via repositórios em `src/lib/repositories`. Sem `fetch` em páginas.
 - Regras de negócio fora de páginas e de componentes de apresentação.
+- Cliente é o agregador de relacionamento. Ordem de serviço é o agregador da operação. Não inverter essa hierarquia ao planejar a V1.
+- RBAC de produção é User, Role e Permission, verificado por chave no servidor. Os quatro perfis são semente, não um enum fechado.
+- A agenda SERVSAM é a fonte da verdade. Google Calendar não substitui a agenda.
 
 ## Testes
 
-Após mudanças relevantes: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`. Não declare sucesso sem evidência.
+Após mudanças relevantes de código: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`. Não declare sucesso sem evidência. Mudança só de documentação não autoriza alterar comportamento para fazer teste passar.

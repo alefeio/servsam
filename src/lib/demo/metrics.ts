@@ -61,6 +61,29 @@ function daysUntil(dateValue: string, referenceDate: string): number {
   return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 }
 
+function referenceWeek(referenceDate: string): { start: string; end: string } {
+  const [year, month, day] = referenceDate.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const weekday = date.getUTCDay();
+  const mondayOffset = weekday === 0 ? -6 : 1 - weekday;
+  const start = new Date(date);
+  start.setUTCDate(date.getUTCDate() + mondayOffset);
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 6);
+  const format = (value: Date) => value.toISOString().slice(0, 10);
+  return { start: format(start), end: format(end) };
+}
+
+function countScheduledServices(
+  dataset: DemoDataset,
+  includesDay: (day: string) => boolean,
+): number {
+  return dataset.workOrders.filter((item) => {
+    if (item.status === "cancelled") return false;
+    return includesDay(item.scheduledAt.slice(0, 10));
+  }).length;
+}
+
 function buildFunnel(dataset: DemoDataset): FunnelStage[] {
   return FUNNEL_ORDER.map((stage) => ({
     stage,
@@ -175,6 +198,52 @@ function buildAlerts(dataset: DemoDataset): DashboardAlert[] {
     dataset.clients.map((client) => [client.id, client.alias]),
   );
 
+  for (const certificate of dataset.certificates.filter((item) => item.status === "draft")) {
+    alerts.push({
+      id: `alert-cert-${certificate.id}`,
+      title: "Certificado pendente",
+      detail: `${certificate.number} de ${clientAliases[certificate.clientId] ?? "cliente"} ainda é prévia.`,
+    });
+  }
+
+  for (const employee of dataset.employees) {
+    for (const document of employee.documents) {
+      if (!/venc|pendente/i.test(document.status)) continue;
+      alerts.push({
+        id: `alert-emp-${employee.id}-${document.label}`,
+        title: `${document.label} do colaborador`,
+        detail: `${employee.name}: ${document.status}${document.expiresAt ? ` · ${document.expiresAt}` : ""}.`,
+      });
+    }
+  }
+
+  for (const product of dataset.products) {
+    if (!product.expiryDate) continue;
+    const days = daysUntil(product.expiryDate, DEMO_REFERENCE_DATE);
+    if (days >= 0 && days <= 90) {
+      alerts.push({
+        id: `alert-expiry-${product.id}`,
+        title: "Produto próximo do vencimento",
+        detail: `${product.name} vence em ${days} dias.`,
+      });
+    }
+  }
+
+  const postSale = dataset.workOrders.find(
+    (item) =>
+      item.status === "completed" &&
+      !dataset.certificates.some(
+        (certificate) => certificate.workOrderId === item.id && certificate.status === "issued",
+      ),
+  );
+  if (postSale) {
+    alerts.push({
+      id: `alert-postsale-${postSale.id}`,
+      title: "Pós-venda",
+      detail: `${postSale.serviceName} de ${clientAliases[postSale.clientId] ?? "cliente"} concluída sem certificado emitido nesta demonstração.`,
+    });
+  }
+
   for (const document of dataset.documents) {
     const days = daysUntil(document.expiresAt, DEMO_REFERENCE_DATE);
     if (days >= 0 && days <= 30) {
@@ -220,7 +289,7 @@ function buildAlerts(dataset: DemoDataset): DashboardAlert[] {
     });
   }
 
-  return alerts.slice(0, 8);
+  return alerts.slice(0, 12);
 }
 
 export function buildDashboardMetrics(
@@ -246,6 +315,18 @@ export function buildDashboardMetrics(
 
   const scheduledServices = dataset.workOrders.filter(
     (item) => item.status === "scheduled" || item.status === "in_progress",
+  ).length;
+  const week = referenceWeek(DEMO_REFERENCE_DATE);
+  const servicesToday = countScheduledServices(
+    dataset,
+    (day) => day === DEMO_REFERENCE_DATE,
+  );
+  const servicesThisWeek = countScheduledServices(
+    dataset,
+    (day) => day >= week.start && day <= week.end,
+  );
+  const certificatesToIssue = dataset.certificates.filter(
+    (item) => item.status === "draft",
   ).length;
 
   const expiringContracts = dataset.contracts.filter(
@@ -273,6 +354,9 @@ export function buildDashboardMetrics(
     openProposals,
     conversionRate,
     scheduledServices,
+    servicesToday,
+    servicesThisWeek,
+    certificatesToIssue,
     expiringContracts,
     delinquencyAmount,
     documentsNearExpiry,

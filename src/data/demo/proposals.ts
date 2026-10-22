@@ -60,6 +60,13 @@ export const demoProposals: DemoProposal[] = [
     value: 9800,
     sentAt: "2026-06-05",
     validUntil: "2026-07-05",
+    discountAmount: 400,
+    paymentTerms: "50% na aprovação e 50% em 30 dias",
+    downPayment: "R$ 4.900 na aprovação",
+    executionDeadline: "Até 15 dias após o aceite",
+    commercialConditions: "Serviço em horário comercial, com acesso liberado pela manutenção do hotel.",
+    cancellationFee: "30% se o cancelamento ocorrer com menos de 48 horas.",
+    observations: "Proposta-guia da apresentação. O aceite libera o agendamento de 28/08.",
     provenance,
   },
   {

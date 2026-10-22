@@ -38,9 +38,9 @@ export function InventoryProductDetailView({ productId }: InventoryProductDetail
     <div className="space-y-6">
       <ManagementPageHeader
         title={product.name}
-        description="Saldo, lote, validade e movimentações fictícias vinculadas a OS."
+        description="Nome comercial, princípio ativo, lote, validade e vínculo visual com a OS. A baixa de estoque não é transacional."
         backHref="/demonstracao/estoque"
-        backLabel="Estoque"
+        backLabel="Produtos"
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -57,6 +57,46 @@ export function InventoryProductDetailView({ productId }: InventoryProductDetail
               <span className="text-muted-foreground">Mínimo:</span>{" "}
               {product.minimumStock} {product.unit}
             </p>
+            {product.tradeName ? (
+              <p>
+                <span className="text-muted-foreground">Nome comercial:</span> {product.tradeName}
+              </p>
+            ) : null}
+            {product.activeIngredient ? (
+              <p>
+                <span className="text-muted-foreground">Princípio ativo:</span> {product.activeIngredient}
+              </p>
+            ) : null}
+            {product.chemicalGroup ? (
+              <p>
+                <span className="text-muted-foreground">Grupo químico:</span> {product.chemicalGroup}
+              </p>
+            ) : null}
+            {product.manufacturer ? (
+              <p>
+                <span className="text-muted-foreground">Fabricante:</span> {product.manufacturer}
+              </p>
+            ) : null}
+            {product.anvisaRegistration ? (
+              <p>
+                <span className="text-muted-foreground">ANVISA/MS:</span> {product.anvisaRegistration}
+              </p>
+            ) : null}
+            {product.antidote ? (
+              <p>
+                <span className="text-muted-foreground">Antídoto:</span> {product.antidote}
+              </p>
+            ) : null}
+            {product.technicalSheet ? (
+              <p>
+                <span className="text-muted-foreground">Ficha técnica:</span> {product.technicalSheet}
+              </p>
+            ) : null}
+            {product.fispq ? (
+              <p>
+                <span className="text-muted-foreground">FISPQ:</span> {product.fispq}
+              </p>
+            ) : null}
             <p>
               <span className="text-muted-foreground">Categoria:</span> {product.category}
             </p>

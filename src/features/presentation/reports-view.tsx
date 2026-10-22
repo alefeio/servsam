@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +36,13 @@ export function ReportsView() {
         title="Relatórios"
         description="Indicadores finais derivados da massa demonstrativa, com exportações claramente identificadas como fictícias."
       />
+
+      <p className="text-sm text-muted-foreground">
+        Os indicadores abaixo não são o relatório de campo.{" "}
+        <Link href="/demonstracao/relatorios/fotograficos" className="font-medium text-navy hover:text-teal">
+          Abrir relatórios fotográficos
+        </Link>
+      </p>
 
       <Card>
         <CardHeader>

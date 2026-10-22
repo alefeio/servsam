@@ -11,6 +11,18 @@ import { clearDemoSession, getDemoSessionRaw, parseDemoSession, subscribeToDemoS
 import { restoreDemoData } from "@/lib/demo/dataset-store";
 import { cn } from "@/lib/utils";
 
+function matchesDemoHref(pathname: string, href: string): boolean {
+  if (href === "/demonstracao") return pathname === href;
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function isDemoNavActive(pathname: string, href: string): boolean {
+  if (!matchesDemoHref(pathname, href)) return false;
+  return !demoNavItems.some(
+    (other) => other.href.length > href.length && matchesDemoHref(pathname, other.href),
+  );
+}
+
 function useDemoSessionSnapshot() {
   const rawSession = useSyncExternalStore(
     subscribeToDemoSession,
@@ -35,13 +47,17 @@ export function DemoSidebar() {
       </div>
       <nav aria-label="Módulos da demonstração" className="flex-1 overflow-y-auto p-3">
         <ul className="space-y-1">
-          {demoNavItems.map((item) => {
-            const isActive =
-              item.href === "/demonstracao"
-                ? pathname === "/demonstracao"
-                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+          {demoNavItems.map((item, index) => {
+            const isActive = isDemoNavActive(pathname, item.href);
+            const previous = index > 0 ? demoNavItems[index - 1] : undefined;
+            const showSection = item.section !== previous?.section;
             return (
               <li key={item.href}>
+                {showSection ? (
+                  <p className="px-3 pt-3 pb-1 text-[11px] tracking-wide text-teal uppercase">
+                    {item.section}
+                  </p>
+                ) : null}
                 <Link
                   href={item.href}
                   aria-current={isActive ? "page" : undefined}
@@ -65,11 +81,9 @@ export function DemoTopBar() {
   const pathname = usePathname();
   const router = useRouter();
   const session = useDemoSessionSnapshot();
-  const current = demoNavItems.find((item) =>
-    item.href === "/demonstracao"
-      ? pathname === "/demonstracao"
-      : pathname === item.href || pathname.startsWith(`${item.href}/`),
-  );
+  const current = [...demoNavItems]
+    .filter((item) => isDemoNavActive(pathname, item.href))
+    .sort((left, right) => right.href.length - left.href.length)[0];
 
   function handleLogout() {
     clearDemoSession();
