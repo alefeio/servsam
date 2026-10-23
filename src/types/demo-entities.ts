@@ -66,6 +66,44 @@ export type ProposalStatus =
   | "expired"
   | "cancelled";
 
+export type DemoServiceFamily =
+  | "rsv"
+  | "cip"
+  | "water-collection"
+  | "ete"
+  | "water-monitoring"
+  | "well";
+
+export type DemoFormalizationKind =
+  | "signed-proposal"
+  | "client-work-order"
+  | "purchase-order"
+  | "service-purchase-order"
+  | "other";
+
+export type DemoLabeledValue = {
+  label: string;
+  value: string;
+};
+
+export type DemoProposalFormalization = {
+  statusLabel: string;
+  kind: DemoFormalizationKind;
+  kindLabel: string;
+  documentCode: string;
+  receivedAt: string;
+  note: string;
+};
+
+export type DemoProposalNarrative = {
+  technicalScope: string[];
+  procedures: string[];
+  contractorDuties: string[];
+  specificConditions: string[];
+  includedDeliverables: string[];
+  technicalResponsibleId?: string;
+};
+
 export type DemoProposal = Provenanced<{
   id: string;
   code: string;
@@ -82,6 +120,9 @@ export type DemoProposal = Provenanced<{
   commercialConditions?: string;
   cancellationFee?: string;
   observations?: string;
+  serviceFamily?: DemoServiceFamily;
+  formalization?: DemoProposalFormalization;
+  narrative?: DemoProposalNarrative;
 }>;
 
 export type DemoProposalItem = Provenanced<{
@@ -131,7 +172,22 @@ export type DemoWorkOrder = Provenanced<{
   vehicleLabel?: string;
   addressLabel?: string;
   scheduleStatusLabel?: string;
+  serviceFamily?: DemoServiceFamily;
+  familyFields?: DemoLabeledValue[];
+  visits?: DemoWorkOrderVisit[];
+  technicalResponsibleId?: string;
+  clientResponsible?: string;
+  vehicleId?: string;
 }>;
+
+export type DemoWorkOrderVisit = {
+  id: string;
+  scheduledAt: string;
+  place: string;
+  team: string;
+  vehicleId: string;
+  status: "done" | "in_progress" | "scheduled";
+};
 
 export type ContractStatus = "active" | "expiring" | "expired";
 export type ContractPeriodicity = "monthly" | "quarterly" | "semiannual" | "annual";
@@ -168,6 +224,7 @@ export type DemoDocument = Provenanced<{
   responsibleAlias: string;
   issuedAt?: string;
   expiresAt: string;
+  cycle?: DemoDocumentCycle;
 }>;
 
 export type DemoProduct = Provenanced<{
@@ -261,7 +318,40 @@ export type DemoEmployee = Provenanced<{
   documents: DemoEmployeeDocument[];
   trainings?: string[];
   warnings: string[];
+  identityDocument?: string;
+  situation?: string;
 }>;
+
+export type DemoVehicle = Provenanced<{
+  id: string;
+  internalCode: string;
+  kind: string;
+  model: string;
+  plate: string;
+  status: string;
+}>;
+
+export type DemoTechnicalResponsible = Provenanced<{
+  id: string;
+  name: string;
+  education: string;
+  council: string;
+  registration: string;
+  specialty: string;
+  families: string[];
+}>;
+
+export type DemoRegulatoryCredential = Provenanced<{
+  id: string;
+  organ: string;
+  kind: string;
+  number: string;
+  validUntil: string;
+  status: string;
+  usedBy: string[];
+}>;
+
+export type DemoCertificateTemplate = "reservoir" | "well" | "pest" | "waste";
 
 export type DemoCertificate = Provenanced<{
   id: string;
@@ -276,7 +366,16 @@ export type DemoCertificate = Provenanced<{
   productId: string;
   technicalResponsible: string;
   licenses: string[];
+  template?: DemoCertificateTemplate;
+  validityLabel?: string;
+  details?: DemoLabeledValue[];
+  technicalResponsibleId?: string;
 }>;
+
+export type DemoReportSection = {
+  title: string;
+  body: string;
+};
 
 export type DemoPhotoReport = Provenanced<{
   id: string;
@@ -292,7 +391,11 @@ export type DemoPhotoReport = Provenanced<{
   photoSrcs: string[];
   clientResponsible: string;
   technicalResponsible: string;
+  sections?: DemoReportSection[];
+  photosPerPage?: number;
 }>;
+
+export type DemoClientRating = "Excelente" | "Bom" | "Razoável" | "Pouco razoável";
 
 export type DemoServiceExecution = Provenanced<{
   id: string;
@@ -305,7 +408,50 @@ export type DemoServiceExecution = Provenanced<{
   checklist: DemoWorkOrderChecklistItem[];
   usedMaterials: DemoWorkOrderPlannedMaterial[];
   photoSrcs: string[];
+  rating?: DemoClientRating;
+  ratingNote?: string;
+  familyFields?: DemoLabeledValue[];
 }>;
+
+export type DemoPreServiceKind = "notice" | "entry-authorization" | "awareness";
+
+export type DemoPreServiceDocument = Provenanced<{
+  id: string;
+  workOrderId: string;
+  clientId: string;
+  kind: DemoPreServiceKind;
+  title: string;
+  summary: string;
+  lines: string[];
+}>;
+
+export type DemoEnvironmentalProcessStatus =
+  | "documents-pending"
+  | "preparing"
+  | "filed"
+  | "under-review"
+  | "pending-issue"
+  | "completed";
+
+export type DemoEnvironmentalProcess = Provenanced<{
+  id: string;
+  code: string;
+  clientId: string;
+  title: string;
+  unit: string;
+  technicalResponsibleId: string;
+  organ: string;
+  status: DemoEnvironmentalProcessStatus;
+  checklist: DemoWorkOrderChecklistItem[];
+  notes: string;
+}>;
+
+export type DemoDocumentCycle =
+  | "commercial"
+  | "pre-service"
+  | "operation"
+  | "post-service"
+  | "regulatory";
 
 export type DemoDataset = Provenanced<{
   clients: DemoClient[];
@@ -325,4 +471,9 @@ export type DemoDataset = Provenanced<{
   certificates: DemoCertificate[];
   photoReports: DemoPhotoReport[];
   serviceExecutions: DemoServiceExecution[];
+  vehicles: DemoVehicle[];
+  technicalResponsibles: DemoTechnicalResponsible[];
+  regulatoryCredentials: DemoRegulatoryCredential[];
+  preServiceDocuments: DemoPreServiceDocument[];
+  environmentalProcesses: DemoEnvironmentalProcess[];
 }>;

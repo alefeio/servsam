@@ -1,3 +1,4 @@
+import { hotelProposalStory, storyProposals } from "@/data/demo/operational-story";
 import { createProvenance } from "@/lib/content/provenance";
 import type { DemoProposal } from "@/types/demo-entities";
 
@@ -66,7 +67,7 @@ export const demoProposals: DemoProposal[] = [
     executionDeadline: "Até 15 dias após o aceite",
     commercialConditions: "Serviço em horário comercial, com acesso liberado pela manutenção do hotel.",
     cancellationFee: "30% se o cancelamento ocorrer com menos de 48 horas.",
-    observations: "Proposta-guia da apresentação. O aceite libera o agendamento de 28/08.",
+    ...hotelProposalStory,
     provenance,
   },
   {
@@ -175,4 +176,5 @@ export const demoProposals: DemoProposal[] = [
     value: 8900,
     provenance,
   },
+  ...storyProposals,
 ];

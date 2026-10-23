@@ -119,6 +119,33 @@ export function AgendaView() {
         description="Visão diária, semanal e mensal. Cada compromisso mostra serviço, cliente, endereço, horário, equipe e veículo. Google Calendar não está ligado."
       />
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Visitas do mesmo serviço</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {dataset.workOrders
+            .filter((workOrder) => (workOrder.visits?.length ?? 0) > 1)
+            .map((workOrder) => (
+              <p key={workOrder.id}>
+                <Link href={`/demonstracao/ordens-servico/${workOrder.id}`} className="font-medium text-navy hover:text-teal">
+                  {workOrder.serviceName}
+                </Link>
+                {" · "}
+                {workOrder.visits?.map((visit) => {
+                  const label =
+                    visit.status === "done"
+                      ? "Executada"
+                      : visit.status === "in_progress"
+                        ? "Em execução"
+                        : "Programada";
+                  return `${new Date(visit.scheduledAt).toLocaleDateString("pt-BR")} ${label}`;
+                }).join(" · ")}
+              </p>
+            ))}
+        </CardContent>
+      </Card>
+
       <div className="flex flex-wrap items-center gap-3">
         <div className="inline-flex rounded-lg border border-border p-1">
           <Button

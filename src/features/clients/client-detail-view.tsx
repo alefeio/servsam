@@ -61,6 +61,48 @@ export function ClientDetailView({ clientId }: ClientDetailViewProps) {
         </CardContent>
       </Card>
 
+      {clientId === "client-hotel-amazonas" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Linha do atendimento</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ol className="space-y-2 text-sm">
+              {[
+                "Proposta criada",
+                "Proposta enviada",
+                "Proposta aprovada",
+                "Formalização recebida",
+                "Agendamento liberado",
+                "Documento pré-serviço gerado",
+                "OS emitida",
+                "Execução iniciada",
+                "Execução concluída — ainda aberta nesta data de referência",
+                "Aceite recebido — pendente",
+                "Avaliação registrada — pendente neste serviço",
+                "Relatório emitido em prévia",
+                "Certificado/atestado em rascunho",
+                "Financeiro aberto",
+                "Próxima recorrência em 04/09",
+              ].map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {clientId === "client-residencial-marajo" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Linha do atendimento</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            Serviço concluído — avaliação: Excelente
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle>Histórico</CardTitle>

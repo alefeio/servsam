@@ -54,17 +54,30 @@ export function CertificateDetailView({ certificateId }: { certificateId: string
         <p className="text-center text-xs tracking-[0.16em] text-amber-700 uppercase">
           Layout fictício · pendente de validação do cliente
         </p>
+        <p className="text-center text-xs font-semibold tracking-wide text-amber-800 uppercase">
+          PRÉVIA DEMONSTRATIVA — NÃO É DOCUMENTO OFICIAL
+        </p>
         <h2 className="text-xl font-semibold text-navy">{certificate.certificateType}</h2>
         <p><span className="text-muted-foreground">Número:</span> {certificate.number}</p>
         <p><span className="text-muted-foreground">Cliente:</span> {client?.legalName ?? client?.alias}</p>
         <p><span className="text-muted-foreground">Serviço:</span> {certificate.serviceName}</p>
         <p><span className="text-muted-foreground">OS:</span> {workOrder?.code}</p>
         <p><span className="text-muted-foreground">Data:</span> {certificate.issuedAt ?? "Ainda não emitido"}</p>
-        <p><span className="text-muted-foreground">Validade:</span> {certificate.validUntil ?? "A definir com o cliente"}</p>
+        <p><span className="text-muted-foreground">Validade:</span> {certificate.validityLabel ?? certificate.validUntil ?? "A definir com o cliente"}</p>
         <p><span className="text-muted-foreground">Produto:</span> {product?.tradeName ?? product?.name}</p>
         <p><span className="text-muted-foreground">Princípio ativo:</span> {product?.activeIngredient ?? "—"}</p>
         <p><span className="text-muted-foreground">Grupo químico:</span> {product?.chemicalGroup ?? "—"}</p>
         <p><span className="text-muted-foreground">Registro MS/ANVISA:</span> {product?.anvisaRegistration ?? "—"}</p>
+        <div>
+          <p className="text-muted-foreground">Campos deste modelo</p>
+          <ul className="list-disc pl-5">
+            {(certificate.details ?? []).map((detail) => (
+              <li key={detail.label}>
+                {detail.label}: {detail.value}
+              </li>
+            ))}
+          </ul>
+        </div>
         <div>
           <p className="text-muted-foreground">Licenças SERVSAM</p>
           <ul className="list-disc pl-5">

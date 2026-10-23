@@ -49,6 +49,8 @@ export function EmployeeDetailView({ employeeId }: { employeeId: string }) {
         <CardContent className="text-sm">
           <p><span className="text-muted-foreground">Função:</span> {employee.role}</p>
           <p><span className="text-muted-foreground">Telefone:</span> {employee.phone}</p>
+          <p><span className="text-muted-foreground">Documento:</span> {employee.identityDocument ?? "Não informado neste fixture"}</p>
+          <p><span className="text-muted-foreground">Situação:</span> {employee.situation ?? "Ativo nesta demonstração"}</p>
         </CardContent>
       </Card>
       <Card>

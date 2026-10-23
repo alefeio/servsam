@@ -51,4 +51,30 @@ test("client presentation journey opens the connected demo records", async ({ pa
   await page.goto("/demonstracao/colaboradores/emp-bruno");
   await expect(page.getByText("ASO:", { exact: true })).toBeVisible();
   await expect(page.getByText("NR-33:", { exact: true })).toBeVisible();
+
+  await page.goto("/demonstracao/comercial/propostas/prop-005");
+  await expect(page.getByText("Formalização da aprovação")).toBeVisible();
+  await expect(page.getByText("OCS-DEMO-014")).toBeVisible();
+  await page.getByRole("button", { name: "Visualizar documento" }).click();
+  await expect(page.getByText("Prévia DEMO de OCS-DEMO-014")).toBeVisible();
+
+  await page.goto("/demonstracao/ordens-servico/os-demo-04");
+  await expect(page.getByText("Visitas vinculadas")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Abrir documentação pré-serviço" })).toBeVisible();
+
+  await page.goto("/demonstracao/ordens-servico/os-demo-04/pre-servico");
+  await expect(page.getByRole("button", { name: "Gerar prévia DEMO" }).first()).toBeVisible();
+
+  await page.goto("/demonstracao/ordens-servico/os-cip-01");
+  await expect(page.getByText("Infestação")).toBeVisible();
+
+  await page.goto("/demonstracao/ordens-servico/os-monitor-01/execucao");
+  await expect(page.getByText("Excelente")).toBeVisible();
+  await expect(page.getByText("Observação do cliente:")).toBeVisible();
+
+  await page.goto("/demonstracao/certificados/cert-cip-001");
+  await expect(page.getByText("PRÉVIA DEMONSTRATIVA — NÃO É DOCUMENTO OFICIAL")).toBeVisible();
+
+  await page.goto("/demonstracao/processos/proc-outorga-iara");
+  await expect(page.getByText("Estrutura proposta para validação do cliente")).toBeVisible();
 });

@@ -17,7 +17,7 @@ describe("demo dataset validation", () => {
     expect(seedDemoDataset.opportunities.length).toBeGreaterThanOrEqual(20);
     expect(seedDemoDataset.opportunities.length).toBeLessThanOrEqual(30);
     expect(seedDemoDataset.workOrders.length).toBeGreaterThanOrEqual(15);
-    expect(seedDemoDataset.workOrders.length).toBeLessThanOrEqual(20);
+    expect(seedDemoDataset.workOrders.length).toBeLessThanOrEqual(25);
     expect(seedDemoDataset.contracts.length).toBeGreaterThanOrEqual(5);
     expect(seedDemoDataset.contracts.length).toBeLessThanOrEqual(8);
     expect(seedDemoDataset.documents.length).toBeGreaterThanOrEqual(6);

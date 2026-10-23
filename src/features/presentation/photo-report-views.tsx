@@ -6,6 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDemoDatasetStore } from "@/features/crm/use-demo-dataset-store";
 import { PresentationPageHeader } from "@/features/presentation/presentation-page-header";
 
+function chunkPhotos(sources: string[], size: number): string[][] {
+  const pages: string[][] = [];
+  for (let index = 0; index < sources.length; index += size) {
+    pages.push(sources.slice(index, index + size));
+  }
+  return pages;
+}
+
 export function PhotoReportsListView() {
   const { dataset } = useDemoDatasetStore();
 
@@ -43,13 +51,26 @@ export function PhotoReportDetailView({ reportId }: { reportId: string }) {
     <div className="space-y-6">
       <PresentationPageHeader
         title={report.title}
-        description="Até seis fotos por página, como no modelo informado. Layout demonstrativo, pendente de validação."
+        description="Prévia com 4 fotos por página, padrão visual desta demonstração, pendente de validação do cliente."
         backHref="/demonstracao/relatorios/fotograficos"
         backLabel="Relatórios fotográficos"
       />
       <article className="space-y-4 rounded-xl border border-border bg-white p-6 text-sm shadow-sm">
         <p className="text-center text-xs tracking-[0.18em] text-teal uppercase">SERVSAM · prévia demonstrativa</p>
+        <p className="text-center text-xs font-semibold tracking-wide text-amber-800 uppercase">
+          PRÉVIA DEMONSTRATIVA — NÃO É DOCUMENTO OFICIAL
+        </p>
         <h2 className="text-xl font-semibold text-navy">Relatório fotográfico</h2>
+        {(report.sections ?? []).length > 0 ? (
+          <ol className="grid gap-2 md:grid-cols-2">
+            {report.sections?.map((section, index) => (
+              <li key={section.title} className="rounded-md border border-border p-3">
+                <p className="font-medium text-navy">{index + 1}. {section.title}</p>
+                <p className="text-muted-foreground">{section.body}</p>
+              </li>
+            ))}
+          </ol>
+        ) : null}
         <p><span className="text-muted-foreground">Cliente:</span> {client?.alias}</p>
         <p><span className="text-muted-foreground">OS:</span> {workOrder?.code} · {workOrder?.serviceName}</p>
         <p>{report.technicalDescription}</p>
@@ -58,12 +79,24 @@ export function PhotoReportDetailView({ reportId }: { reportId: string }) {
         <p><span className="text-muted-foreground">NR-33:</span> {report.nr33}</p>
         <p><span className="text-muted-foreground">NR-35:</span> {report.nr35}</p>
         <p>{report.observations}</p>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {report.photoSrcs.slice(0, 6).map((src, index) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={src} src={src} alt={`Foto demonstrativa ${index + 1}`} className="h-36 w-full rounded-md object-cover" />
-          ))}
-        </div>
+        {chunkPhotos(report.photoSrcs, report.photosPerPage ?? 4).map((page, pageIndex) => (
+          <div key={pageIndex} className="space-y-2">
+            <p className="font-medium text-navy">
+              Página {pageIndex + 1} · {pageIndex === 0 ? "ANTES" : "DEPOIS"}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {page.map((src, index) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={src}
+                  src={src}
+                  alt={`${pageIndex === 0 ? "Antes" : "Depois"} ${index + 1}`}
+                  className="h-36 w-full rounded-md object-cover"
+                />
+              ))}
+            </div>
+          </div>
+        ))}
         <div className="grid gap-4 border-t border-border pt-4 md:grid-cols-2">
           <p>Responsável do cliente: {report.clientResponsible}<br />Assinatura: espaço reservado</p>
           <p>Responsável técnico: {report.technicalResponsible}<br />Assinatura: espaço reservado</p>

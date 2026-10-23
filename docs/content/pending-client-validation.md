@@ -48,3 +48,38 @@ O site institucional não deve vender o sistema interno. Estas respostas ainda f
 34. O formulário final deverá enviar o orçamento para qual canal?
 35. O acesso ao sistema deve aparecer no site público final? O link "Acessar demonstração" permanece no rodapé só enquanto durar a validação com o cliente.
 36. "Coleta de água" e "CIP" devem virar nomes públicos, ou permanecem análise da água e os serviços de pragas já catalogados?
+
+## Reunião após a Sprint 10.1
+
+A demonstração foi ajustada para perguntar. Nenhuma resposta abaixo está fechada. Confirmar com o cliente: padrão final será 4 ou 6 fotos por página?
+
+37. Após aprovação da proposta, quais documentos realmente liberam o agendamento?
+38. A SERVSAM aceita proposta assinada, OS, OC e OCS?
+39. Existe outra forma de formalização?
+40. Cada família de serviço deve possuir sua própria OS/checklist?
+41. Os campos mostrados na nova execução representam corretamente RSV?
+42. Representam corretamente CIP?
+43. Representam corretamente coleta?
+44. Representam corretamente ETE?
+45. Retrolavagem/monitoramento pertence a qual módulo/família?
+46. Uma OS pode possuir várias visitas?
+47. Contratos geram visitas recorrentes automaticamente?
+48. A avaliação Excelente/Bom/Razoável/Pouco razoável deve continuar?
+49. Desejam acrescentar comentário do cliente?
+50. O relatório final deve manter 4 fotos por página ou mudar para 6?
+51. Quais serviços geram relatório técnico?
+52. Quais geram relatório fotográfico?
+53. Quais geram atestado?
+54. Quais geram certificado?
+55. Quais validades são calculadas por serviço?
+56. Quem pode assinar cada documento?
+57. Responsáveis técnicos devem ser vinculados por serviço?
+58. "Processos" significa processos ambientais como Outorga?
+59. Outorga deve fazer parte da V1?
+60. Esgotamento de resíduos/fossa entra no catálogo principal?
+61. Retrolavagem entra no catálogo principal?
+62. Quais documentos pré-serviço são obrigatórios?
+63. Quais documentos devem ser enviados automaticamente ao cliente?
+64. Veículos possuem identificação interna como F1/F2/F3?
+65. Quais são os veículos ativos?
+66. Quais documentos reais podem ser usados como modelo oficial no futuro?

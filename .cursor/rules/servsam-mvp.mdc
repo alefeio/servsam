@@ -14,9 +14,9 @@ A especificação viva da V1 está em `docs/architecture/v1/`. A sprint ativa es
 - Sprints 1 a 7 estão concluídas. Não apague o site, o demo nem o CRM (leads, oportunidades, Kanban).
 - A Sprint 8 (arquitetura e documentação da V1) está entregue.
 - A Sprint 9 (fundação de `/sistema`: PostgreSQL, Prisma, autenticação, usuários, papéis, permissões e auditoria de plataforma) está entregue e deve continuar íntegra.
-- A Sprint 10 é validação visual e funcional em `/demonstracao`. Não implemente Customer nem os outros domínios de negócio no Prisma.
+- A Sprint 10 é validação visual e funcional em `/demonstracao`. A Sprint 10.1 ajusta essa demonstração ao que os documentos operacionais sugerem. Não implemente Customer nem os outros domínios de negócio no Prisma.
 - A fila original das Sprints 10 a 20 (clientes reais em diante) fica congelada até o cliente aprovar as telas. Não a renumere e não comece a Sprint 11.
-- Não refatore a UI de forma ampla fora do que a apresentação da Sprint 10 precisar.
+- Não refatore a UI de forma ampla fora do que a apresentação da Sprint 10 e da 10.1 precisar.
 - Não crie rotas de produção antecipadas. O demo existente permanece em fixture e `localStorage`.
 - Mobile de campo continua fora de contrato. Ver `docs/future/mobile-field-epic.md` e `docs/architecture/v1/scope.md`.
 

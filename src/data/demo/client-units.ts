@@ -1,3 +1,4 @@
+import { storyUnits } from "@/data/demo/operational-story";
 import { createProvenance } from "@/lib/content/provenance";
 import type { DemoClientUnit } from "@/types/demo-entities";
 
@@ -79,4 +80,5 @@ export const demoClientUnits: DemoClientUnit[] = [
     city: "Belém",
     provenance,
   },
+  ...storyUnits,
 ];

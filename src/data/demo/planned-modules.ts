@@ -135,4 +135,5 @@ export const demoNavItems = [
   { href: "/demonstracao/licitacoes", label: "Licitações", implemented: true, section: "Apoio" },
   { href: "/demonstracao/relatorios", label: "Relatórios", implemented: true, section: "Apoio" },
   { href: "/demonstracao/configuracoes", label: "Configurações", implemented: true, section: "Apoio" },
+  { href: "/demonstracao/processos", label: "Processos ambientais (DEMO)", implemented: true, section: "Apoio" },
 ] as const;

@@ -13,6 +13,13 @@ import { demoPublicTenders } from "@/data/demo/public-tenders";
 import { demoStockMovements } from "@/data/demo/stock-movements";
 import { demoWorkOrders } from "@/data/demo/work-orders";
 import {
+  storyCredentials,
+  storyPreServiceDocuments,
+  storyProcesses,
+  storyResponsibles,
+  storyVehicles,
+} from "@/data/demo/operational-story";
+import {
   demoCertificates,
   demoEmployees,
   demoPhotoReports,
@@ -38,6 +45,11 @@ export const seedDemoDataset: DemoDataset = {
   certificates: demoCertificates,
   photoReports: demoPhotoReports,
   serviceExecutions: demoServiceExecutions,
+  vehicles: storyVehicles,
+  technicalResponsibles: storyResponsibles,
+  regulatoryCredentials: storyCredentials,
+  preServiceDocuments: storyPreServiceDocuments,
+  environmentalProcesses: storyProcesses,
   provenance: createProvenance({
     sourceType: "DEMO_FICTIONAL",
     notes:

@@ -289,7 +289,29 @@ function buildAlerts(dataset: DemoDataset): DashboardAlert[] {
     });
   }
 
-  return alerts.slice(0, 12);
+  const awaitingFormalization = dataset.workOrders.find(
+    (item) => item.scheduleStatusLabel === "Aguardando formalização",
+  );
+  if (awaitingFormalization) {
+    alerts.push({
+      id: `alert-formalization-${awaitingFormalization.id}`,
+      title: "Formalização pendente",
+      detail: `${awaitingFormalization.serviceName} ainda não tem documento que libere o agendamento nesta demonstração.`,
+    });
+  }
+
+  const environmentalPending = (dataset.environmentalProcesses ?? []).find(
+    (item) => item.status === "documents-pending",
+  );
+  if (environmentalPending) {
+    alerts.push({
+      id: `alert-process-${environmentalPending.id}`,
+      title: "Processo ambiental com pendência",
+      detail: `${environmentalPending.code} está com documentação pendente. Estrutura ainda em validação.`,
+    });
+  }
+
+  return alerts.slice(0, 24);
 }
 
 export function buildDashboardMetrics(

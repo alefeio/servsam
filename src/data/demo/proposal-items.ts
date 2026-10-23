@@ -90,7 +90,7 @@ export const demoProposalItems: DemoProposalItem[] = [
   {
     id: "pitem-011",
     proposalId: "prop-005",
-    description: "Higienização de reservatórios — RSV",
+    description: "Higienização de 2 reservatórios elevados de 10.000 L — RSV",
     quantity: 2,
     unitPrice: 4200,
     provenance,
@@ -98,7 +98,7 @@ export const demoProposalItems: DemoProposalItem[] = [
   {
     id: "pitem-012",
     proposalId: "prop-005",
-    description: "Desinfecção complementar dos reservatórios inferiores",
+    description: "Desinfecção da cisterna de 20.000 L",
     quantity: 1,
     unitPrice: 1800,
     provenance,

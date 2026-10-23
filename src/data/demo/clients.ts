@@ -1,4 +1,5 @@
 import { createProvenance } from "@/lib/content/provenance";
+import { storyClients } from "@/data/demo/operational-story";
 import type { DemoClient } from "@/types/demo-entities";
 
 const provenance = createProvenance({
@@ -108,4 +109,5 @@ export const demoClients: DemoClient[] = [
     city: "Ananindeua",
     provenance,
   },
+  ...storyClients,
 ];

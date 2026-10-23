@@ -38,6 +38,8 @@ O histórico não é uma tabela paralela de texto. É a consulta do cliente atra
 
 No fluxo mestre, **aprovação é o aceite do cliente sobre a proposta**. Esse aceite é o que libera agendamento e OS.
 
+Hipótese da Sprint 10.1, ainda sem decisão: os documentos operacionais recebidos sugerem um passo de formalização (proposta assinada, OS do cliente, ordem de compra ou ordem de compra de serviço) entre o aceite e a agenda. A demonstração mostra esse passo para a reunião. Não substitui a regra acima até o cliente confirmar.
+
 Não está definido um fluxo interno de alçada (quem na SERVSAM pode enviar ou aceitar em nome do cliente). A matriz RBAC reserva permissões distintas para redigir, enviar e registrar o aceite. A regra de alçada continua pendente. Ver [documentation-audit.md](./documentation-audit.md).
 
 Proposta aceita deve ser tratada como imutável na V1. Correção de escopo gera nova proposta, ligada à anterior. O demo ainda edita status no `localStorage` e não tem versão. Isso não muda agora.

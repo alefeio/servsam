@@ -75,6 +75,34 @@ export function DocumentsListView() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Ciclo operacional</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 text-sm md:grid-cols-2">
+          <div>
+            <p className="font-medium text-navy">Comercial</p>
+            <p className="text-muted-foreground">Proposta, aceite e OC/OCS.</p>
+          </div>
+          <div>
+            <p className="font-medium text-navy">Pré-serviço</p>
+            <p className="text-muted-foreground">Informativo, autorização de entrada e declaração de ciência.</p>
+          </div>
+          <div>
+            <p className="font-medium text-navy">Operação</p>
+            <p className="text-muted-foreground">OS, checklist e termo de aceite.</p>
+          </div>
+          <div>
+            <p className="font-medium text-navy">Pós-serviço</p>
+            <p className="text-muted-foreground">Relatório, certificado, atestado e resultado laboratorial.</p>
+          </div>
+          <div>
+            <p className="font-medium text-navy">Regulatórios</p>
+            <p className="text-muted-foreground">ART, licenças, documentos ambientais e processos.</p>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader>

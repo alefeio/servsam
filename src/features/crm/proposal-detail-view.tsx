@@ -188,7 +188,7 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
             ) : null}
             {proposal.status === "accepted" ? (
               <p className="rounded-md bg-secondary px-3 py-2">
-                Proposta aprovada. O próximo passo demonstrativo é o agendamento e a ordem de serviço.
+                Proposta aprovada. A formalização é o passo demonstrativo antes de liberar o agendamento.
               </p>
             ) : null}
             {opportunity ? (
@@ -244,6 +244,82 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
           </CardContent>
         </Card>
       </div>
+
+      {proposal.formalization ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Formalização da aprovação</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <p>
+              <span className="text-muted-foreground">Status:</span> {proposal.formalization.statusLabel}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Forma de formalização:</span>{" "}
+              {proposal.formalization.kindLabel}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Documento:</span> {proposal.formalization.documentCode}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Data:</span>{" "}
+              {proposal.formalization.receivedAt.split("-").reverse().join("/")}
+            </p>
+            <p className="text-muted-foreground">{proposal.formalization.note}</p>
+            <p className="text-muted-foreground">
+              Outras formas nesta demonstração: proposta assinada, OS do cliente, OC, OCS ou outro. Ainda sem regra definitiva.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                setPreviewNote(
+                  `Prévia DEMO de ${proposal.formalization?.documentCode}. Não é documento oficial.`,
+                )
+              }
+            >
+              Visualizar documento
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {proposal.narrative ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {(
+            [
+              ["Escopo técnico", proposal.narrative.technicalScope],
+              ["Procedimentos previstos", proposal.narrative.procedures],
+              ["Obrigações do contratante", proposal.narrative.contractorDuties],
+              ["Condições específicas", proposal.narrative.specificConditions],
+              ["Entregáveis incluídos", proposal.narrative.includedDeliverables],
+            ] as const
+          ).map(([title, lines]) => (
+            <Card key={title}>
+              <CardHeader>
+                <CardTitle className="text-base">{title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc space-y-1 pl-5 text-sm">
+                  {lines.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          ))}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Responsável técnico</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm">
+              {dataset.technicalResponsibles.find(
+                (item) => item.id === proposal.narrative?.technicalResponsibleId,
+              )?.name ?? "A definir conforme o serviço"}
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
     </div>
   );
 }

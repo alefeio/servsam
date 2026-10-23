@@ -239,6 +239,70 @@ export function WorkOrderDetailView({ workOrderId }: WorkOrderDetailViewProps) {
         </div>
       </div>
 
+      {workOrder.familyFields && workOrder.familyFields.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Formulário da família do serviço</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 text-sm md:grid-cols-2">
+            {workOrder.familyFields.map((field) => (
+              <p key={field.label}>
+                <span className="text-muted-foreground">{field.label}:</span> {field.value}
+              </p>
+            ))}
+            {workOrder.clientResponsible ? (
+              <p>
+                <span className="text-muted-foreground">Responsável do cliente:</span>{" "}
+                {workOrder.clientResponsible}
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {workOrder.visits && workOrder.visits.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Visitas vinculadas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              {workOrder.visits.map((visit) => {
+                const vehicle = dataset.vehicles.find((item) => item.id === visit.vehicleId);
+                const statusLabel =
+                  visit.status === "done"
+                    ? "Executada"
+                    : visit.status === "in_progress"
+                      ? "Em execução"
+                      : "Programada";
+                return (
+                  <li key={visit.id}>
+                    {new Date(visit.scheduledAt).toLocaleDateString("pt-BR")} — {statusLabel} · {visit.place} · {visit.team} · {vehicle?.plate ?? visit.vehicleId}
+                  </li>
+                );
+              })}
+            </ul>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Documentação pré-serviço</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <p className="text-muted-foreground">
+            Informativo, autorização de entrada e declaração de ciência ficam separados do relatório e do certificado.
+          </p>
+          <Link
+            href={`/demonstracao/ordens-servico/${workOrder.id}/pre-servico`}
+            className="font-medium text-navy hover:text-teal"
+          >
+            Abrir documentação pré-serviço
+          </Link>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Termo e prévia</CardTitle>

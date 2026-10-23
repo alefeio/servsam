@@ -1,3 +1,4 @@
+import { storyOpportunities } from "@/data/demo/operational-story";
 import { createProvenance } from "@/lib/content/provenance";
 import type { DemoOpportunity } from "@/types/demo-entities";
 
@@ -282,4 +283,5 @@ export const demoOpportunities: DemoOpportunity[] = [
     updatedAt: "2026-08-20",
     provenance,
   },
+  ...storyOpportunities,
 ];

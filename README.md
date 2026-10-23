@@ -122,7 +122,7 @@ docs/                     sprints, conteúdo, aceite do MVP e épicas futuras
 
 ## Próxima implementação
 
-A Sprint 10 já validou o fluxo no demo. A implementação real de clientes continua congelada até o cliente aprovar as telas. Não abrir a Sprint 11 antes disso.
+A Sprint 10.1 ajustou o demo aos documentos operacionais, ainda sem implementação real. A implementação real de clientes continua congelada até o cliente aprovar as telas. Não abrir a Sprint 11 antes disso.
 
 Backlog: `docs/product-backlog.md`. Setup local da fundação: `docs/sprints/sprint-09.md`.
 

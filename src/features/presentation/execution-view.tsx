@@ -59,6 +59,48 @@ export function ExecutionView({ workOrderId }: ExecutionViewProps) {
 
       <Card>
         <CardHeader>
+          <CardTitle>Formulário da execução</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 text-sm md:grid-cols-2">
+          {(execution?.familyFields ?? workOrder.familyFields ?? []).map((field) => (
+            <p key={field.label}>
+              <span className="text-muted-foreground">{field.label}:</span> {field.value}
+            </p>
+          ))}
+          {(execution?.familyFields ?? workOrder.familyFields ?? []).length === 0 ? (
+            <p className="text-muted-foreground">Esta OS ainda não tem campos específicos de família.</p>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Avaliação do atendimento</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <div className="flex flex-wrap gap-2">
+            {(["Excelente", "Bom", "Razoável", "Pouco razoável"] as const).map((option) => (
+              <span
+                key={option}
+                className={
+                  execution?.rating === option
+                    ? "rounded-full bg-navy px-3 py-1 text-white"
+                    : "rounded-full border border-border px-3 py-1 text-muted-foreground"
+                }
+              >
+                {option}
+              </span>
+            ))}
+          </div>
+          <p>
+            <span className="text-muted-foreground">Observação do cliente:</span>{" "}
+            {execution?.ratingNote ?? "Ainda sem comentário nesta execução."}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Checklist da execução</CardTitle>
         </CardHeader>
         <CardContent>
