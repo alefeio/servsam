@@ -1,4 +1,9 @@
 import { serviceCategories } from "@/data/official/services";
+import {
+  buildDashboardNextActions,
+  buildFormalizationOverview,
+  buildRecurringVisits,
+} from "@/lib/demo/dashboard-overview";
 import type { DemoDataset } from "@/types/demo-entities";
 import type {
   DashboardAlert,
@@ -369,6 +374,8 @@ export function buildDashboardMetrics(
     return days >= 0 && days <= 30;
   }).length;
 
+  const alerts = buildAlerts(dataset);
+
   return {
     periodKey,
     periodLabel: formatPeriodLabel(periodKey),
@@ -386,7 +393,14 @@ export function buildDashboardMetrics(
     revenueByMonth: buildRevenueByMonth(dataset, periodKey),
     salesByCategory: buildSalesByCategory(dataset, periodKey),
     upcomingServices: buildUpcomingServices(dataset),
-    alerts: buildAlerts(dataset),
+    alerts,
+    nextActions: buildDashboardNextActions({
+      dataset,
+      alerts,
+      delinquencyAmount,
+    }),
+    formalizationOverview: buildFormalizationOverview(dataset),
+    recurringVisits: buildRecurringVisits(dataset),
     productivityRanking: buildProductivityRanking(dataset, periodKey),
   };
 }

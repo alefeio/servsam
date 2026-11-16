@@ -18,6 +18,39 @@ export type DashboardAlert = {
   detail: string;
 };
 
+export type DashboardActionPriority = "high" | "medium" | "guide";
+
+export type DashboardNextAction = {
+  id: string;
+  title: string;
+  detail: string;
+  category: string;
+  priority: DashboardActionPriority;
+  href?: string;
+  recordId?: string;
+};
+
+export type FormalizationOverviewItem = {
+  id: string;
+  proposalCode: string;
+  clientAlias: string;
+  status: "awaiting" | "received" | "schedule-ready";
+  statusLabel: string;
+  documentCode?: string;
+  href: string;
+};
+
+export type RecurringVisitItem = {
+  id: string;
+  clientAlias: string;
+  serviceName: string;
+  nextVisitAt: string;
+  statusLabel: string;
+  vehicleLabel?: string;
+  team?: string;
+  href: string;
+};
+
 export type UpcomingService = {
   id: string;
   clientAlias: string;
@@ -76,6 +109,9 @@ export type DashboardMetrics = {
   salesByCategory: CategorySales[];
   upcomingServices: UpcomingService[];
   alerts: DashboardAlert[];
+  nextActions: DashboardNextAction[];
+  formalizationOverview: FormalizationOverviewItem[];
+  recurringVisits: RecurringVisitItem[];
   productivityRanking: ProductivityRank[];
 };
 

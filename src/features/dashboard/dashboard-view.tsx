@@ -1,15 +1,22 @@
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DemoContentBanner } from "@/features/institutional/demo-content-banner";
-import { formatCurrencyBrl } from "@/lib/utils/format";
-import type { DashboardMetrics } from "@/types/demo";
 import { formatPeriodLabel } from "@/lib/demo/metrics";
-import Link from "next/link";
+import { formatCurrencyBrl } from "@/lib/utils/format";
+import type { DashboardMetrics, DashboardNextAction } from "@/types/demo";
 
 type DashboardViewProps = {
   metrics: DashboardMetrics;
   periods: string[];
   periodKey: string;
   onPeriodChange: (periodKey: string) => void;
+  roleLabel?: string;
+};
+
+const PRIORITY_LABEL: Record<DashboardNextAction["priority"], string> = {
+  high: "Alta",
+  medium: "Média",
+  guide: "Roteiro",
 };
 
 export function DashboardView({
@@ -17,15 +24,25 @@ export function DashboardView({
   periods,
   periodKey,
   onPeriodChange,
+  roleLabel,
 }: DashboardViewProps) {
+  const priorityActions = metrics.nextActions.filter((action) => action.priority !== "guide");
+  const guideActions = metrics.nextActions.filter((action) => action.priority === "guide");
+  const alertIdsCovered = new Set(
+    metrics.nextActions
+      .map((action) => action.id.replace(/^action-/, ""))
+      .filter((id) => id.startsWith("alert-")),
+  );
+  const remainingAlerts = metrics.alerts.filter((alert) => !alertIdsCovered.has(alert.id)).slice(0, 6);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Visão geral</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            O que precisa de atenção agora na operação demonstrativa. A data de
-            referência desta massa é 28/08/2026.
+            Como está a operação, o que merece atenção da Diretoria e o que resolver primeiro.
+            Data de referência da massa: 28/08/2026.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -47,43 +64,158 @@ export function DashboardView({
         </div>
       </div>
 
-      <p className="rounded-lg border border-teal/30 bg-secondary px-4 py-3 text-sm">
-        Números fictícios, derivados da massa demonstrativa. Nada aqui é faturamento
-        ou pendência real da SERVSAM.
-      </p>
+      {roleLabel === "Direção" ? (
+        <p className="rounded-lg border border-navy/20 bg-navy/5 px-4 py-3 text-sm text-navy">
+          Prioridades da Direção nesta demonstração: operação do dia, indicadores do período e
+          pendências que liberam ou bloqueiam o fluxo do Hotel Amazonas Plaza.
+        </p>
+      ) : roleLabel === "Compliance" ? (
+        <p className="rounded-lg border border-teal/30 bg-secondary px-4 py-3 text-sm">
+          Contexto Compliance: use Documentos, Contratos e Licitações para a governança. O roteiro
+          completo permanece acessível nesta demonstração.
+        </p>
+      ) : (
+        <p className="rounded-lg border border-teal/30 bg-secondary px-4 py-3 text-sm">
+          Números fictícios, derivados da massa demonstrativa. Nada aqui é faturamento ou pendência
+          real da SERVSAM.
+        </p>
+      )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard title="Serviços de hoje" value={String(metrics.servicesToday)} />
-        <MetricCard title="Serviços da semana" value={String(metrics.servicesThisWeek)} />
-        <MetricCard title="OS abertas" value={String(metrics.scheduledServices)} />
-        <MetricCard title="Propostas pendentes" value={String(metrics.openProposals)} />
-        <MetricCard title="Certificados a emitir" value={String(metrics.certificatesToIssue)} />
-        <MetricCard title="Contratos a vencer" value={String(metrics.expiringContracts)} />
-        <MetricCard title="Financeiro em atraso" value={formatCurrencyBrl(metrics.delinquencyAmount)} />
-      </div>
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-navy">Indicadores operacionais</h2>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard title="Serviços de hoje" value={String(metrics.servicesToday)} />
+          <MetricCard title="Serviços da semana" value={String(metrics.servicesThisWeek)} />
+          <MetricCard title="OS abertas" value={String(metrics.scheduledServices)} />
+          <MetricCard title="Propostas pendentes" value={String(metrics.openProposals)} />
+          <MetricCard title="Certificados a emitir" value={String(metrics.certificatesToIssue)} />
+          <MetricCard title="Contratos a vencer" value={String(metrics.expiringContracts)} />
+          <MetricCard title="Financeiro em atraso" value={formatCurrencyBrl(metrics.delinquencyAmount)} />
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Próximas ações</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="grid gap-3 md:grid-cols-2">
-            {NEXT_ACTIONS.map((action) => (
-              <li key={action.href}>
-                <Link
-                  href={action.href}
-                  className="block rounded-lg border border-border p-3 hover:border-teal"
-                >
-                  <p className="font-medium text-navy">{action.label}</p>
-                  <p className="text-sm text-muted-foreground">{action.detail}</p>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-navy">Resumo executivo</h2>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <MetricCard
+            title={`Receitas de ${metrics.periodLabel}`}
+            value={formatCurrencyBrl(metrics.billingMonth)}
+            hint="Soma das receitas pagas ou lançadas no período selecionado."
+          />
+          <MetricCard
+            title="Valores vencidos"
+            value={formatCurrencyBrl(metrics.delinquencyAmount)}
+            hint="Contas a receber com vencimento anterior a 28/08/2026."
+          />
+          <MetricCard
+            title="Contratos próximos do vencimento"
+            value={String(metrics.expiringContracts)}
+            hint="Contratos com status a vencer na massa demonstrativa."
+          />
+          <MetricCard
+            title="Certificados pendentes"
+            value={String(metrics.certificatesToIssue)}
+            hint="Atestados e certificados ainda em prévia."
+          />
+        </div>
+      </section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <h2 className="text-lg font-semibold text-navy">Próximas ações prioritárias</h2>
+          <p className="text-xs text-muted-foreground">
+            Derivadas dos alertas e da narrativa. Mudam quando a massa muda.
+          </p>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pendências calculadas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                {priorityActions.length === 0 ? (
+                  <li className="text-sm text-muted-foreground">
+                    Nenhuma pendência calculada neste momento da demonstração.
+                  </li>
+                ) : (
+                  priorityActions.map((action) => <ActionItem key={action.id} action={action} />)
+                )}
+              </ul>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Atalhos do roteiro</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                {guideActions.map((action) => (
+                  <ActionItem key={action.id} action={action} />
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Formalização de propostas</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              Hipótese da Sprint 10.1: a formalização libera o agendamento. A regra definitiva ainda
+              depende do cliente.
+            </p>
+            <ul className="space-y-3">
+              {metrics.formalizationOverview.slice(0, 6).map((item) => (
+                <li key={item.id} className="rounded-lg border border-border p-3">
+                  <Link href={item.href} className="font-medium text-navy hover:text-teal">
+                    {item.proposalCode} · {item.clientAlias}
+                  </Link>
+                  <p className="text-muted-foreground">{item.statusLabel}</p>
+                  {item.documentCode ? (
+                    <p className="text-xs text-muted-foreground">Documento: {item.documentCode}</p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recorrências e próximas visitas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-3">
+              {metrics.recurringVisits.length === 0 ? (
+                <li className="text-sm text-muted-foreground">
+                  Nenhum serviço com múltiplas visitas neste fixture.
+                </li>
+              ) : (
+                metrics.recurringVisits.map((visit) => (
+                  <li key={visit.id} className="rounded-lg border border-border p-3 text-sm">
+                    <Link href={visit.href} className="font-medium text-navy hover:text-teal">
+                      {visit.clientAlias}
+                    </Link>
+                    <p>{visit.serviceName}</p>
+                    <p className="text-muted-foreground">
+                      Próxima visita {visit.nextVisitAt} · {visit.statusLabel}
+                      {visit.vehicleLabel ? ` · ${visit.vehicleLabel}` : ""}
+                      {visit.team ? ` · ${visit.team}` : ""}
+                    </p>
+                  </li>
+                ))
+              )}
+            </ul>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Próximos serviços</CardTitle>
@@ -94,9 +226,7 @@ export function DashboardView({
                 <li key={item.id} className="rounded-lg border border-border p-3">
                   <p className="font-medium">{item.serviceName}</p>
                   <p className="text-sm text-muted-foreground">{item.clientAlias}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {item.scheduledFor}
-                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{item.scheduledFor}</p>
                 </li>
               ))}
             </ul>
@@ -105,25 +235,65 @@ export function DashboardView({
 
         <Card>
           <CardHeader>
-            <CardTitle>Alertas</CardTitle>
+            <CardTitle>Alertas adicionais</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-3">
-              {metrics.alerts.map((alert) => (
-                <li key={alert.id} className="rounded-lg border border-border p-3">
-                  <p className="font-medium">{alert.title}</p>
-                  <p className="text-sm text-muted-foreground">{alert.detail}</p>
+              {remainingAlerts.length === 0 ? (
+                <li className="text-sm text-muted-foreground">
+                  Os alertas principais já aparecem em Próximas ações.
                 </li>
-              ))}
+              ) : (
+                remainingAlerts.map((alert) => (
+                  <li key={alert.id} className="rounded-lg border border-border p-3">
+                    <p className="font-medium">{alert.title}</p>
+                    <p className="text-sm text-muted-foreground">{alert.detail}</p>
+                  </li>
+                ))
+              )}
             </ul>
           </CardContent>
         </Card>
-      </div>
+      </section>
     </div>
   );
 }
 
-function MetricCard({ title, value }: { title: string; value: string }) {
+function ActionItem({ action }: { action: DashboardNextAction }) {
+  const content = (
+    <>
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="font-medium text-navy">{action.title}</p>
+        <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+          {action.category} · {PRIORITY_LABEL[action.priority]}
+        </span>
+      </div>
+      <p className="text-sm text-muted-foreground">{action.detail}</p>
+    </>
+  );
+
+  if (!action.href) {
+    return <li className="rounded-lg border border-border p-3">{content}</li>;
+  }
+
+  return (
+    <li>
+      <Link href={action.href} className="block rounded-lg border border-border p-3 hover:border-teal">
+        {content}
+      </Link>
+    </li>
+  );
+}
+
+function MetricCard({
+  title,
+  value,
+  hint,
+}: {
+  title: string;
+  value: string;
+  hint?: string;
+}) {
   return (
     <Card>
       <CardHeader>
@@ -131,40 +301,8 @@ function MetricCard({ title, value }: { title: string; value: string }) {
       </CardHeader>
       <CardContent>
         <p className="text-2xl font-semibold text-navy">{value}</p>
+        {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
       </CardContent>
     </Card>
   );
 }
-
-const NEXT_ACTIONS = [
-  {
-    href: "/demonstracao/clientes/client-hotel-amazonas",
-    label: "Abrir o Hotel Amazonas Plaza",
-    detail: "Cliente-guia da apresentação, com proposta, OS, relatório e financeiro ligados.",
-  },
-  {
-    href: "/demonstracao/ordens-servico/os-demo-04/execucao",
-    label: "Confirmar o serviço de hoje",
-    detail: "Execução em andamento na torre de hóspedes, veículo F2.",
-  },
-  {
-    href: "/demonstracao/certificados/cert-hotel-001",
-    label: "Revisar o atestado pendente",
-    detail: "Prévia do certificado. O modelo oficial ainda depende de aprovação.",
-  },
-  {
-    href: "/demonstracao/financeiro",
-    label: "Cobrar a parcela em aberto",
-    detail: "Parcela 2/2 da proposta DEMO-005 e uma renegociação demonstrativa.",
-  },
-  {
-    href: "/demonstracao/colaboradores/emp-bruno",
-    label: "Documento de colaborador vencendo",
-    detail: "ASO vencido e NR-33 pendente no cadastro fictício de Bruno.",
-  },
-  {
-    href: "/demonstracao/contratos",
-    label: "Contratos próximos do vencimento",
-    detail: "A lista de contratos mostra vigência, periodicidade e reajuste.",
-  },
-];
