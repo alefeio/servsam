@@ -7,11 +7,48 @@ import type { DemoDataset } from "@/types/demo-entities";
 
 const listeners = new Set<() => void>();
 
+type DatasetLoadIssue = {
+  kind: "invalid" | "corrupt";
+  message: string;
+  at: string;
+};
+
+let cachedRaw: string | null | undefined;
+let cachedSnapshot: DemoDataset = seedDemoDataset;
+let lastLoadIssue: DatasetLoadIssue | null = null;
+let storageListenerBound = false;
+
 function emitChange() {
   listeners.forEach((listener) => listener());
 }
 
+function ensureStorageListener() {
+  if (typeof window === "undefined" || storageListenerBound) {
+    return;
+  }
+  storageListenerBound = true;
+  window.addEventListener("storage", (event) => {
+    if (event.key !== DEMO_DATASET_STORAGE_KEY && event.key !== null) {
+      return;
+    }
+    invalidateDemoDatasetCache();
+    emitChange();
+  });
+}
+
+function invalidateDemoDatasetCache() {
+  cachedRaw = undefined;
+}
+
+function readRawDataset(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return window.localStorage.getItem(DEMO_DATASET_STORAGE_KEY);
+}
+
 export function subscribeDemoDataset(listener: () => void): () => void {
+  ensureStorageListener();
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
@@ -85,36 +122,87 @@ export function getSeedDemoDataset(): DemoDataset {
   return seedDemoDataset;
 }
 
+export function getDemoDatasetLoadIssue(): DatasetLoadIssue | null {
+  return lastLoadIssue;
+}
+
+export function clearDemoDatasetLoadIssue(): void {
+  lastLoadIssue = null;
+}
+
+/**
+ * Snapshot estável para useSyncExternalStore.
+ * Com massa no localStorage, hydrateDemoDataset criava um objeto novo a cada leitura
+ * e o React entrava em loop (erro #185). O cache só muda quando o texto salvo muda.
+ */
 export function getDemoDatasetSnapshot(): DemoDataset {
   if (typeof window === "undefined") {
     return seedDemoDataset;
   }
 
-  const raw = window.localStorage.getItem(DEMO_DATASET_STORAGE_KEY);
+  ensureStorageListener();
+  const raw = readRawDataset();
+  if (cachedRaw === raw) {
+    return cachedSnapshot;
+  }
+
+  cachedRaw = raw;
   if (!raw) {
-    return seedDemoDataset;
+    lastLoadIssue = null;
+    cachedSnapshot = seedDemoDataset;
+    return cachedSnapshot;
   }
 
   try {
     const parsed: unknown = JSON.parse(raw);
     if (!isDemoDataset(parsed)) {
-      return seedDemoDataset;
+      lastLoadIssue = {
+        kind: "invalid",
+        message:
+          "A massa salva neste navegador não tem a estrutura esperada. Os dados não foram apagados.",
+        at: new Date().toISOString(),
+      };
+      cachedSnapshot = seedDemoDataset;
+      return cachedSnapshot;
     }
-    return hydrateDemoDataset(parsed);
+    lastLoadIssue = null;
+    cachedSnapshot = hydrateDemoDataset(parsed);
+    return cachedSnapshot;
   } catch {
-    return seedDemoDataset;
+    lastLoadIssue = {
+      kind: "corrupt",
+      message:
+        "Não foi possível ler a massa demonstrativa salva. Os dados permaneceram no navegador.",
+      at: new Date().toISOString(),
+    };
+    cachedSnapshot = seedDemoDataset;
+    return cachedSnapshot;
   }
 }
 
 export function saveDemoDataset(dataset: DemoDataset): void {
-  window.localStorage.setItem(DEMO_DATASET_STORAGE_KEY, JSON.stringify(dataset));
+  const raw = JSON.stringify(dataset);
+  window.localStorage.setItem(DEMO_DATASET_STORAGE_KEY, raw);
+  lastLoadIssue = null;
+  cachedRaw = raw;
+  cachedSnapshot = dataset;
   emitChange();
 }
 
 export function restoreDemoData(): void {
   window.localStorage.removeItem(DEMO_DATASET_STORAGE_KEY);
   window.localStorage.setItem(DEMO_RESTORE_FLAG_KEY, new Date().toISOString());
+  lastLoadIssue = null;
+  cachedRaw = null;
+  cachedSnapshot = seedDemoDataset;
   emitChange();
+}
+
+/** Só para testes: limpa o cache em memória sem tocar no localStorage. */
+export function resetDemoDatasetStoreForTests(): void {
+  cachedRaw = undefined;
+  cachedSnapshot = seedDemoDataset;
+  lastLoadIssue = null;
 }
 
 export {
