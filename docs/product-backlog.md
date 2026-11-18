@@ -19,12 +19,13 @@ Especificação: `docs/architecture/v1/`.
 | 9 | PostgreSQL, Prisma, autenticação, usuários, papéis, permissões e auditoria de plataforma | Entregue |
 | 10 | Validação visual e funcional da V1 em `/demonstracao` | Entregue no demo. Sem domínio novo no Prisma |
 | 10.1 | Adequação da demonstração aos documentos operacionais do cliente | Entregue no demo. Sem domínio novo no Prisma |
+| 10.2 | Orçamento como eixo, sinal antes da OS, agenda calendário, O.C. em contratos e RH estruturado | Entregue no demo (Preview). Sem domínio novo no Prisma |
 
-O CRM demonstrativo continua no produto. Na produção, lead, oportunidade e Kanban ficam atrás do fluxo mestre (V1.1). A proposta demonstrativa foi reorganizada na Sprint 10. A implementação real de proposta continua fora desta sprint.
+O CRM demonstrativo continua no produto. Na produção, lead, oportunidade e Kanban ficam atrás do fluxo mestre (V1.1). A proposta demonstrativa foi reorganizada na Sprint 10. Na UI da Sprint 10.2 o termo principal é Orçamento (`DemoProposal`). A implementação real de proposta continua fora desta sprint.
 
 ## Sprint ativa
 
-A Sprint 10.1 está concluída como ajuste da demonstração. Nenhuma sprint de implementação de domínio está ativa.
+A Sprint 10.2 está entregue na demonstração (branch de Preview, sem merge automático em `main`). Nenhuma sprint de implementação de domínio está ativa.
 
 `/sistema` permanece a fundação da Sprint 9. `/demonstracao` é o ambiente de apresentação ao cliente.
 

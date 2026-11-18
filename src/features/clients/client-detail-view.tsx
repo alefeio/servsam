@@ -122,7 +122,7 @@ export function ClientDetailView({ clientId }: ClientDetailViewProps) {
                 <Link href={`/demonstracao/ordens-servico/${workOrder.id}`} className="font-medium text-navy hover:text-teal">
                   {workOrder.code} · {workOrder.serviceName}
                 </Link>
-                <span className="text-muted-foreground"> · {WORK_ORDER_STATUS_LABELS[workOrder.status]} · {workOrder.scheduledAt.slice(0, 10)}</span>
+                <span className="text-muted-foreground"> · {WORK_ORDER_STATUS_LABELS[workOrder.status]} · {workOrder.scheduledAt?.slice(0, 10) ?? "aguardando agendamento"}</span>
               </li>
             ))}
             {dataset.photoReports.filter((report) => report.clientId === clientId).map((report) => (

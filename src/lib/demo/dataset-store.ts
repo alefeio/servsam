@@ -89,6 +89,31 @@ function mergeById<T extends { id: string }>(stored: T[] | undefined, seed: T[])
   return merged;
 }
 
+function hydrateEmployees(
+  stored: DemoDataset["employees"] | undefined,
+  seed: DemoDataset["employees"],
+): DemoDataset["employees"] {
+  return mergeById(stored, seed).map((employee) => {
+    if (employee.hrRecords && employee.hrRecords.length > 0) {
+      return employee;
+    }
+    const fromWarnings = (employee.warnings ?? [])
+      .filter((text) => text.trim().length > 0 && !text.toLowerCase().includes("nenhuma"))
+      .map((text, index) => ({
+        id: `${employee.id}-legacy-warning-${index}`,
+        kind: "warning" as const,
+        title: "Advertência (massa anterior)",
+        startedAt: "2026-01-01",
+        note: text,
+      }));
+    return {
+      ...employee,
+      warnings: employee.warnings ?? [],
+      hrRecords: fromWarnings,
+    };
+  });
+}
+
 /** Completa campos e registros da validação visual sem apagar o que o navegador já alterou. */
 export function hydrateDemoDataset(dataset: DemoDataset): DemoDataset {
   const seed = seedDemoDataset;
@@ -98,14 +123,28 @@ export function hydrateDemoDataset(dataset: DemoDataset): DemoDataset {
     clients: mergeById(dataset.clients, seed.clients),
     clientUnits: mergeById(dataset.clientUnits, seed.clientUnits),
     opportunities: mergeById(dataset.opportunities, seed.opportunities),
-    proposals: mergeById(dataset.proposals, seed.proposals),
+    proposals: mergeById(dataset.proposals, seed.proposals).map((proposal) => {
+      const fromSeed = seed.proposals.find((item) => item.id === proposal.id);
+      return {
+        ...proposal,
+        paymentSignal: proposal.paymentSignal ?? fromSeed?.paymentSignal,
+        formalization: proposal.formalization ?? fromSeed?.formalization,
+        narrative: proposal.narrative ?? fromSeed?.narrative,
+      };
+    }),
     proposalItems: mergeById(dataset.proposalItems, seed.proposalItems),
     workOrders: mergeById(dataset.workOrders, seed.workOrders),
     documents: mergeById(dataset.documents, seed.documents),
     products: mergeById(dataset.products, seed.products),
-    contracts: mergeById(dataset.contracts, seed.contracts),
+    contracts: mergeById(dataset.contracts, seed.contracts).map((contract) => {
+      const fromSeed = seed.contracts.find((item) => item.id === contract.id);
+      return {
+        ...contract,
+        purchaseOrder: contract.purchaseOrder ?? fromSeed?.purchaseOrder,
+      };
+    }),
     financialTransactions: mergeById(dataset.financialTransactions, seed.financialTransactions),
-    employees: mergeById(dataset.employees, seed.employees),
+    employees: hydrateEmployees(dataset.employees, seed.employees),
     certificates: mergeById(dataset.certificates, seed.certificates),
     photoReports: mergeById(dataset.photoReports, seed.photoReports),
     serviceExecutions: mergeById(dataset.serviceExecutions, seed.serviceExecutions),

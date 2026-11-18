@@ -7,7 +7,7 @@ export const plannedModules: PlannedModule[] = [
     name: "Comercial",
     navLabel: "Comercial",
     objective:
-      "Demonstrar o fluxo do lead até a proposta, com oportunidades e próximas ações.",
+      "Demonstrar o fluxo do lead até o orçamento, com oportunidades e próximas ações.",
     plannedSprint: 3,
   },
   {
@@ -29,9 +29,9 @@ export const plannedModules: PlannedModule[] = [
   {
     slug: "comercial-propostas",
     href: "/demonstracao/comercial/propostas",
-    name: "Propostas",
-    navLabel: "Propostas",
-    objective: "Proposta com itens, validade, status e ações simuladas.",
+    name: "Orçamentos",
+    navLabel: "Orçamentos",
+    objective: "Orçamento com itens, validade, aceite, sinal e emissão de OS simulados.",
     plannedSprint: 3,
   },
   {
@@ -121,7 +121,7 @@ export const plannedModules: PlannedModule[] = [
 export const demoNavItems = [
   { href: "/demonstracao", label: "Visão geral", implemented: true, section: "Fluxo" },
   { href: "/demonstracao/clientes", label: "Clientes", implemented: true, section: "Fluxo" },
-  { href: "/demonstracao/comercial/propostas", label: "Propostas", implemented: true, section: "Fluxo" },
+  { href: "/demonstracao/comercial/propostas", label: "Orçamentos", implemented: true, section: "Fluxo" },
   { href: "/demonstracao/agenda", label: "Agenda", implemented: true, section: "Fluxo" },
   { href: "/demonstracao/ordens-servico", label: "Ordens de serviço", implemented: true, section: "Fluxo" },
   { href: "/demonstracao/relatorios/fotograficos", label: "Relatório fotográfico", implemented: true, section: "Fluxo" },

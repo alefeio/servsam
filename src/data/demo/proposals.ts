@@ -17,6 +17,16 @@ export const demoProposals: DemoProposal[] = [
     value: 8400,
     sentAt: "2026-05-20",
     validUntil: "2026-06-20",
+    paymentTerms: "50% de sinal na aprovação",
+    downPayment: "R$ 4.200 na aprovação",
+    paymentSignal: {
+      status: "confirmed",
+      amount: 4200,
+      registeredAt: "2026-05-21",
+      confirmedAt: "2026-05-21",
+      note: "Sinal demonstrativo confirmado. Pronto para emitir OS (ainda sem OS neste fixture).",
+      financialTransactionId: "fin-signal-001",
+    },
     provenance,
   },
   {
@@ -28,6 +38,14 @@ export const demoProposals: DemoProposal[] = [
     value: 12600,
     sentAt: "2026-05-25",
     validUntil: "2026-06-25",
+    paymentTerms: "40% de sinal na aprovação",
+    downPayment: "R$ 5.040 na aprovação",
+    paymentSignal: {
+      status: "pending",
+      amount: 5040,
+      registeredAt: "2026-05-26",
+      note: "Aguardando confirmação do sinal antes de emitir a OS. Exceções ainda não estão fechadas com o cliente.",
+    },
     provenance,
   },
   {

@@ -83,3 +83,15 @@ A demonstração foi ajustada para perguntar. Nenhuma resposta abaixo está fech
 64. Veículos possuem identificação interna como F1/F2/F3?
 65. Quais são os veículos ativos?
 66. Quais documentos reais podem ser usados como modelo oficial no futuro?
+
+## Prioridades após a Sprint 10.1 (Sprint 10.2)
+
+A demonstração passou a mostrar Orçamento, sinal, agenda em calendário, O.C. de contratos e RH ampliado. Nenhuma resposta abaixo está fechada.
+
+67. O sinal é obrigatório em todos os orçamentos antes de emitir a OS, ou há exceções?
+68. Quais exceções (cliente recorrente, contrato vigente, valor mínimo, alçada interna) devem existir?
+69. A O.C. de contrato periódico deve gerar uma OS individual por visita?
+70. Se não gerar OS por visita, como a execução e o entregável ficam vinculados à visita?
+71. Os indicadores de conversão de orçamento (emitido → aceito → contratado) estão corretos para a gestão?
+72. A profundidade de RH mostrada (férias, faltas, atestados, advertências, suspensões, ocorrências) entra na V1 ou fica para depois?
+73. O Financeiro deve tratar o sinal como parcela 1, como adiantamento, ou de outro modo?

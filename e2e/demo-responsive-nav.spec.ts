@@ -71,8 +71,8 @@ test.describe("demo mobile navigation", () => {
     await expect(
       page.getByRole("dialog").getByRole("link", { name: "Clientes", exact: true }),
     ).toHaveAttribute("aria-current", "page");
-    await page.getByRole("dialog").getByRole("link", { name: "Propostas", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Propostas" })).toBeVisible();
+    await page.getByRole("dialog").getByRole("link", { name: "Orçamentos", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Orçamentos" })).toBeVisible();
 
     await goViaMobileMenu(page, "Agenda", "Agenda");
     await goViaMobileMenu(page, "Ordens de serviço", /Ordens de serviço|Ordem/);

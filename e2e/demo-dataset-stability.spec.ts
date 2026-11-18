@@ -19,7 +19,7 @@ test("Direção survives persisted localStorage, mutation and reload", async ({ 
   const pageErrors = await loginAs(page, "Direção");
 
   await page.goto("/demonstracao/comercial/propostas/prop-005");
-  await expect(page.getByRole("heading", { name: "Proposta DEMO-005" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Orçamento DEMO-005" })).toBeVisible();
   await page.getByRole("button", { name: "Gerar prévia (demo)" }).click();
   await expect(page.getByText("Prévia exibida nesta tela")).toBeVisible();
 
@@ -49,7 +49,7 @@ test("Direção survives persisted localStorage, mutation and reload", async ({ 
   }
 
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Proposta DEMO-005" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Orçamento DEMO-005" })).toBeVisible();
   await expect(page.getByText("OCS-DEMO-014")).toBeVisible();
   await expect(page.getByText("This page couldn’t load")).toHaveCount(0);
 

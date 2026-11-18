@@ -17,14 +17,17 @@ test("client presentation journey opens the connected demo records", async ({ pa
   await expect(page.getByText("04.882.110/0001-36")).toBeVisible();
 
   await page.goto("/demonstracao/comercial/propostas/prop-005");
-  await expect(page.getByRole("heading", { name: "Proposta DEMO-005" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Orçamento DEMO-005" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Gerar prévia (demo)" })).toBeVisible();
+  await expect(page.getByText("Sinal e emissão da OS", { exact: true })).toBeVisible();
+  await expect(page.getByText("Confirmado", { exact: true })).toBeVisible();
 
   await page.goto("/demonstracao/agenda");
   await expect(page.getByRole("heading", { name: "Agenda" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Diária" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Semanal" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Mensal" })).toBeVisible();
+  await expect(page.getByText("OS emitidas aguardando agendamento")).toBeVisible();
 
   await page.goto("/demonstracao/ordens-servico/os-demo-04");
   await expect(page.getByRole("link", { name: "Abrir execução" })).toBeVisible();
@@ -51,12 +54,24 @@ test("client presentation journey opens the connected demo records", async ({ pa
   await page.goto("/demonstracao/colaboradores/emp-bruno");
   await expect(page.getByText("ASO:", { exact: true })).toBeVisible();
   await expect(page.getByText("NR-33:", { exact: true })).toBeVisible();
+  await expect(page.getByText("Histórico de RH")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Férias" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Advertências" })).toBeVisible();
 
   await page.goto("/demonstracao/comercial/propostas/prop-005");
   await expect(page.getByText("Formalização da aprovação")).toBeVisible();
   await expect(page.getByText("OCS-DEMO-014")).toBeVisible();
   await page.getByRole("button", { name: "Visualizar documento" }).click();
   await expect(page.getByText("Prévia DEMO de OCS-DEMO-014")).toBeVisible();
+
+  await page.goto("/demonstracao/contratos/contract-001");
+  await expect(page.getByRole("heading", { name: /CT-DEMO-001/ })).toBeVisible();
+  await expect(page.getByText("Código: OC-DEMO-CT-001")).toBeVisible();
+  await expect(page.getByText("O.C. do contrato", { exact: true })).toBeVisible();
+
+  await page.goto("/demonstracao");
+  await expect(page.getByText("Orçamentos emitidos")).toBeVisible();
+  await expect(page.getByText("Taxa de conversão")).toBeVisible();
 
   await page.goto("/demonstracao/ordens-servico/os-demo-04");
   await expect(page.getByText("Visitas vinculadas")).toBeVisible();

@@ -17,7 +17,7 @@ export async function generateMetadata({
   const { id } = await params;
   const proposal = seedDemoDataset.proposals.find((item) => item.id === id);
   return {
-    title: pageTitle(proposal ? `Proposta ${proposal.code}` : "Proposta"),
+    title: pageTitle(proposal ? `Orçamento ${proposal.code}` : "Orçamento"),
     robots: { index: false, follow: false },
   };
 }

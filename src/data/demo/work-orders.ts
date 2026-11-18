@@ -43,7 +43,7 @@ function workOrder(index: number, seed: WorkOrderSeed): DemoWorkOrder {
     planningChecklist: isCompleted
       ? completedChecklist()
       : (seed.planningChecklist ?? createDefaultPlanningChecklist()),
-    completedAt: isCompleted ? (seed.completedAt ?? seed.scheduledAt.slice(0, 10)) : seed.completedAt,
+    completedAt: isCompleted ? (seed.completedAt ?? seed.scheduledAt?.slice(0, 10)) : seed.completedAt,
     provenance,
   };
 }

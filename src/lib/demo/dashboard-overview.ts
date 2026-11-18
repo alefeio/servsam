@@ -285,6 +285,7 @@ function buildPreServiceActions(dataset: DemoDataset): DashboardNextAction[] {
   return dataset.workOrders
     .filter((workOrder) => {
       if (workOrder.status === "cancelled" || workOrder.status === "completed") return false;
+      if (!workOrder.scheduledAt) return false;
       const scheduled = new Date(workOrder.scheduledAt);
       if (scheduled < reference) return false;
       const hasPreService = dataset.preServiceDocuments.some(

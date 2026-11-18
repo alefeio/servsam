@@ -91,6 +91,15 @@ export type ProductivityRank = {
   completedOrders: number;
 };
 
+export type BudgetConversionMetrics = {
+  issuedCount: number;
+  acceptedCount: number;
+  convertedCount: number;
+  conversionRate: number;
+  negotiationValue: number;
+  negotiationCount: number;
+};
+
 export type DashboardMetrics = {
   periodKey: string;
   periodLabel: string;
@@ -113,6 +122,7 @@ export type DashboardMetrics = {
   formalizationOverview: FormalizationOverviewItem[];
   recurringVisits: RecurringVisitItem[];
   productivityRanking: ProductivityRank[];
+  budgetConversion: BudgetConversionMetrics;
 };
 
 export type PlannedModule = {

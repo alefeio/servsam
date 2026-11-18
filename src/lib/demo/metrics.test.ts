@@ -49,8 +49,27 @@ describe("dashboard metrics derivation", () => {
   it("builds alerts from documents, proposals, stock and overdue work orders", () => {
     const metrics = buildDashboardMetrics(seedDemoDataset, "2026-08");
     expect(metrics.alerts.length).toBeGreaterThan(0);
-    expect(metrics.alerts.some((alert) => alert.title.includes("Proposta"))).toBe(
+    expect(metrics.alerts.some((alert) => alert.title.includes("Orçamento"))).toBe(
       true,
     );
+  });
+
+  it("derives budget conversion metrics from proposals and work orders", () => {
+    const metrics = buildDashboardMetrics(seedDemoDataset, "2026-08");
+    const issued = seedDemoDataset.proposals.filter(
+      (item) => item.status !== "draft" && item.status !== "cancelled",
+    );
+    const accepted = seedDemoDataset.proposals.filter((item) => item.status === "accepted");
+    const converted = accepted.filter((proposal) =>
+      seedDemoDataset.workOrders.some((workOrder) => workOrder.proposalId === proposal.id),
+    );
+
+    expect(metrics.budgetConversion.issuedCount).toBe(issued.length);
+    expect(metrics.budgetConversion.acceptedCount).toBe(accepted.length);
+    expect(metrics.budgetConversion.convertedCount).toBe(converted.length);
+    expect(metrics.budgetConversion.conversionRate).toBe(
+      Math.round((converted.length / issued.length) * 100),
+    );
+    expect(metrics.budgetConversion.negotiationValue).toBeGreaterThan(0);
   });
 });

@@ -87,10 +87,32 @@ export function DashboardView({
           <MetricCard title="Serviços de hoje" value={String(metrics.servicesToday)} />
           <MetricCard title="Serviços da semana" value={String(metrics.servicesThisWeek)} />
           <MetricCard title="OS abertas" value={String(metrics.scheduledServices)} />
-          <MetricCard title="Propostas pendentes" value={String(metrics.openProposals)} />
+          <MetricCard title="Orçamentos em aberto" value={String(metrics.openProposals)} />
           <MetricCard title="Certificados a emitir" value={String(metrics.certificatesToIssue)} />
           <MetricCard title="Contratos a vencer" value={String(metrics.expiringContracts)} />
           <MetricCard title="Financeiro em atraso" value={formatCurrencyBrl(metrics.delinquencyAmount)} />
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-navy">Conversão de orçamentos</h2>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <MetricCard title="Orçamentos emitidos" value={String(metrics.budgetConversion.issuedCount)} />
+          <MetricCard title="Orçamentos aceitos" value={String(metrics.budgetConversion.acceptedCount)} />
+          <MetricCard
+            title="Convertidos em OS"
+            value={String(metrics.budgetConversion.convertedCount)}
+          />
+          <MetricCard
+            title="Taxa de conversão"
+            value={`${metrics.budgetConversion.conversionRate}%`}
+            hint="Orçamentos convertidos em OS sobre os emitidos, na massa demonstrativa."
+          />
+          <MetricCard
+            title="Valor em negociação"
+            value={formatCurrencyBrl(metrics.budgetConversion.negotiationValue)}
+            hint="Orçamentos em rascunho ou enviados, ainda sem decisão. Valores fictícios."
+          />
         </div>
       </section>
 
@@ -162,7 +184,7 @@ export function DashboardView({
       <section className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Formalização de propostas</CardTitle>
+            <CardTitle>Formalização de orçamentos</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <p className="text-muted-foreground">

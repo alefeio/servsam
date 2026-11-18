@@ -104,6 +104,18 @@ export type DemoProposalNarrative = {
   technicalResponsibleId?: string;
 };
 
+export type PaymentSignalStatus = "pending" | "confirmed";
+
+/** Registro demonstrativo do sinal após o aceite do orçamento. Sem cobrança real. */
+export type DemoPaymentSignal = {
+  status: PaymentSignalStatus;
+  amount: number;
+  registeredAt: string;
+  confirmedAt?: string;
+  note?: string;
+  financialTransactionId?: string;
+};
+
 export type DemoProposal = Provenanced<{
   id: string;
   code: string;
@@ -123,6 +135,8 @@ export type DemoProposal = Provenanced<{
   serviceFamily?: DemoServiceFamily;
   formalization?: DemoProposalFormalization;
   narrative?: DemoProposalNarrative;
+  /** Sinal de pagamento demonstrativo; libera a emissão da OS quando confirmado. */
+  paymentSignal?: DemoPaymentSignal;
 }>;
 
 export type DemoProposalItem = Provenanced<{
@@ -134,6 +148,7 @@ export type DemoProposalItem = Provenanced<{
 }>;
 
 export type WorkOrderStatus =
+  | "issued"
   | "scheduled"
   | "in_progress"
   | "completed"
@@ -161,7 +176,9 @@ export type DemoWorkOrder = Provenanced<{
   serviceName: string;
   categoryId: "water-sanitation" | "environmental-pest";
   status: WorkOrderStatus;
-  scheduledAt: string;
+  /** Ausente enquanto a OS está só emitida, aguardando agendamento. */
+  scheduledAt?: string;
+  issuedAt?: string;
   technicianAlias: string;
   teamAliases: string[];
   plannedMaterials: DemoWorkOrderPlannedMaterial[];
@@ -199,6 +216,15 @@ export type DemoContractVisit = {
   workOrderId?: string;
 };
 
+/** O.C. do contrato periódico — distinta da formalização (OCS/OC) do orçamento avulso. */
+export type DemoContractPurchaseOrder = {
+  code: string;
+  issuedAt: string;
+  statusLabel: string;
+  amount: number;
+  note: string;
+};
+
 export type DemoContract = Provenanced<{
   id: string;
   code: string;
@@ -213,6 +239,7 @@ export type DemoContract = Provenanced<{
   nextAdjustmentDate?: string;
   status: ContractStatus;
   scheduledVisits: DemoContractVisit[];
+  purchaseOrder?: DemoContractPurchaseOrder;
 }>;
 
 export type DemoDocument = Provenanced<{
@@ -310,6 +337,24 @@ export type DemoEmployeeDocument = {
   expiresAt?: string;
 };
 
+export type DemoEmployeeHrKind =
+  | "vacation"
+  | "absence"
+  | "medical_certificate"
+  | "warning"
+  | "suspension"
+  | "occurrence";
+
+/** Registro de RH demonstrativo. Sem dados clínicos sensíveis. */
+export type DemoEmployeeHrRecord = {
+  id: string;
+  kind: DemoEmployeeHrKind;
+  title: string;
+  startedAt: string;
+  endedAt?: string;
+  note: string;
+};
+
 export type DemoEmployee = Provenanced<{
   id: string;
   name: string;
@@ -317,7 +362,9 @@ export type DemoEmployee = Provenanced<{
   phone: string;
   documents: DemoEmployeeDocument[];
   trainings?: string[];
+  /** Mantido por compatibilidade com massa antiga no navegador. */
   warnings: string[];
+  hrRecords?: DemoEmployeeHrRecord[];
   identityDocument?: string;
   situation?: string;
 }>;

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -7,9 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDemoDatasetStore } from "@/features/crm/use-demo-dataset-store";
 import { OperationsPageHeader } from "@/features/operations/operations-page-header";
 import {
+  AWAITING_SCHEDULE_LABEL,
+  formatWorkOrderSchedule,
+  fromDatetimeLocalValue,
+} from "@/features/operations/work-order-schedule-format";
+import {
   WORK_ORDER_STATUS_LABELS,
   cancelWorkOrder,
   completeWorkOrder,
+  scheduleWorkOrder,
   startWorkOrder,
   togglePlanningChecklistItem,
 } from "@/lib/demo/operations-actions";
@@ -18,18 +25,9 @@ type WorkOrderDetailViewProps = {
   workOrderId: string;
 };
 
-function formatSchedule(dateIso: string): string {
-  return new Date(dateIso).toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export function WorkOrderDetailView({ workOrderId }: WorkOrderDetailViewProps) {
   const { dataset, mutate } = useDemoDatasetStore();
+  const [scheduleDraft, setScheduleDraft] = useState("2026-09-10T09:00");
   const workOrder = dataset.workOrders.find((item) => item.id === workOrderId);
 
   if (!workOrder) {
@@ -39,6 +37,10 @@ export function WorkOrderDetailView({ workOrderId }: WorkOrderDetailViewProps) {
   const client = dataset.clients.find((item) => item.id === workOrder.clientId);
   const unit = dataset.clientUnits.find((item) => item.id === workOrder.clientUnitId);
   const proposal = dataset.proposals.find((item) => item.id === workOrder.proposalId);
+  const canSchedule =
+    !workOrder.scheduledAt &&
+    workOrder.status !== "cancelled" &&
+    workOrder.status !== "completed";
   const checkedCount = workOrder.planningChecklist.filter((item) => item.checked).length;
 
   return (
@@ -59,11 +61,15 @@ export function WorkOrderDetailView({ workOrderId }: WorkOrderDetailViewProps) {
             <div className="grid gap-3 md:grid-cols-2">
               <p>
                 <span className="text-muted-foreground">Status:</span>{" "}
-                {WORK_ORDER_STATUS_LABELS[workOrder.status]}
+                {workOrder.status === "issued" && !workOrder.scheduledAt
+                  ? AWAITING_SCHEDULE_LABEL
+                  : WORK_ORDER_STATUS_LABELS[workOrder.status]}
               </p>
               <p>
                 <span className="text-muted-foreground">Agendamento:</span>{" "}
-                {formatSchedule(workOrder.scheduledAt)}
+                {workOrder.scheduledAt
+                  ? formatWorkOrderSchedule(workOrder.scheduledAt)
+                  : AWAITING_SCHEDULE_LABEL}
               </p>
               {client ? (
                 <p>
@@ -192,6 +198,37 @@ export function WorkOrderDetailView({ workOrderId }: WorkOrderDetailViewProps) {
               <CardTitle>Ações da gestão</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
+              {canSchedule ? (
+                <div className="space-y-2 rounded-lg border border-dashed border-teal/50 p-3">
+                  <p className="text-xs text-muted-foreground">
+                    OS emitida sem data. Escolha data e hora para agendar nesta demonstração.
+                  </p>
+                  <label className="block text-xs text-muted-foreground">
+                    Data e hora
+                    <input
+                      type="datetime-local"
+                      value={scheduleDraft}
+                      onChange={(event) => setScheduleDraft(event.target.value)}
+                      className="mt-1 h-9 w-full rounded-md border border-border bg-background px-2 text-sm text-foreground"
+                    />
+                  </label>
+                  <Button
+                    type="button"
+                    disabled={!scheduleDraft}
+                    onClick={() =>
+                      mutate((current) =>
+                        scheduleWorkOrder(
+                          current,
+                          workOrderId,
+                          fromDatetimeLocalValue(scheduleDraft),
+                        ),
+                      )
+                    }
+                  >
+                    Agendar OS (simulado)
+                  </Button>
+                </div>
+              ) : null}
               {workOrder.status === "scheduled" || workOrder.status === "overdue" ? (
                 <Button
                   type="button"

@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import { seedDemoDataset } from "@/data/demo/demo-dataset";
 import {
   advanceOpportunityStage,
+  confirmPaymentSignal,
   filterLeadsByStatus,
   getProposalItemsTotal,
   markOpportunityLost,
   markOpportunityWon,
+  registerPaymentSignal,
   reopenOpportunity,
   updateLeadStatus,
   updateOpportunityStage,
@@ -112,5 +114,26 @@ describe("CRM demo actions", () => {
     expect(
       updated.opportunities.find((item) => item.id === opportunity.id)?.stage,
     ).toBe("proposal");
+  });
+
+  it("registers and confirms a payment signal without real billing", () => {
+    const draft = seedDemoDataset.proposals.find((item) => item.status === "draft");
+    expect(draft).toBeDefined();
+
+    const accepted = updateProposalStatus(seedDemoDataset, draft!.id, "accepted");
+    const withSignal = registerPaymentSignal(accepted, draft!.id);
+    const pending = withSignal.proposals.find((item) => item.id === draft!.id);
+    expect(pending?.paymentSignal?.status).toBe("pending");
+    expect(pending?.paymentSignal?.amount).toBe(Math.round(draft!.value * 0.5));
+
+    const confirmed = confirmPaymentSignal(withSignal, draft!.id);
+    const proposal = confirmed.proposals.find((item) => item.id === draft!.id);
+    expect(proposal?.paymentSignal?.status).toBe("confirmed");
+    expect(proposal?.paymentSignal?.financialTransactionId).toBeDefined();
+    expect(
+      confirmed.financialTransactions.some(
+        (item) => item.id === proposal?.paymentSignal?.financialTransactionId,
+      ),
+    ).toBe(true);
   });
 });

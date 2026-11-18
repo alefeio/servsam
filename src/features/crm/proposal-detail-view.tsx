@@ -9,10 +9,13 @@ import { DemoPageHeader } from "@/features/crm/demo-page-header";
 import { useDemoDatasetStore } from "@/features/crm/use-demo-dataset-store";
 import {
   PROPOSAL_STATUS_LABELS,
+  confirmPaymentSignal,
   getProposalItemsTotal,
+  registerPaymentSignal,
   updateProposalStatus,
 } from "@/lib/demo/crm-actions";
 import {
+  canIssueWorkOrderFromProposal,
   createWorkOrderFromProposal,
   getWorkOrderByProposalId,
 } from "@/lib/demo/operations-actions";
@@ -44,23 +47,28 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
     mutate((current) => updateProposalStatus(current, proposalId, status));
   }
 
-  function generateWorkOrder() {
-    mutate((current) =>
-      createWorkOrderFromProposal(
-        current,
-        proposalId,
-        "2026-09-10T09:00:00",
-      ),
-    );
+  function registerSignal() {
+    mutate((current) => registerPaymentSignal(current, proposalId));
   }
+
+  function confirmSignal() {
+    mutate((current) => confirmPaymentSignal(current, proposalId));
+  }
+
+  function issueWorkOrder() {
+    mutate((current) => createWorkOrderFromProposal(current, proposalId));
+  }
+
+  const paymentSignal = proposal.paymentSignal;
+  const issueCheck = canIssueWorkOrderFromProposal(dataset, proposalId);
 
   return (
     <div className="space-y-6">
       <DemoPageHeader
-        title={`Proposta ${proposal.code}`}
-        description="Composição demonstrativa com itens, quantidades e ações comerciais simuladas."
+        title={`Orçamento ${proposal.code}`}
+        description="Composição demonstrativa com itens, quantidades e fluxo simulado: aceite, sinal e emissão da OS."
         backHref="/demonstracao/comercial/propostas"
-        backLabel="Propostas"
+        backLabel="Orçamentos"
       />
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -158,7 +166,7 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
               {PROPOSAL_STATUS_LABELS[proposal.status]}
             </p>
             <p className="text-muted-foreground">
-              Caminho principal: rascunho, enviada e aprovada. Recusada, expirada e cancelada também existem nesta demonstração.
+              Fluxo principal: rascunho, enviado, aceito, sinal confirmado e OS emitida. Recusado, expirado e cancelado também existem nesta demonstração.
             </p>
             <p>
               <span className="text-muted-foreground">Valor cadastrado:</span>{" "}
@@ -188,7 +196,7 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
             ) : null}
             {proposal.status === "accepted" ? (
               <p className="rounded-md bg-secondary px-3 py-2">
-                Proposta aprovada. A formalização é o passo demonstrativo antes de liberar o agendamento.
+                Orçamento aceito. Próximos passos: registrar e confirmar o sinal, depois emitir a OS. O agendamento é um passo separado.
               </p>
             ) : null}
             {opportunity ? (
@@ -205,31 +213,26 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
             <div className="flex flex-col gap-2 pt-2">
               {proposal.status === "draft" ? (
                 <Button type="button" onClick={() => setStatus("sent")}>
-                  Enviar proposta (simulado)
+                  Enviar orçamento (simulado)
                 </Button>
               ) : null}
               {proposal.status === "sent" ? (
                 <>
                   <Button type="button" onClick={() => setStatus("accepted")}>
-                    Aceitar proposta
+                    Aceitar orçamento
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setStatus("rejected")}
                   >
-                    Recusar proposta
+                    Recusar orçamento
                   </Button>
                 </>
               ) : null}
               {proposal.status === "rejected" ? (
                 <Button type="button" variant="outline" onClick={() => setStatus("sent")}>
-                  Reenviar proposta
-                </Button>
-              ) : null}
-              {proposal.status === "accepted" && !linkedWorkOrder ? (
-                <Button type="button" onClick={generateWorkOrder}>
-                  Gerar OS a partir da proposta
+                  Reenviar orçamento
                 </Button>
               ) : null}
               {linkedWorkOrder ? (
@@ -244,6 +247,86 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
           </CardContent>
         </Card>
       </div>
+
+      {proposal.status === "accepted" || paymentSignal || linkedWorkOrder ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Sinal e emissão da OS</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              Fluxo demonstrativo: Aceite → Registrar/Confirmar sinal → Emitir OS. Sem cobrança real.
+            </p>
+            {paymentSignal ? (
+              <dl className="grid gap-2 md:grid-cols-2">
+                <div>
+                  <dt className="text-muted-foreground">Status do sinal</dt>
+                  <dd className="font-medium">
+                    {paymentSignal.status === "confirmed" ? "Confirmado" : "Pendente"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Valor do sinal</dt>
+                  <dd className="font-medium">{formatCurrencyBrl(paymentSignal.amount)}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Registrado em</dt>
+                  <dd>{paymentSignal.registeredAt.split("-").reverse().join("/")}</dd>
+                </div>
+                {paymentSignal.confirmedAt ? (
+                  <div>
+                    <dt className="text-muted-foreground">Confirmado em</dt>
+                    <dd>{paymentSignal.confirmedAt.split("-").reverse().join("/")}</dd>
+                  </div>
+                ) : null}
+                {paymentSignal.note ? (
+                  <div className="md:col-span-2">
+                    <dt className="text-muted-foreground">Observação</dt>
+                    <dd>{paymentSignal.note}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            ) : (
+              <p>Nenhum sinal registrado para este orçamento.</p>
+            )}
+            <p className="rounded-md bg-secondary px-3 py-2 text-muted-foreground">
+              Exceções à exigência de sinal ainda precisam de validação do cliente.
+            </p>
+            {!linkedWorkOrder && !issueCheck.ok && issueCheck.reason ? (
+              <p className="text-muted-foreground">{issueCheck.reason}</p>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              {proposal.status === "accepted" && !paymentSignal ? (
+                <Button type="button" onClick={registerSignal}>
+                  Registrar sinal
+                </Button>
+              ) : null}
+              {proposal.status === "accepted" && paymentSignal?.status === "pending" ? (
+                <Button type="button" onClick={confirmSignal}>
+                  Confirmar sinal
+                </Button>
+              ) : null}
+              {!linkedWorkOrder ? (
+                <Button type="button" onClick={issueWorkOrder} disabled={!issueCheck.ok}>
+                  Emitir OS
+                </Button>
+              ) : (
+                <Link
+                  href={`/demonstracao/ordens-servico/${linkedWorkOrder.id}`}
+                  className="inline-flex h-9 items-center justify-center rounded-md bg-navy px-4 text-sm font-medium text-white hover:bg-navy/90"
+                >
+                  Abrir OS {linkedWorkOrder.code}
+                </Link>
+              )}
+            </div>
+            {linkedWorkOrder && !linkedWorkOrder.scheduledAt ? (
+              <p className="text-muted-foreground">
+                OS emitida e aguardando agendamento. O agendamento é feito na própria OS.
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {proposal.formalization ? (
         <Card>
@@ -267,7 +350,10 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
             </p>
             <p className="text-muted-foreground">{proposal.formalization.note}</p>
             <p className="text-muted-foreground">
-              Outras formas nesta demonstração: proposta assinada, OS do cliente, OC, OCS ou outro. Ainda sem regra definitiva.
+              Outras formas nesta demonstração: orçamento assinado, OS do cliente, OC, OCS ou outro. Ainda sem regra definitiva.
+            </p>
+            <p className="text-muted-foreground">
+              OCS (aceite do orçamento) e OC de contrato são documentos distintos nesta demonstração. A distinção ainda precisa de validação do cliente.
             </p>
             <Button
               type="button"

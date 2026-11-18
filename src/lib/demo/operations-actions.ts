@@ -8,6 +8,7 @@ import {
 const DEMO_TODAY = "2026-08-28";
 
 export const WORK_ORDER_STATUS_LABELS: Record<WorkOrderStatus, string> = {
+  issued: "Emitida",
   scheduled: "Agendada",
   in_progress: "Em andamento",
   completed: "Concluída",
@@ -37,13 +38,22 @@ export function getWorkOrdersInRange(
 
   return dataset.workOrders
     .filter((item) => {
+      if (!item.scheduledAt) return false;
       const scheduled = new Date(item.scheduledAt).getTime();
       return scheduled >= start && scheduled <= end;
     })
     .sort(
       (left, right) =>
-        new Date(left.scheduledAt).getTime() - new Date(right.scheduledAt).getTime(),
+        new Date(left.scheduledAt!).getTime() - new Date(right.scheduledAt!).getTime(),
     );
+}
+
+export function getUnscheduledWorkOrders(dataset: DemoDataset) {
+  return dataset.workOrders.filter(
+    (item) =>
+      item.status === "issued" ||
+      (!item.scheduledAt && item.status !== "cancelled" && item.status !== "completed"),
+  );
 }
 
 export function updateWorkOrderStatus(
@@ -130,13 +140,20 @@ function nextWorkOrderCode(dataset: DemoDataset): string {
   return `OS-DEMO-${String(next).padStart(3, "0")}`;
 }
 
+/**
+ * Emite OS a partir do orçamento aceito com sinal confirmado.
+ * Não agenda: scheduledAt fica ausente até scheduleWorkOrder.
+ */
 export function createWorkOrderFromProposal(
   dataset: DemoDataset,
   proposalId: string,
-  scheduledAt: string,
 ): DemoDataset {
   const proposal = dataset.proposals.find((item) => item.id === proposalId);
   if (!proposal || proposal.status !== "accepted") {
+    return dataset;
+  }
+
+  if (proposal.paymentSignal?.status !== "confirmed") {
     return dataset;
   }
 
@@ -166,13 +183,15 @@ export function createWorkOrderFromProposal(
     proposalId: proposal.id,
     serviceName,
     categoryId,
-    status: "scheduled" as const,
-    scheduledAt,
+    status: "issued" as const,
+    issuedAt: DEMO_TODAY,
     technicianAlias: leadTechnician,
     teamAliases: [leadTechnician, DEMO_FIELD_TEAMS[1]],
     plannedMaterials: createDefaultPlannedMaterials(categoryId),
     planningChecklist: createDefaultPlanningChecklist(),
-    notes: "OS gerada a partir de proposta aceita (demonstração).",
+    notes:
+      "OS emitida a partir do orçamento aceito com sinal confirmado. Agendamento é passo separado.",
+    scheduleStatusLabel: "Aguardando agendamento",
     provenance: proposal.provenance,
   };
 
@@ -182,6 +201,58 @@ export function createWorkOrderFromProposal(
   };
 }
 
+export function scheduleWorkOrder(
+  dataset: DemoDataset,
+  workOrderId: string,
+  scheduledAt: string,
+  options?: { technicianAlias?: string; vehicleLabel?: string },
+): DemoDataset {
+  return {
+    ...dataset,
+    workOrders: dataset.workOrders.map((workOrder) => {
+      if (workOrder.id !== workOrderId) {
+        return workOrder;
+      }
+      if (workOrder.status === "cancelled" || workOrder.status === "completed") {
+        return workOrder;
+      }
+
+      return {
+        ...workOrder,
+        scheduledAt,
+        status: workOrder.status === "issued" ? ("scheduled" as const) : workOrder.status,
+        technicianAlias: options?.technicianAlias ?? workOrder.technicianAlias,
+        vehicleLabel: options?.vehicleLabel ?? workOrder.vehicleLabel,
+        scheduleStatusLabel: "Agendada",
+      };
+    }),
+  };
+}
+
 export function getWorkOrderByProposalId(dataset: DemoDataset, proposalId: string) {
   return dataset.workOrders.find((item) => item.proposalId === proposalId);
+}
+
+export function canIssueWorkOrderFromProposal(
+  dataset: DemoDataset,
+  proposalId: string,
+): { ok: boolean; reason?: string } {
+  const proposal = dataset.proposals.find((item) => item.id === proposalId);
+  if (!proposal) {
+    return { ok: false, reason: "Orçamento não encontrado." };
+  }
+  if (proposal.status !== "accepted") {
+    return { ok: false, reason: "O orçamento precisa estar aceito." };
+  }
+  if (proposal.paymentSignal?.status !== "confirmed") {
+    return {
+      ok: false,
+      reason:
+        "Confirme o sinal antes de emitir a OS. Exceções à exigência ainda precisam de validação do cliente.",
+    };
+  }
+  if (dataset.workOrders.some((item) => item.proposalId === proposalId)) {
+    return { ok: false, reason: "Já existe OS vinculada a este orçamento." };
+  }
+  return { ok: true };
 }

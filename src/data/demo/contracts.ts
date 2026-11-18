@@ -32,6 +32,13 @@ export const demoContracts: DemoContract[] = [
     adjustmentIndex: "IPCA (demonstrativo)",
     nextAdjustmentDate: "2027-01-01",
     status: "active",
+    purchaseOrder: {
+      code: "OC-DEMO-CT-001",
+      issuedAt: "2026-01-05",
+      statusLabel: "Vigente",
+      amount: 33600,
+      note: "O.C. do contrato periódico. Não se confunde com a OCS de formalização de orçamento avulso. OS por visita ainda pendente de validação.",
+    },
     scheduledVisits: [
       {
         id: "visit-001-a",
@@ -58,6 +65,13 @@ export const demoContracts: DemoContract[] = [
     adjustmentIndex: "IGP-M (demonstrativo)",
     nextAdjustmentDate: "2027-03-01",
     status: "active",
+    purchaseOrder: {
+      code: "OC-DEMO-CT-002",
+      issuedAt: "2026-03-02",
+      statusLabel: "Vigente",
+      amount: 50400,
+      note: "O.C. associada ao contrato e às visitas previstas. A emissão automática de OS por visita permanece em aberto.",
+    },
     scheduledVisits: [
       {
         id: "visit-002-a",

@@ -17,8 +17,8 @@ const links = [
   },
   {
     href: "/demonstracao/comercial/propostas",
-    title: "Propostas",
-    description: "Itens, validade, status e ações de envio ou aceite fictícias.",
+    title: "Orçamentos",
+    description: "Itens, validade, status, aceite, sinal e emissão de OS fictícios.",
   },
   {
     href: "/demonstracao/clientes",
@@ -32,7 +32,7 @@ export function CommercialHubView() {
     <div className="space-y-6">
       <DemoPageHeader
         title="Comercial"
-        description="Fluxo demonstrativo do lead até a proposta aprovada. Todas as ações são simuladas e ficam no navegador."
+        description="Fluxo demonstrativo do lead até o orçamento aceito e a OS emitida. Todas as ações são simuladas e ficam no navegador."
       />
       <div className="grid gap-4 md:grid-cols-2">
         {links.map((link) => (

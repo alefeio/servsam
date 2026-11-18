@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { seedDemoDataset } from "@/data/demo/demo-dataset";
 import {
+  canIssueWorkOrderFromProposal,
   completeWorkOrder,
   createWorkOrderFromProposal,
   filterWorkOrdersByStatus,
+  getUnscheduledWorkOrders,
   getWorkOrdersInRange,
+  scheduleWorkOrder,
   startWorkOrder,
   togglePlanningChecklistItem,
   updateWorkOrderStatus,
@@ -25,7 +28,7 @@ describe("operations demo actions", () => {
     );
     expect(inRange.length).toBeGreaterThan(0);
     expect(
-      inRange.every((item) => item.scheduledAt.startsWith("2026-09-0")),
+      inRange.every((item) => item.scheduledAt?.startsWith("2026-09-0")),
     ).toBe(true);
   });
 
@@ -58,35 +61,66 @@ describe("operations demo actions", () => {
     );
   });
 
-  it("creates a work order from an accepted proposal once", () => {
-    const proposal = seedDemoDataset.proposals.find((item) => item.status === "accepted");
+  it("issues a work order from an accepted proposal with confirmed signal, without scheduling", () => {
+    const proposal = seedDemoDataset.proposals.find(
+      (item) =>
+        item.status === "accepted" &&
+        item.paymentSignal?.status === "confirmed" &&
+        !seedDemoDataset.workOrders.some((workOrder) => workOrder.proposalId === item.id),
+    );
     expect(proposal).toBeDefined();
+    expect(canIssueWorkOrderFromProposal(seedDemoDataset, proposal!.id).ok).toBe(true);
 
-    const datasetWithAccepted = updateProposalStatus(
-      seedDemoDataset,
-      proposal!.id,
-      "accepted",
-    );
-
-    const created = createWorkOrderFromProposal(
-      datasetWithAccepted,
-      proposal!.id,
-      "2026-09-10T09:00:00",
-    );
-
+    const created = createWorkOrderFromProposal(seedDemoDataset, proposal!.id);
     const workOrder = created.workOrders.find((item) => item.proposalId === proposal!.id);
     expect(workOrder).toBeDefined();
     expect(workOrder?.clientId).toBe(proposal!.clientId);
-    expect(workOrder?.status).toBe("scheduled");
-
-    const duplicated = createWorkOrderFromProposal(
-      created,
-      proposal!.id,
-      "2026-09-10T09:00:00",
+    expect(workOrder?.status).toBe("issued");
+    expect(workOrder?.scheduledAt).toBeUndefined();
+    expect(getUnscheduledWorkOrders(created).some((item) => item.id === workOrder?.id)).toBe(
+      true,
     );
+
+    const duplicated = createWorkOrderFromProposal(created, proposal!.id);
     expect(
       duplicated.workOrders.filter((item) => item.proposalId === proposal!.id),
     ).toHaveLength(1);
+  });
+
+  it("does not issue a work order without confirmed payment signal", () => {
+    const proposal = seedDemoDataset.proposals.find(
+      (item) => item.paymentSignal?.status === "pending",
+    );
+    expect(proposal).toBeDefined();
+    expect(canIssueWorkOrderFromProposal(seedDemoDataset, proposal!.id).ok).toBe(false);
+
+    const unchanged = createWorkOrderFromProposal(seedDemoDataset, proposal!.id);
+    expect(
+      unchanged.workOrders.filter((item) => item.proposalId === proposal!.id),
+    ).toHaveLength(0);
+  });
+
+  it("schedules an issued work order in a separate step", () => {
+    const proposal = seedDemoDataset.proposals.find(
+      (item) =>
+        item.status === "accepted" &&
+        item.paymentSignal?.status === "confirmed" &&
+        !seedDemoDataset.workOrders.some((workOrder) => workOrder.proposalId === item.id),
+    );
+    expect(proposal).toBeDefined();
+
+    const issued = createWorkOrderFromProposal(seedDemoDataset, proposal!.id);
+    const workOrder = issued.workOrders.find((item) => item.proposalId === proposal!.id);
+    expect(workOrder?.status).toBe("issued");
+
+    const scheduled = scheduleWorkOrder(
+      issued,
+      workOrder!.id,
+      "2026-09-10T09:00:00",
+    );
+    const changed = scheduled.workOrders.find((item) => item.id === workOrder!.id);
+    expect(changed?.status).toBe("scheduled");
+    expect(changed?.scheduledAt).toBe("2026-09-10T09:00:00");
   });
 
   it("updates work order status directly", () => {
@@ -95,5 +129,14 @@ describe("operations demo actions", () => {
     expect(
       updated.workOrders.find((item) => item.id === target.id)?.status,
     ).toBe("cancelled");
+  });
+
+  it("keeps accepted status helper available for fixtures", () => {
+    const proposal = seedDemoDataset.proposals.find((item) => item.status === "accepted");
+    expect(proposal).toBeDefined();
+    const updated = updateProposalStatus(seedDemoDataset, proposal!.id, "accepted");
+    expect(updated.proposals.find((item) => item.id === proposal!.id)?.status).toBe(
+      "accepted",
+    );
   });
 });

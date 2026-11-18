@@ -3,7 +3,7 @@ import { ProposalsListView } from "@/features/crm/proposals-list-view";
 import { pageTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: pageTitle("Propostas"),
+  title: pageTitle("Orçamentos"),
   robots: { index: false, follow: false },
 };
 

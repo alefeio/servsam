@@ -35,6 +35,8 @@ describe("sprint 10 presentation story", () => {
     expect(receivable?.clientId).toBe(clientId);
     expect(receivable?.billingStatus).toBe("open");
     expect(proposal?.formalization?.documentCode).toBe("OCS-DEMO-014");
+    expect(proposal?.paymentSignal?.status).toBe("confirmed");
+    expect(proposal?.paymentSignal?.amount).toBe(4900);
     expect(proposal?.observations).not.toMatch(/libera o agendamento/);
     expect(workOrder?.familyFields?.some((field) => field.value.includes("10.000 L"))).toBe(true);
     expect(report?.technicalDescription).toContain("10.000 L");
@@ -54,7 +56,7 @@ describe("sprint 10 presentation story", () => {
     expect(metrics.servicesToday).toBeGreaterThan(0);
     expect(metrics.servicesThisWeek).toBeGreaterThanOrEqual(metrics.servicesToday);
     expect(metrics.certificatesToIssue).toBeGreaterThan(0);
-    expect(metrics.alerts.some((alert) => alert.title.includes("Proposta"))).toBe(true);
+    expect(metrics.alerts.some((alert) => alert.title.includes("Orçamento"))).toBe(true);
     expect(metrics.alerts.some((alert) => alert.title.includes("Certificado"))).toBe(true);
     expect(metrics.alerts.some((alert) => alert.title.includes("ASO"))).toBe(true);
   });
@@ -88,7 +90,7 @@ describe("sprint 10 presentation story", () => {
       "2026-08-27",
     );
     expect(
-      seedDemoDataset.workOrders.filter((item) => item.scheduledAt.startsWith("2026-08-28")),
+      seedDemoDataset.workOrders.filter((item) => item.scheduledAt?.startsWith("2026-08-28")),
     ).toHaveLength(1);
   });
 });

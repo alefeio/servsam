@@ -13,8 +13,8 @@ export function ProposalsListView() {
   return (
     <div className="space-y-6">
       <DemoPageHeader
-        title="Propostas"
-        description="Propostas demonstrativas com itens, validade e status. Abra a ficha para simular envio ou aceite."
+        title="Orçamentos"
+        description="Orçamentos demonstrativos com itens, validade e status. Abra a ficha para simular envio, aceite, sinal e emissão da OS."
         backHref="/demonstracao/comercial"
         backLabel="Comercial"
       />

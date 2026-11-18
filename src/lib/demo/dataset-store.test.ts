@@ -72,6 +72,33 @@ describe("demo dataset store snapshots", () => {
     expect(hydrated.environmentalProcesses.length).toBeGreaterThan(0);
     expect(hydrated.technicalResponsibles.length).toBeGreaterThan(0);
     expect(hydrated.clients.some((client) => client.id === "client-local-only")).toBe(true);
+    expect(hydrated.employees.some((employee) => (employee.hrRecords?.length ?? 0) > 0)).toBe(
+      true,
+    );
+    expect(hydrated.contracts.some((contract) => contract.purchaseOrder)).toBe(true);
+    expect(
+      hydrated.proposals.some((proposal) => proposal.paymentSignal?.status === "confirmed"),
+    ).toBe(true);
+  });
+
+  it("maps legacy employee warnings into hrRecords when missing", () => {
+    const legacyEmployee = {
+      id: "emp-legacy",
+      name: "Colaborador legado (DEMO)",
+      role: "Técnico",
+      phone: "(91) 90000-0000",
+      documents: [],
+      warnings: ["Advertência antiga no localStorage."],
+      provenance: seedDemoDataset.provenance,
+    };
+    const hydrated = hydrateDemoDataset({
+      ...minimalStoredDataset(),
+      employees: [legacyEmployee],
+    } as unknown as typeof seedDemoDataset);
+
+    const employee = hydrated.employees.find((item) => item.id === "emp-legacy");
+    expect(employee?.hrRecords?.[0]?.kind).toBe("warning");
+    expect(employee?.hrRecords?.[0]?.note).toContain("Advertência antiga");
   });
 
   it("updates the snapshot after a mutation and keeps it stable", () => {

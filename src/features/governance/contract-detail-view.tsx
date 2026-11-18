@@ -140,6 +140,47 @@ export function ContractDetailView({ contractId }: ContractDetailViewProps) {
 
       <Card>
         <CardHeader>
+          <CardTitle>O.C. do contrato</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          {contract.purchaseOrder ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              <p>
+                <span className="text-muted-foreground">Código:</span>{" "}
+                {contract.purchaseOrder.code}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Situação:</span>{" "}
+                {contract.purchaseOrder.statusLabel}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Emitida em:</span>{" "}
+                {contract.purchaseOrder.issuedAt}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Valor:</span>{" "}
+                {formatCurrencyBrl(contract.purchaseOrder.amount)}
+              </p>
+              <p className="md:col-span-2">
+                <span className="text-muted-foreground">Observação:</span>{" "}
+                {contract.purchaseOrder.note}
+              </p>
+            </div>
+          ) : (
+            <p className="text-muted-foreground">
+              Nenhuma O.C. de contrato registrada neste fixture.
+            </p>
+          )}
+          <p className="rounded-md border border-dashed border-teal/50 px-3 py-2 text-xs text-muted-foreground">
+            A O.C. do contrato periódico é distinta da formalização do orçamento avulso (OCS/OC
+            da proposta). A emissão de uma OS por visita ainda aguarda validação do cliente. Dados
+            demonstrativos.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Cronograma previsto</CardTitle>
         </CardHeader>
         <CardContent>

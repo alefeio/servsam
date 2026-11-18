@@ -84,9 +84,35 @@ function countScheduledServices(
   includesDay: (day: string) => boolean,
 ): number {
   return dataset.workOrders.filter((item) => {
-    if (item.status === "cancelled") return false;
+    if (item.status === "cancelled" || !item.scheduledAt) return false;
     return includesDay(item.scheduledAt.slice(0, 10));
   }).length;
+}
+
+/** Indicadores de conversão de orçamento derivados da massa demonstrativa. */
+export function buildBudgetConversionMetrics(dataset: DemoDataset) {
+  const issued = dataset.proposals.filter(
+    (item) => item.status !== "draft" && item.status !== "cancelled",
+  );
+  const accepted = dataset.proposals.filter((item) => item.status === "accepted");
+  const converted = accepted.filter((proposal) =>
+    dataset.workOrders.some((workOrder) => workOrder.proposalId === proposal.id),
+  );
+  const inNegotiation = dataset.proposals.filter(
+    (item) => item.status === "sent" || item.status === "draft",
+  );
+  const negotiationValue = inNegotiation.reduce((sum, item) => sum + item.value, 0);
+  const conversionRate =
+    issued.length > 0 ? Math.round((converted.length / issued.length) * 100) : 0;
+
+  return {
+    issuedCount: issued.length,
+    acceptedCount: accepted.length,
+    convertedCount: converted.length,
+    conversionRate,
+    negotiationValue,
+    negotiationCount: inNegotiation.length,
+  };
 }
 
 function buildFunnel(dataset: DemoDataset): FunnelStage[] {
@@ -152,10 +178,14 @@ function buildUpcomingServices(dataset: DemoDataset): UpcomingService[] {
   );
 
   return dataset.workOrders
-    .filter((item) => item.status === "scheduled" || item.status === "in_progress")
+    .filter(
+      (item) =>
+        Boolean(item.scheduledAt) &&
+        (item.status === "scheduled" || item.status === "in_progress"),
+    )
     .sort(
       (left, right) =>
-        new Date(left.scheduledAt).getTime() - new Date(right.scheduledAt).getTime(),
+        new Date(left.scheduledAt!).getTime() - new Date(right.scheduledAt!).getTime(),
     )
     .slice(0, 5)
     .map((item) => ({
@@ -165,7 +195,7 @@ function buildUpcomingServices(dataset: DemoDataset): UpcomingService[] {
       scheduledFor: new Intl.DateTimeFormat("pt-BR", {
         dateStyle: "short",
         timeStyle: "short",
-      }).format(new Date(item.scheduledAt)),
+      }).format(new Date(item.scheduledAt!)),
     }));
 }
 
@@ -179,7 +209,8 @@ function buildProductivityRanking(
     if (workOrder.status !== "completed") {
       continue;
     }
-    if (!isInPeriod(workOrder.scheduledAt.slice(0, 10), periodKey)) {
+    const scheduleDay = workOrder.completedAt ?? workOrder.scheduledAt?.slice(0, 10);
+    if (!scheduleDay || !isInPeriod(scheduleDay, periodKey)) {
       continue;
     }
     counts.set(
@@ -263,8 +294,8 @@ function buildAlerts(dataset: DemoDataset): DashboardAlert[] {
   for (const proposal of dataset.proposals.filter((item) => item.status === "sent")) {
     alerts.push({
       id: `alert-prop-${proposal.id}`,
-      title: "Proposta aguardando retorno",
-      detail: `Proposta ${proposal.code} enviada para ${clientAliases[proposal.clientId]}.`,
+      title: "Orçamento aguardando retorno",
+      detail: `Orçamento ${proposal.code} enviado para ${clientAliases[proposal.clientId]}.`,
     });
   }
 
@@ -402,6 +433,7 @@ export function buildDashboardMetrics(
     formalizationOverview: buildFormalizationOverview(dataset),
     recurringVisits: buildRecurringVisits(dataset),
     productivityRanking: buildProductivityRanking(dataset, periodKey),
+    budgetConversion: buildBudgetConversionMetrics(dataset),
   };
 }
 

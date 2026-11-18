@@ -290,17 +290,28 @@ export const storyProcesses: DemoEnvironmentalProcess[] = [
   },
 ];
 
-export const hotelProposalStory: Pick<DemoProposal, "formalization" | "narrative" | "serviceFamily" | "observations"> = {
+export const hotelProposalStory: Pick<
+  DemoProposal,
+  "formalization" | "narrative" | "serviceFamily" | "observations" | "paymentSignal"
+> = {
   serviceFamily: "rsv",
   observations:
-    "Proposta-guia. A aprovação não agenda sozinha: a formalização abaixo é o passo demonstrativo antes da agenda.",
+    "Orçamento-guia. Após o aceite, o sinal confirmado libera a emissão da OS; o agendamento é um passo separado.",
+  paymentSignal: {
+    status: "confirmed",
+    amount: 4900,
+    registeredAt: "2026-06-06",
+    confirmedAt: "2026-06-06",
+    note: "Sinal demonstrativo (50% do orçamento). Não é cobrança real. Exceções à exigência ainda precisam de validação.",
+    financialTransactionId: "fin-signal-005",
+  },
   formalization: {
     statusLabel: "Aprovada",
     kind: "service-purchase-order",
     kindLabel: "Ordem de Compra de Serviço",
     documentCode: "OCS-DEMO-014",
     receivedAt: "2026-08-27",
-    note: "Exemplo para a reunião. Ainda não é regra definitiva de quais documentos liberam o agendamento.",
+    note: "Formalização do orçamento avulso (OCS). Distinta da O.C. vinculada a contratos periódicos.",
   },
   narrative: {
     technicalScope: [
@@ -309,7 +320,7 @@ export const hotelProposalStory: Pick<DemoProposal, "formalization" | "narrative
     procedures: ["Esvaziamento, remoção de sedimento, lavagem, desinfecção e registro fotográfico."],
     contractorDuties: ["Liberar acesso à laje e indicar o responsável no local."],
     specificConditions: [
-      "Cancelamento desta proposta: 30% com menos de 48 horas. Outras propostas podem ter condição diferente.",
+      "Cancelamento desta proposta comercial: 30% com menos de 48 horas. Outras propostas podem ter condição diferente.",
     ],
     includedDeliverables: [
       "Relatório técnico/fotográfico",

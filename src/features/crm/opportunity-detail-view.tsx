@@ -39,7 +39,7 @@ export function OpportunityDetailView({ opportunityId }: OpportunityDetailViewPr
     <div className="space-y-6">
       <DemoPageHeader
         title={opportunity.title}
-        description="Ficha demonstrativa da oportunidade com propostas vinculadas e ações simuladas."
+        description="Ficha demonstrativa da oportunidade com orçamentos vinculados e ações simuladas."
         backHref="/demonstracao/comercial/oportunidades"
         backLabel="Oportunidades"
       />
@@ -135,12 +135,12 @@ export function OpportunityDetailView({ opportunityId }: OpportunityDetailViewPr
 
       <Card>
         <CardHeader>
-          <CardTitle>Propostas vinculadas</CardTitle>
+          <CardTitle>Orçamentos vinculados</CardTitle>
         </CardHeader>
         <CardContent>
           {proposals.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Nenhuma proposta demonstrativa vinculada a esta oportunidade.
+              Nenhum orçamento demonstrativo vinculado a esta oportunidade.
             </p>
           ) : (
             <ul className="space-y-3">

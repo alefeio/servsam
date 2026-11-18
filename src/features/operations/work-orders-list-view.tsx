@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDemoDatasetStore } from "@/features/crm/use-demo-dataset-store";
 import { OperationsPageHeader } from "@/features/operations/operations-page-header";
+import { formatWorkOrderSchedule } from "@/features/operations/work-order-schedule-format";
 import {
   WORK_ORDER_STATUS_LABELS,
   filterWorkOrdersByStatus,
@@ -13,6 +14,7 @@ import type { WorkOrderStatus } from "@/types/demo-entities";
 
 const STATUS_FILTERS: Array<{ value: WorkOrderStatus | "all"; label: string }> = [
   { value: "all", label: "Todas" },
+  { value: "issued", label: "Emitidas" },
   { value: "scheduled", label: "Agendadas" },
   { value: "in_progress", label: "Em andamento" },
   { value: "completed", label: "Concluídas" },
@@ -20,14 +22,8 @@ const STATUS_FILTERS: Array<{ value: WorkOrderStatus | "all"; label: string }> =
   { value: "cancelled", label: "Canceladas" },
 ];
 
-function formatSchedule(dateIso: string): string {
-  return new Date(dateIso).toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function scheduleSortValue(dateIso?: string): number {
+  return dateIso ? new Date(dateIso).getTime() : Number.MAX_SAFE_INTEGER;
 }
 
 export function WorkOrdersListView() {
@@ -36,7 +32,7 @@ export function WorkOrdersListView() {
 
   const workOrders = filterWorkOrdersByStatus(dataset, statusFilter).sort(
     (left, right) =>
-      new Date(right.scheduledAt).getTime() - new Date(left.scheduledAt).getTime(),
+      scheduleSortValue(right.scheduledAt) - scheduleSortValue(left.scheduledAt),
   );
 
   return (
@@ -93,7 +89,7 @@ export function WorkOrdersListView() {
                       <td className="py-3 pr-4 font-medium">{item.code}</td>
                       <td className="py-3 pr-4">{client?.alias ?? "—"}</td>
                       <td className="py-3 pr-4">{item.serviceName}</td>
-                      <td className="py-3 pr-4">{formatSchedule(item.scheduledAt)}</td>
+                      <td className="py-3 pr-4">{formatWorkOrderSchedule(item.scheduledAt)}</td>
                       <td className="py-3 pr-4">{item.teamAliases.join(", ")}</td>
                       <td className="py-3 pr-4">
                         {WORK_ORDER_STATUS_LABELS[item.status]}
