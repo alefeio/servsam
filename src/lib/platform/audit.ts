@@ -1,5 +1,5 @@
 import { getPrisma } from "@/lib/db/prisma";
-import type { Prisma } from "@/generated/prisma/client";
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 
 export const AUDIT_ACTIONS = [
   "LOGIN_SUCCESS",
@@ -15,6 +15,21 @@ export const AUDIT_ACTIONS = [
   "ROLE_REMOVED",
   "PERMISSION_GRANTED",
   "PERMISSION_REVOKED",
+  "CUSTOMER_CREATED",
+  "CUSTOMER_UPDATED",
+  "CUSTOMER_ARCHIVED",
+  "CUSTOMER_RESTORED",
+  "CUSTOMER_CONTACT_CREATED",
+  "CUSTOMER_CONTACT_UPDATED",
+  "CUSTOMER_CONTACT_ARCHIVED",
+  "CUSTOMER_UNIT_CREATED",
+  "CUSTOMER_UNIT_UPDATED",
+  "CUSTOMER_UNIT_ARCHIVED",
+  "PROPOSAL_CREATED",
+  "PROPOSAL_UPDATED",
+  "PROPOSAL_ARCHIVED",
+  "PROPOSAL_STATUS_CHANGED",
+  "PROPOSAL_REVISED",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -39,7 +54,8 @@ export function sanitizeAuditMetadata(
   for (const [key, value] of Object.entries(metadata)) {
     if (SENSITIVE_KEYS.has(key.toLowerCase())) continue;
     if (value && typeof value === "object" && !Array.isArray(value)) {
-      clean[key] = sanitizeAuditMetadata(value as Record<string, unknown>) ?? {};
+      clean[key] =
+        sanitizeAuditMetadata(value as Record<string, unknown>) ?? {};
       continue;
     }
     clean[key] = value;
@@ -47,15 +63,23 @@ export function sanitizeAuditMetadata(
   return clean;
 }
 
-export async function writeAudit(input: {
-  organizationId: string;
-  actorUserId?: string | null;
-  action: AuditAction;
-  entityType: string;
-  entityId?: string | null;
-  metadata?: Record<string, unknown>;
-}): Promise<void> {
-  await getPrisma().auditLog.create({
+/** Cliente mínimo aceito: o global ou o `tx` de uma transação interativa. */
+export type AuditWriter = {
+  auditLog: Pick<PrismaClient["auditLog"], "create">;
+};
+
+export async function writeAudit(
+  input: {
+    organizationId: string;
+    actorUserId?: string | null;
+    action: AuditAction;
+    entityType: string;
+    entityId?: string | null;
+    metadata?: Record<string, unknown>;
+  },
+  client: AuditWriter = getPrisma(),
+): Promise<void> {
+  await client.auditLog.create({
     data: {
       id: crypto.randomUUID(),
       organizationId: input.organizationId,
@@ -63,7 +87,8 @@ export async function writeAudit(input: {
       action: input.action,
       entityType: input.entityType,
       entityId: input.entityId ?? null,
-      metadata: sanitizeAuditMetadata(input.metadata) as Prisma.InputJsonValue | undefined,
+      metadata: sanitizeAuditMetadata(input.metadata) as
+        Prisma.InputJsonValue | undefined,
     },
   });
 }

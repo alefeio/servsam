@@ -14,17 +14,19 @@ A especificação viva da V1 está em `docs/architecture/v1/`. A sprint ativa es
 - Sprints 1 a 7 estão concluídas. Não apague o site, o demo nem o CRM (leads, oportunidades, Kanban).
 - A Sprint 8 (arquitetura e documentação da V1) está entregue.
 - A Sprint 9 (fundação de `/sistema`: PostgreSQL, Prisma, autenticação, usuários, papéis, permissões e auditoria de plataforma) está entregue e deve continuar íntegra.
-- A Sprint 10 é validação visual e funcional em `/demonstracao`. A Sprint 10.1 ajusta essa demonstração ao que os documentos operacionais sugerem. Não implemente Customer nem os outros domínios de negócio no Prisma.
-- A fila original das Sprints 10 a 20 (clientes reais em diante) fica congelada até o cliente aprovar as telas. Não a renumere e não comece a Sprint 11.
-- Não refatore a UI de forma ampla fora do que a apresentação da Sprint 10 e da 10.1 precisar.
-- Não crie rotas de produção antecipadas. O demo existente permanece em fixture e `localStorage`.
+- A Sprint 10 / 10.1 / 10.2 validam e adequam `/demonstracao`. O demo permanece em fixture e `localStorage`, separado da sessão de `/sistema`.
+- A Sprint 11A (núcleo persistente em `/sistema`: Clientes e Orçamentos no Prisma, branch `sprint-11a-persistent-core`) está em curso após Gate 0 PASS. Não altera `/demonstracao`.
+- A fila original das Sprints 10 a 20 permanece numerada; não a renumere. Não comece a Sprint 11B/11C nem as seguintes antes do contrato delas.
+- Não faça merge em `main` nem promote Production sem pedido explícito.
 - Mobile de campo continua fora de contrato. Ver `docs/future/mobile-field-epic.md` e `docs/architecture/v1/scope.md`.
 
 ## Proibido até a sprint que for dona do item
 
-O schema de plataforma (`Organization`, `User`, `Role`, `Permission`, `AuditLog` e as tabelas de sessão) já existe. Não crie as entidades de negócio da V1. A Sprint 10 mostra esses domínios só na demonstração.
+O schema de plataforma (`Organization`, `User`, `Role`, `Permission`, `AuditLog` e as tabelas de sessão) já existe. A Sprint 11A adiciona `Customer`, `CustomerContact`, `CustomerUnit`, `Proposal` e `ProposalItem` em Preview/HOMOL. Não implemente sinal, OS, financeiro, agenda real, certificado, estoque ou os demais domínios fora da sprint dona.
 
-Sempre fora até a sprint ou o contrato próprio: WhatsApp/e-mail/ERP reais, dados de clientes reais, PWA/offline, geolocalização, câmera, NF-e, portal externo do cliente, ou qualquer jornada mobile de campo. O demo em `/demonstracao` continua em fixture e `localStorage`, separado da sessão de `/sistema`.
+Sempre fora até a sprint ou o contrato próprio: WhatsApp/e-mail/ERP reais, dados de clientes reais em Production, PWA/offline, geolocalização, câmera, NF-e, portal externo do cliente, ou qualquer jornada mobile de campo. O demo em `/demonstracao` continua em fixture e `localStorage`, separado da sessão de `/sistema`.
+
+Migrations e seed de domínio só com `DATABASE_ENV=preview` (ou development/test) e URLs HOMOL de Preview. Nunca migrar Production a partir desta sprint.
 
 O fluxo mestre da V1 está documentado. Não o implemente fora da sprint que o backlog atribui a cada passo.
 
@@ -43,11 +45,12 @@ O fluxo mestre da V1 está documentado. Não o implemente fora da sprint que o b
 - Next.js App Router, TypeScript strict, sem `any`.
 - Server Components por padrão; Client Components só para interação.
 - Dados do demo via repositórios em `src/lib/repositories`. Sem `fetch` em páginas.
-- Regras de negócio fora de páginas e de componentes de apresentação.
+- Dados de `/sistema` via Prisma e serviços em `src/lib/platform`. Regras de negócio fora de páginas e de componentes de apresentação.
 - Cliente é o agregador de relacionamento. Ordem de serviço é o agregador da operação. Não inverter essa hierarquia ao planejar a V1.
 - RBAC de produção é User, Role e Permission, verificado por chave no servidor. Os quatro perfis são semente, não um enum fechado.
 - A agenda SERVSAM é a fonte da verdade. Google Calendar não substitui a agenda.
+- Em Preview, runtime/migrate preferem `HOMOL_*` quando `DATABASE_ENV=preview` (ver `src/lib/db/urls.ts`).
 
 ## Testes
 
-Após mudanças relevantes de código: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`. Não declare sucesso sem evidência. Mudança só de documentação não autoriza alterar comportamento para fazer teste passar.
+Após mudanças relevantes de código: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`. Não declare sucesso sem evidência. Mudança só de documentação não autoriza alterar comportamento para fazer teste passar. Integração/e2e de `/sistema` usam o banco HOMOL (`npm run test:integration` / `test:e2e:preview`).

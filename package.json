@@ -20,7 +20,10 @@
     "postinstall": "prisma generate",
     "db:migrate": "tsx scripts/run-prisma.ts migrate dev",
     "db:deploy": "tsx scripts/run-prisma.ts migrate deploy",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:preview:migrate": "node scripts/preview-migrate.mjs all",
+    "test:integration": "node scripts/preview-test.mjs integration",
+    "test:e2e:preview": "node scripts/preview-e2e.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

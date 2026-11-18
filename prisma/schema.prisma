@@ -9,36 +9,42 @@ datasource db {
 
 /// Organização única da V1. Não há UI de multiempresa.
 model Organization {
-  id        String   @id
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  users     User[]
-  roles     Role[]
-  auditLogs AuditLog[]
+  id                String             @id
+  name              String
+  slug              String             @unique
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  users             User[]
+  roles             Role[]
+  auditLogs         AuditLog[]
+  customers         Customer[]
+  customerContacts  CustomerContact[]
+  customerUnits     CustomerUnit[]
+  proposals         Proposal[]
+  proposalItems     ProposalItem[]
+  documentSequences DocumentSequence[]
 
   @@map("organization")
 }
 
 /// Conta de acesso. Papéis ficam em UserRole, não num enum neste registro.
 model User {
-  id             String    @id
-  name           String
-  email          String
-  emailVerified  Boolean   @default(false)
-  image          String?
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  isActive       Boolean   @default(true)
-  createdAt      DateTime
-  updatedAt      DateTime
-  sessions       Session[]
-  accounts       Account[]
-  userRoles      UserRole[]
-  auditLogs      AuditLog[] @relation("AuditActor")
-  roleGrants     RolePermission[] @relation("PermissionGrantActor")
-  roleAssignments UserRole[] @relation("RoleAssignActor")
+  id              String           @id
+  name            String
+  email           String
+  emailVerified   Boolean          @default(false)
+  image           String?
+  organizationId  String
+  organization    Organization     @relation(fields: [organizationId], references: [id])
+  isActive        Boolean          @default(true)
+  createdAt       DateTime
+  updatedAt       DateTime
+  sessions        Session[]
+  accounts        Account[]
+  userRoles       UserRole[]
+  auditLogs       AuditLog[]       @relation("AuditActor")
+  roleGrants      RolePermission[] @relation("PermissionGrantActor")
+  roleAssignments UserRole[]       @relation("RoleAssignActor")
 
   @@unique([email])
   @@index([organizationId])
@@ -94,16 +100,16 @@ model Verification {
 }
 
 model Role {
-  id             String           @id
-  organizationId String
-  organization   Organization     @relation(fields: [organizationId], references: [id])
-  code           String
-  name           String
-  description    String
-  isSystem       Boolean          @default(false)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  userRoles      UserRole[]
+  id              String           @id
+  organizationId  String
+  organization    Organization     @relation(fields: [organizationId], references: [id])
+  code            String
+  name            String
+  description     String
+  isSystem        Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  userRoles       UserRole[]
   rolePermissions RolePermission[]
 
   @@unique([organizationId, code])
@@ -166,4 +172,150 @@ model AuditLog {
   @@index([organizationId, createdAt])
   @@index([entityType, entityId])
   @@map("audit_log")
+}
+
+/// Sprint 11A. Cliente � o agregador de relacionamento. Exclus�o � l�gica (deletedAt).
+model Customer {
+  id             String            @id
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  legalName      String
+  tradeName      String?
+  /// CPF ou CNPJ, s� d�gitos. Opcional: prospect pode ainda n�o ter documento.
+  document       String?
+  segment        String?
+  notes          String?
+  createdById    String?
+  updatedById    String?
+  deletedAt      DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  contacts       CustomerContact[]
+  units          CustomerUnit[]
+  proposals      Proposal[]
+
+  @@index([organizationId, deletedAt])
+  @@index([organizationId, document])
+  /// Índice único parcial ativo: ver migration 20261118193000_customer_document_active_unique.
+  @@map("customer")
+}
+
+model CustomerContact {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  customerId     String
+  customer       Customer     @relation(fields: [customerId], references: [id])
+  name           String
+  roleTitle      String?
+  email          String?
+  phone          String?
+  isPrimary      Boolean      @default(false)
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, customerId])
+  @@map("customer_contact")
+}
+
+model CustomerUnit {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  customerId     String
+  customer       Customer     @relation(fields: [customerId], references: [id])
+  name           String
+  addressLine    String?
+  city           String?
+  state          String?
+  postalCode     String?
+  notes          String?
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  proposals      Proposal[]
+
+  @@index([organizationId, customerId])
+  @@map("customer_unit")
+}
+
+/// Estados em docs/architecture/v1/state-machines.md. UI usa o r�tulo "Or�amento".
+enum ProposalStatus {
+  draft
+  sent
+  accepted
+  rejected
+  expired
+}
+
+model Proposal {
+  id                   String         @id
+  organizationId       String
+  organization         Organization   @relation(fields: [organizationId], references: [id])
+  /// N�mero leg�vel por organiza��o e ano (ORC-2026-0001). Nunca reutilizado.
+  code                 String
+  customerId           String
+  customer             Customer       @relation(fields: [customerId], references: [id])
+  customerUnitId       String?
+  customerUnit         CustomerUnit?  @relation(fields: [customerUnitId], references: [id])
+  title                String
+  status               ProposalStatus @default(draft)
+  validUntil           DateTime?
+  paymentTerms         String?
+  commercialConditions String?
+  observations         String?
+  /// Valores monet�rios em centavos (inteiro). Total = soma dos itens - desconto.
+  discountCents        Int            @default(0)
+  totalCents           Int            @default(0)
+  sentAt               DateTime?
+  decidedAt            DateTime?
+  rejectionReason      String?
+  /// Proposta que esta substitui (ajuste de aceita/expirada gera outra proposta).
+  supersedesId         String?
+  supersedes           Proposal?      @relation("ProposalSuccession", fields: [supersedesId], references: [id])
+  successors           Proposal[]     @relation("ProposalSuccession")
+  createdById          String?
+  updatedById          String?
+  deletedAt            DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  items                ProposalItem[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, status, deletedAt])
+  @@index([organizationId, customerId])
+  @@map("proposal")
+}
+
+model ProposalItem {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  proposalId     String
+  proposal       Proposal     @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  position       Int
+  description    String
+  quantity       Decimal      @db.Decimal(12, 3)
+  unitPriceCents Int
+  totalCents     Int
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, proposalId])
+  @@map("proposal_item")
+}
+
+/// Contador at�mico de numera��o por organiza��o, chave e ano.
+model DocumentSequence {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  key            String
+  year           Int
+  lastValue      Int          @default(0)
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, key, year])
+  @@map("document_sequence")
 }

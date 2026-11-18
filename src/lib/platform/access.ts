@@ -4,12 +4,9 @@ import { auth } from "@/lib/platform/auth";
 import { getPrisma } from "@/lib/db/prisma";
 import { hasPermission } from "@/lib/platform/permissions";
 
-export class PermissionError extends Error {
-  constructor(message = "Permissão insuficiente.") {
-    super(message);
-    this.name = "PermissionError";
-  }
-}
+import { PermissionError } from "@/lib/platform/permission-error";
+
+export { PermissionError };
 
 export type AuthenticatedUser = {
   id: string;
@@ -71,7 +68,9 @@ export async function requireAuthenticatedUser(): Promise<AuthenticatedUser> {
   return user;
 }
 
-export async function requirePermission(permission: string): Promise<AuthenticatedUser> {
+export async function requirePermission(
+  permission: string,
+): Promise<AuthenticatedUser> {
   const user = await requireAuthenticatedUser();
   if (!hasPermission(user.permissions, permission)) {
     throw new PermissionError();
@@ -79,6 +78,9 @@ export async function requirePermission(permission: string): Promise<Authenticat
   return user;
 }
 
-export function userHasPermission(user: AuthenticatedUser, permission: string): boolean {
+export function userHasPermission(
+  user: AuthenticatedUser,
+  permission: string,
+): boolean {
   return hasPermission(user.permissions, permission);
 }

@@ -1,12 +1,54 @@
 const BUILD_PLACEHOLDER = "postgresql://build:build@127.0.0.1:5432/build";
 
 /**
- * Runtime do Next.js. Somente RUNTIME_DATABASE_URL.
+ * Em Preview, exigir URLs HOMOL_* (homologação isolada).
+ * Fail-closed: sem HOMOL não há fallback para RUNTIME/POSTGRES legado/Production.
+ */
+function getHomolDatabaseUrl(
+  env: Record<string, string | undefined>,
+  preferPooled: boolean,
+): string | undefined {
+  if (readDatabaseEnvLabel(env) !== "preview") return undefined;
+
+  const candidates = preferPooled
+    ? [
+        env.HOMOL_DATABASE_URL_POOLED,
+        env.HOMOL_DATABASE_URL,
+        env.HOMOL_POSTGRES_URL,
+        env.HOMOL_PRISMA_DATABASE_URL,
+      ]
+    : [
+        env.HOMOL_POSTGRES_URL,
+        env.HOMOL_DATABASE_URL,
+        env.HOMOL_DATABASE_URL_POOLED,
+        env.HOMOL_PRISMA_DATABASE_URL,
+      ];
+
+  for (const candidate of candidates) {
+    const url = candidate?.trim();
+    if (url) return url;
+  }
+  return undefined;
+}
+
+/**
+ * Runtime do Next.js.
+ * Em DATABASE_ENV=preview exige HOMOL_*. Caso contrário RUNTIME_DATABASE_URL.
  * DATABASE_URL e PRISMA_DATABASE_URL ficam no ambiente e este módulo não as lê.
  */
 export function getRuntimeDatabaseUrl(
   env: Record<string, string | undefined> = process.env,
 ): string {
+  if (readDatabaseEnvLabel(env) === "preview") {
+    const homol = getHomolDatabaseUrl(env, true);
+    if (!homol) {
+      throw new Error(
+        "DATABASE_ENV=preview requires HOMOL_DATABASE_URL_POOLED, HOMOL_DATABASE_URL, or HOMOL_POSTGRES_URL",
+      );
+    }
+    return homol;
+  }
+
   const url = env.RUNTIME_DATABASE_URL?.trim();
   if (url) return url;
 
@@ -19,11 +61,22 @@ export function getRuntimeDatabaseUrl(
 
 /**
  * Prisma CLI e seed: migrations, generate e carga inicial.
- * Somente POSTGRES_URL. PRISMA_DATABASE_URL não entra neste caminho.
+ * Em DATABASE_ENV=preview exige HOMOL_*. Caso contrário POSTGRES_URL.
+ * PRISMA_DATABASE_URL não entra neste caminho.
  */
 export function getMigrationDatabaseUrl(
   env: Record<string, string | undefined> = process.env,
 ): string {
+  if (readDatabaseEnvLabel(env) === "preview") {
+    const homol = getHomolDatabaseUrl(env, false);
+    if (!homol) {
+      throw new Error(
+        "DATABASE_ENV=preview requires HOMOL_POSTGRES_URL, HOMOL_DATABASE_URL, or HOMOL_DATABASE_URL_POOLED",
+      );
+    }
+    return homol;
+  }
+
   const url = env.POSTGRES_URL?.trim();
   if (url) return url;
 

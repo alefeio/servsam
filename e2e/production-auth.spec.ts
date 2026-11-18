@@ -22,7 +22,7 @@ test("production login is separate from the demo", async ({ page }) => {
   await page.getByLabel("Senha").fill(password ?? "");
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page).toHaveURL(/\/sistema$/, { timeout: 30000 });
-  await expect(page.getByRole("heading", { name: "Fundação do sistema" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Painel" })).toBeVisible();
 
   await page.getByRole("link", { name: "Usuários" }).click();
   await expect(page.getByRole("heading", { name: "Usuários" })).toBeVisible();

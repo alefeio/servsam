@@ -2,13 +2,8 @@ import Link from "next/link";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { Button } from "@/components/ui/button";
 import { logoutAction } from "@/lib/platform/actions";
-import { userHasPermission, type AuthenticatedUser } from "@/lib/platform/access";
-
-const NAV = [
-  { href: "/sistema", label: "Início", permission: "dashboard.view" },
-  { href: "/sistema/configuracoes/usuarios", label: "Usuários", permission: "user.view" },
-  { href: "/sistema/configuracoes/perfis", label: "Perfis", permission: "role.view" },
-] as const;
+import type { AuthenticatedUser } from "@/lib/platform/access";
+import { getNavItems } from "@/lib/platform/nav";
 
 export function ProductionShell({
   user,
@@ -17,13 +12,7 @@ export function ProductionShell({
   user: AuthenticatedUser;
   children: React.ReactNode;
 }) {
-  const items = NAV.filter((item) => {
-    if (item.href === "/sistema") return userHasPermission(user, "dashboard.view");
-    if (item.href.endsWith("/usuarios")) {
-      return userHasPermission(user, "user.view") || userHasPermission(user, "user.manage");
-    }
-    return userHasPermission(user, "role.view") || userHasPermission(user, "role.manage");
-  });
+  const items = getNavItems(user.permissions);
 
   return (
     <div className="flex min-h-screen bg-muted">
@@ -60,6 +49,23 @@ export function ProductionShell({
             </Button>
           </form>
         </header>
+        <nav
+          aria-label="Sistema (compacto)"
+          className="border-b border-border bg-background px-4 py-2 lg:hidden"
+        >
+          <ul className="flex flex-wrap gap-2">
+            {items.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="block rounded-md px-3 py-1.5 text-sm text-navy hover:bg-muted"
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
         <main id="conteudo-principal" className="flex-1 p-4 md:p-6">
           {children}
         </main>
