@@ -78,6 +78,18 @@ Arquivo `platform.integration.test.ts` (4) e `persistent-core.integration.test.t
 - E2E: UI completa + reload + logout/login + segunda sessão de navegador  
 - Consulta direta ao Postgres HOMOL nos smokes
 
-## 6. Publicação
+## 6. Publicação — PASS (sem promote)
 
-Preenchido no Gate G após commit/push/deploy.
+| Item | Valor |
+| --- | --- |
+| Branch | `sprint-11a-persistent-core` |
+| Commit | `51466eb` |
+| Remote | `origin/sprint-11a-persistent-core` (pushed) |
+| Preview | `https://servsam-dkf2g3bpj-alefeios-projects.vercel.app` |
+| Deployment | `dpl_2EdGKrnHs9Ug2SSGTXNay8UvkYd5` READY, environment preview, Vercel Authentication |
+| Smoke | `/sistema/login` 200 com “Entrar no sistema”; `/sistema/clientes` protegido (login/clientes, sem demo) |
+| Merge `main` | não |
+| Promote Production | não |
+| Migration Production | não |
+
+**Sprint 11A homologação: PASS.** Não iniciar 11B sem aprovação.
