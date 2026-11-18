@@ -33,8 +33,10 @@ Adequação de `/demonstracao` ao fluxo Orçamento → Aceite → Sinal → OS �
 ## Commit e Preview
 
 - Branch: `sprint-10-2-demo-adequacao`
-- Commit: (preencher após o commit)
-- URL Preview: (preencher após o deploy)
+- Commit: `40f3abacf485c730e0ce3dc605d8f34a52dce60e`
+- URL Preview: https://servsam-2edd8j89f-alefeios-projects.vercel.app
+- Inspector: https://vercel.com/alefeios-projects/servsam/FQ6WU7KuVeWysqZUxnej6st1qZV8
+- Ambiente: Preview (sem promote para produção). Pode exigir autenticação Vercel (Deployment Protection).
 - Merge em `main`: **não realizado**
 
 ## Pontos ainda sujeitos à validação do cliente
