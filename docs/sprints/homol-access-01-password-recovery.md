@@ -61,24 +61,15 @@ Mensagem pública uniforme: *“Se este e-mail estiver cadastrado…”*.
 
 | Item | Resultado |
 | --- | --- |
-| Host HOMOL (fingerprint) | `22e5c2dd2d93` |
+| Host HOMOL (fingerprint) | `22e5c2dd2d93` (sem contato Production) |
 | Organização `servsam` | Presente |
-| Conta | **NÃO EXISTE** |
-| Perfil Diretoria | **PENDENTE** (aguardando autorização) |
-| Credencial Better Auth | Ausente |
+| Conta | **EXISTE** (provisionada com autorização explícita) |
+| Ativa | **SIM** |
+| Perfil Diretoria | **CONFIGURADO** |
+| Credencial Better Auth | Presente (hash); senha em texto **não** persistida nem impressa |
+| Senha operacional | Definir via **Esqueci minha senha** no Preview |
 
-### Provisionamento preparado (não executado)
-
-```text
-npx tsx scripts/homol-provision-access01.mjs alexandrefpenha@gmail.com
-# dry-run → awaiting_authorization
-
-CONFIRM=YES npx tsx scripts/homol-provision-access01.mjs alexandrefpenha@gmail.com
-# só após autorização explícita; senha inicial em .tmp-access01-initial-password.local (gitignored)
-```
-
-Plano: org SERVSAM · perfil **Diretoria** · ativo · credencial · auditoria `USER_CREATED` / `ROLE_ASSIGNED`.  
-Preferência: após criar, usar **Esqueci minha senha** no Preview (não depender da senha inicial impressa em chat).
+Script: `scripts/homol-provision-access01.mjs` — criação atômica (user + credential + role + auditoria) em transação; senha aleatória só em memória para gerar o hash e depois descartada.
 
 ## Vercel Authentication
 
