@@ -4,7 +4,29 @@
 **Branch:** `sprint-11a-persistent-core`  
 **Ambiente:** Preview Vercel com autenticação da Vercel (não é site público).
 
-Não há credenciais neste documento. Contas e senhas ficam no vault / variáveis `SEED_*` / convite individual — nunca na UI pública nem no Git.
+Não há credenciais neste documento. Contas e senhas ficam no vault / convite individual — nunca na UI pública nem no Git.
+
+Provisionamento interno: `sprint-11a-client-access-runbook.md`.
+
+## O que esta versão cobre
+
+Clientes, contatos, unidades e orçamentos com login real (Better Auth) e PostgreSQL de homologação.
+
+## O que ainda **não** está operacional nesta versão
+
+Ordem de serviço, agenda persistente, O.C., contratos periódicos, RH e financeiro completo **não** fazem parte da Sprint 11A. Podem existir só no demo (`/demonstracao`), sem persistência de produção.
+
+## Sequência simples (9 passos)
+
+1. Entrar com a sua conta (proteção Vercel + login `/sistema`).  
+2. Cadastrar um **cliente de teste** (não use dados reais sensíveis desnecessários).  
+3. Adicionar um contato.  
+4. Adicionar uma unidade.  
+5. Criar um orçamento ligado a esse cliente.  
+6. Incluir itens, salvar e conferir o total.  
+7. Recarregar a página (F5) e confirmar que tudo continua lá.  
+8. Sair e entrar novamente; confirmar os mesmos registros.  
+9. Anotar observações sobre a experiência (usabilidade, dúvidas, bugs) na seção de aceite.
 
 ## Antes de começar
 
@@ -18,7 +40,7 @@ Não há credenciais neste documento. Contas e senhas ficam no vault / variávei
 
 Acesso anônimo ao Preview ou ao banco HOMOL **não** será liberado.
 
-## Roteiro funcional
+## Roteiro funcional (detalhe)
 
 ### 1. Acesso e login
 

@@ -47,7 +47,12 @@ Os 15 testes ignorados em `npm test` são os de integração guardados por `DATA
 | Merge `main` | não |
 | Promote Production | não |
 
-Checklist de acesso do cliente: [`sprint-11a-client-homologation-checklist.md`](./sprint-11a-client-homologation-checklist.md).
+Pacote de homologação pelo cliente:
+
+- Checklist: [`sprint-11a-client-homologation-checklist.md`](./sprint-11a-client-homologation-checklist.md)
+- Runbook de acesso: [`sprint-11a-client-access-runbook.md`](./sprint-11a-client-access-runbook.md)
+- Plano de limpeza HOMOL (aprovação pendente): [`sprint-11a-homol-cleanup-plan.md`](./sprint-11a-homol-cleanup-plan.md)
+- Relatório de readiness: [`sprint-11a-client-readiness-report.md`](./sprint-11a-client-readiness-report.md)
 
 ## Incidente: migration no banco legado (corrigido)
 
