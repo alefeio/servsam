@@ -38,6 +38,10 @@ yarn-error.log*
 .env*
 !.env.example
 
+# local one-shot secrets (ACCESS-01 etc.)
+.tmp-access01-initial-password.local
+scripts/tmp-*.mjs
+
 # generated
 /src/generated
 

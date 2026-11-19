@@ -2,82 +2,109 @@
 
 **Branch:** `hotfix/homol-access-01-password-recovery`  
 **Base:** `sprint-11a-persistent-core` (`dd28911`)  
-**Commit:** `a3b7e2f`  
-**Preview:** `https://servsam-os3pioj3g-alefeios-projects.vercel.app` (protegido)  
-**Escopo:** Better Auth + e-mail transacional (Resend) + UI `/sistema`. Sem 11B, sem merge `main`, sem Production.
+**Commits de referência:** `a3b7e2f` (feature) · docs/provisionamento abaixo  
+**Preview atual:** `https://servsam-qu88u4e1g-alefeios-projects.vercel.app`  
+**Proteção:** Vercel Authentication (Deployment Protection ativa)  
+**Escopo:** Better Auth + Resend (`onboarding@resend.dev` só HOMOL) + UI `/sistema`. Sem 11B, sem merge `main`, sem Production.
 
 ## Fluxo
 
-1. Login → link **Esqueci minha senha** → `/sistema/esqueci-senha`  
-2. `authClient.requestPasswordReset` (Better Auth) com `redirectTo` = origem atual + `/sistema/redefinir-senha`  
+1. Login → **Esqueci minha senha** → `/sistema/esqueci-senha`  
+2. `authClient.requestPasswordReset` com `redirectTo` = `/sistema/redefinir-senha` (path relativo)  
 3. Token em `verification` (`reset-password:…`), TTL **3600 s**, uso único  
-4. E-mail via Resend (se configurado); contas **inativas** não recebem e-mail (token removido)  
-5. Link BA → callback com `?token=` → `/sistema/redefinir-senha`  
-6. `authClient.resetPassword` → `revokeSessionsOnPasswordReset: true` → voltar ao login (sem auto-login)
+4. E-mail via Resend; contas **inativas** não recebem e-mail (token removido)  
+5. Callback Better Auth → `/sistema/redefinir-senha?token=…`  
+6. `authClient.resetPassword` → `revokeSessionsOnPasswordReset: true` → login manual (sem auto-login)
 
-Mensagem pública uniforme: *“Se este e-mail estiver cadastrado…”* (sem enumeração).
+Mensagem pública uniforme: *“Se este e-mail estiver cadastrado…”*.
 
 ## Arquivos principais
 
-- `src/lib/platform/auth.ts` — `sendResetPassword`, `onPasswordReset`, revogação de sessões  
-- `src/lib/platform/email.ts` — Resend / modo teste  
-- `src/lib/platform/password-reset.ts` — paths, redirect allowlist, validação de senha  
-- `src/features/platform/forgot-password-form.tsx`, `reset-password-form.tsx`  
-- `src/app/sistema/esqueci-senha/page.tsx`, `redefinir-senha/page.tsx`  
-- `src/features/platform/production-login-form.tsx` — link  
+- `src/lib/platform/auth.ts`, `email.ts`, `password-reset.ts`  
+- `src/features/platform/forgot-password-form.tsx`, `reset-password-form.tsx`, `production-login-form.tsx`  
+- `src/app/sistema/esqueci-senha/`, `redefinir-senha/`  
 - `e2e/password-recovery.spec.ts`  
-- Auditoria: `PASSWORD_RESET_REQUESTED` | `COMPLETED` | `DENIED_INACTIVE` (sem token)
+- `scripts/homol-user-lookup.mjs` (somente leitura)  
+- `scripts/homol-provision-access01.mjs` (dry-run por padrão; execução só com `CONFIRM=YES`)  
+- Auditoria: `PASSWORD_RESET_REQUESTED` | `COMPLETED` | `DENIED_INACTIVE`
 
 ## Variáveis (sem valores)
 
 | Variável | Onde | Uso |
 | --- | --- | --- |
-| `RESEND_API_KEY` | servidor / Preview | API Resend |
-| `RESEND_FROM_EMAIL` | servidor / Preview | Remetente de **domínio verificado** |
-| `BETTER_AUTH_SECRET` | já existente | Sessão / tokens |
-| `DATABASE_ENV=preview` + `HOMOL_*` | Preview | Isolamento HOMOL |
+| `RESEND_API_KEY` | Preview + local | API Resend |
+| `RESEND_FROM_EMAIL` | Preview + local | Remetente HOMOL: `onboarding@resend.dev` |
+| `BETTER_AUTH_SECRET` | Preview | Sessão / tokens |
+| `DATABASE_ENV=preview` + `HOMOL_*` | Preview | Isolamento HOMOL (sem fallback legado) |
 
 ## Segurança
 
-- Token temporário e de uso único (consume no reset)  
-- Rate limit Better Auth (janela 60s / 20)  
+- Token temporário e de uso único  
+- Rate limit Better Auth (60s / 20)  
 - Resposta uniforme existência/inexistência  
 - Inativo: sem e-mail  
 - Revogação de sessões no sucesso  
 - Sem auto-login pós-reset  
-- Sem redirecionamento para origem arbitrária (`originCheck` + path fixo)  
+- `redirectTo` relativo + `trustedOrigins` (inclui alias localhost/127.0.0.1 em local)  
 - Sem tokens em logs/auditoria  
 
-## Conta de teste `alexandrefpenha@gmail.com`
+## Gate Resend (HOMOL)
 
 | Item | Resultado |
 | --- | --- |
-| Existe no HOMOL | **NÃO** |
-| Provisionamento necessário | **SIM** (autorização humana; perfil proposto Diretoria) |
-| Recuperação sem conta | Impossível — cadastro prévio obrigatório |
+| `RESEND_*` no Preview | Presentes (`vercel env ls preview`) |
+| Remetente local / combinado | `onboarding@resend.dev` |
+| Destinatário `alexandrefpenha@gmail.com` | **Autorizado** — probe Resend aceito (sem link de recuperação) |
+| Domínio `servsam.com.br` | Não exigido neste momento |
 
-## Provedor de e-mail
+## Conta `alexandrefpenha@gmail.com` (HOMOL)
 
-- Implementação Resend pronta.  
-- `RESEND_API_KEY` pode existir no ambiente local; **não** foi confirmado no Preview Vercel nem remetente de domínio verificado.  
-- **Envio real:** BLOCKED até `RESEND_*` no Preview + domínio verificado + conta provisionada.  
-- Se uma chave local apareceu em logs de terminal, **rotacionar** no painel Resend.
+| Item | Resultado |
+| --- | --- |
+| Host HOMOL (fingerprint) | `22e5c2dd2d93` |
+| Organização `servsam` | Presente |
+| Conta | **NÃO EXISTE** |
+| Perfil Diretoria | **PENDENTE** (aguardando autorização) |
+| Credencial Better Auth | Ausente |
 
-## Testes
+### Provisionamento preparado (não executado)
+
+```text
+npx tsx scripts/homol-provision-access01.mjs alexandrefpenha@gmail.com
+# dry-run → awaiting_authorization
+
+CONFIRM=YES npx tsx scripts/homol-provision-access01.mjs alexandrefpenha@gmail.com
+# só após autorização explícita; senha inicial em .tmp-access01-initial-password.local (gitignored)
+```
+
+Plano: org SERVSAM · perfil **Diretoria** · ativo · credencial · auditoria `USER_CREATED` / `ROLE_ASSIGNED`.  
+Preferência: após criar, usar **Esqueci minha senha** no Preview (não depender da senha inicial impressa em chat).
+
+## Vercel Authentication
+
+1. Painel Vercel → projeto `servsam` → Deployment Protection / Vercel Authentication.  
+2. Convidar `alexandrefpenha@gmail.com`.  
+3. Aceitar o convite no e-mail da Vercel.  
+4. Abrir o Preview atual e autenticar na tela da Vercel **antes** do login SERVSAM.  
+5. **Não** desativar Deployment Protection.
+
+Estado: proteção **ativa** no deployment; confirmação de que o e-mail já está na allowlist = **ação humana** (não verificável só pelo CLI sem sessão do usuário).
+
+## Testes reexecutados
 
 | Suite | Estado |
 | --- | --- |
-| `npm run lint` / `typecheck` / `build` | PASS |
-| Unit (`npm test`) | PASS (125) |
-| Unit helpers (`password-reset.test.ts`) | PASS |
-| Integration HOMOL (`password-reset.integration.test.ts` + plataforma) | PASS — ack uniforme, inativo sem e-mail, token único, expirado, senha fraca, login novo/antigo, sessões revogadas, papéis intactos |
-| E2E Preview (`password-recovery` + auth + core) | PASS (3) |
-| Envio real / login pós-reset do e-mail de teste | BLOCKED (conta ausente + Resend Preview + convite Vercel) |
+| lint / typecheck | PASS |
+| `npm test` | PASS (126) |
+| `test:integration` | PASS (19) |
+| `build` | PASS (`/sistema/esqueci-senha`, `/sistema/redefinir-senha`) |
+| `test:e2e:preview` | PASS (3) |
+| Probe Resend (sem reset) | PASS |
+| Recuperação real + login admin | **BLOCKED** — conta HOMOL inexistente + convite Vercel a confirmar |
 
 ## Ações humanas pendentes
 
-1. Definir `RESEND_FROM_EMAIL` com domínio verificado no Resend.  
-2. Adicionar `RESEND_API_KEY` e `RESEND_FROM_EMAIL` ao ambiente **Preview** (e rotacionar se vazou).  
-3. Autorizar provisionamento de `alexandrefpenha@gmail.com` com perfil Diretoria no HOMOL.  
-4. Convidar o e-mail na Vercel Authentication do Preview.  
-5. Redeploy Preview desta branch e repetir o teste real de e-mail.
+1. **Autorizar** provisionamento HOMOL (`CONFIRM=YES` no script) **ou** criar via operador com `user.manage`.  
+2. Confirmar/convidar `alexandrefpenha@gmail.com` na Vercel Authentication.  
+3. Após (1)+(2): abrir Preview → Esqueci minha senha → confirmar recebimento do e-mail → redefinir → login → Clientes/Orçamentos/Usuários.  
+4. Informar ao Cursor apenas a confirmação de recebimento (sem senha/token).
