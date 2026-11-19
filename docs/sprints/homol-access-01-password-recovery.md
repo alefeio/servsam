@@ -2,8 +2,8 @@
 
 **Branch:** `hotfix/homol-access-01-password-recovery`  
 **Base:** `sprint-11a-persistent-core` (`dd28911`)  
-**Commits de referência:** `a3b7e2f` (feature) · docs/provisionamento abaixo  
-**Preview atual:** `https://servsam-qu88u4e1g-alefeios-projects.vercel.app`  
+**Commits de referência:** `a3b7e2f` (feature) · `fc7ac54` (docs/provisionamento)  
+**Preview atual:** `https://servsam-h0pqqixn1-alefeios-projects.vercel.app`  
 **Proteção:** Vercel Authentication (Deployment Protection ativa)  
 **Escopo:** Better Auth + Resend (`onboarding@resend.dev` só HOMOL) + UI `/sistema`. Sem 11B, sem merge `main`, sem Production.
 
