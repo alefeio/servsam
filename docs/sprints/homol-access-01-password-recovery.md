@@ -2,6 +2,8 @@
 
 **Branch:** `hotfix/homol-access-01-password-recovery`  
 **Base:** `sprint-11a-persistent-core` (`dd28911`)  
+**Commit:** `a3b7e2f`  
+**Preview:** `https://servsam-os3pioj3g-alefeios-projects.vercel.app` (protegido)  
 **Escopo:** Better Auth + e-mail transacional (Resend) + UI `/sistema`. Sem 11B, sem merge `main`, sem Production.
 
 ## Fluxo
