@@ -24,8 +24,10 @@ O demo não migra para o banco. Não há importação de fixture, seed de client
 | Acesso (`Organization`, `User`, `Role`, `Permission`, `AuditLog`) | Não existe | **Persistente** | 9 |
 | `Customer`, `CustomerContact`, `CustomerUnit` | `DemoClient`, `DemoClientUnit` | **Persistente** | 11A |
 | `Proposal`, `ProposalItem` (UI: Orçamento) | `DemoProposal`, `DemoProposalItem` | **Persistente** | 11A |
-| Sinal, `ServiceOrder` mínima | `DemoWorkOrder` | Contrato escrito | 11B |
-| `FinancialEntry`, `Installment`, `Payment` | `DemoFinancialTransaction` | Contrato escrito | 11C |
+| Sinal, `ServiceOrder`, agenda persistente | Demo (sinal/OS/agenda) | Contrato escrito (prioridade cliente) | 11B |
+| Contratos periódicos, O.C., vínculo visitas/OS | `DemoContract` / O.C. demo | Contrato escrito (prioridade cliente) | 11C |
+| Financeiro amplo | `DemoFinancialTransaction` | Escopo pendente de definição | após 11C |
+| RH / colaborador sensível | Parcial no demo | Etapa posterior + permissões | após 11C / Sprint 12 |
 | Leads, oportunidades, Kanban | `DemoLead`, `DemoOpportunity` | Só demo (V1.1) | — |
 | Agenda, colaboradores, veículos | Parcial no demo | Congelado | 12 |
 | Estoque, relatórios, certificados, contratos, licitações, alertas | Demo | Congelado | 14 a 19 |

@@ -8,7 +8,7 @@ Primeiro corte de dados reais em `/sistema`: Clientes (com contatos e unidades) 
 
 ## Fora do escopo
 
-- Sinal/entrada, OS, financeiro, agenda: só contratos documentados (Gate 4). Ver `sprint-11a-contracts-11b-11c.md`.
+- Sinal, OS, agenda, contratos/O.C., financeiro amplo e RH: só planejamento documentado (Gate 4). Ver `sprint-11a-contracts-11b-11c.md` (roadmap revisado pós-homologação).
 - Copiar fixtures do demo para o banco.
 - Migração ou deploy em Production. Merge em `main`.
 - Leads, oportunidades, Kanban, PDF, envio por e-mail ou WhatsApp.
@@ -21,7 +21,7 @@ Primeiro corte de dados reais em `/sistema`: Clientes (com contatos e unidades) 
 | 1 | Shell, login, logout e RBAC mantidos. Navegação Clientes e Orçamentos por permissão. Sem vazamento da sessão demo |
 | 2 | `Customer`, `CustomerContact`, `CustomerUnit`. CRUD em `/sistema/clientes`, validação Zod, CPF/CNPJ, arquivamento (soft delete), auditoria |
 | 3 | `Proposal`, `ProposalItem`, `DocumentSequence`. CRUD em `/sistema/orcamentos`, máquina de estados, revisão, painel lido do banco |
-| 4 | Contratos de dados para 11B/11C (documento) |
+| 4 | Roadmap/contratos 11B (sinal/OS/agenda) e 11C (contratos/O.C.); financeiro e RH fora |
 | 5 | Endurecimento: escopo por `organizationId`, sem segredo na UI, sem exclusão física |
 | 6 | Testes unitários, de integração (com guarda de ambiente) e e2e |
 | 7 | Notas de Preview e script de migração restrito a HOMOL |

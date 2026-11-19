@@ -93,3 +93,12 @@ Arquivo `platform.integration.test.ts` (4) e `persistent-core.integration.test.t
 | Migration Production | não |
 
 **Sprint 11A homologação: PASS.** Não iniciar 11B sem aprovação.
+
+## 7. Documentação pós-homologação
+
+Consolidação posterior (só docs / inventário read-only), sem nova migration:
+
+- Relatório alinhado a este audit: `sprint-11a-report.md`
+- Checklist do cliente: `sprint-11a-client-homologation-checklist.md`
+- Roadmap 11B/11C revisado: `sprint-11a-contracts-11b-11c.md`
+- Resíduos HOMOL (`[E2E]` / `[GATEF]`): inventário e proposta de limpeza segura no relatório — **sem exclusão executada**

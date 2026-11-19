@@ -19,17 +19,22 @@ Especificação: `docs/architecture/v1/`.
 | 9 | PostgreSQL, Prisma, autenticação, usuários, papéis, permissões e auditoria de plataforma | Entregue |
 | 10 | Validação visual e funcional da V1 em `/demonstracao` | Entregue no demo. Sem domínio novo no Prisma |
 | 10.1 | Adequação da demonstração aos documentos operacionais do cliente | Entregue no demo. Sem domínio novo no Prisma |
-| 11A | Núcleo persistente: Clientes, contatos, unidades e Orçamentos em `/sistema` | Implementada na branch, aguardando revisão e merge |
+| 11A | Núcleo persistente: Clientes, contatos, unidades e Orçamentos em `/sistema` | Homologação técnica PASS na branch; sem merge `main` / sem Production |
 
-O CRM demonstrativo continua no produto. Na produção, lead, oportunidade e Kanban ficam atrás do fluxo mestre (V1.1). A proposta demonstrativa foi reorganizada na Sprint 10. A implementação real de proposta continua fora desta sprint.
+O CRM demonstrativo continua no produto. Na produção, lead, oportunidade e Kanban ficam atrás do fluxo mestre (V1.1). A proposta demonstrativa foi reorganizada na Sprint 10. Orçamentos reais estão na 11A (`/sistema`); o demo permanece separado.
 
-## Sprint ativa
+## Sprint ativa / próximo planejamento
 
-**Sprint 11A: núcleo persistente (Clientes e Orçamentos).** Implementada na branch `sprint-11a-persistent-core`, ainda sem merge e sem migração em Production. Escopo e relatório: `docs/sprints/sprint-11a.md` e `docs/sprints/sprint-11a-report.md`. Contratos para sinal, OS e financeiro (11B/11C), só documentados: `docs/sprints/sprint-11a-contracts-11b-11c.md`.
+**Sprint 11A** homologada tecnicamente na branch `sprint-11a-persistent-core` (HEAD `212ae41` + docs de pós-homologação). Sem merge em `main` e sem migração em Production até aceite do cliente.
 
-`/sistema` ganhou Clientes e Orçamentos persistentes. `/demonstracao` continua em fixture e `localStorage`, sem mudanças.
+- Relatório e auditoria: `docs/sprints/sprint-11a-report.md`, `docs/sprints/sprint-11a-homologation-audit.md`
+- Checklist do cliente: `docs/sprints/sprint-11a-client-homologation-checklist.md`
+- Roadmap revisado 11B/11C: `docs/sprints/sprint-11a-contracts-11b-11c.md`
+  - **11B (planejada):** sinal administrativo, emissão de OS, agendamento persistente
+  - **11C (planejada):** contratos periódicos, O.C., vínculo visitas/OS
+  - **Financeiro amplo** e **RH:** posteriores; escopo/comercial ainda aberto
 
-A 11A é uma entrega intermediária e **não renumera** a fila congelada abaixo. Ela cobre o domínio de clientes (item 10) e o núcleo de propostas (item 11) da fila, sem aceite que libere agenda.
+**Não iniciar 11B** sem aprovação explícita. A fila congelada abaixo **não é renumerada**.
 
 ## Fila de produção congelada
 
