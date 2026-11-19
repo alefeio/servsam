@@ -8,7 +8,7 @@ Primeiro corte de dados reais em `/sistema`: Clientes (com contatos e unidades) 
 
 ## Fora do escopo
 
-- Sinal, OS, agenda, contratos/O.C., financeiro amplo e RH: só planejamento documentado (Gate 4). Ver `sprint-11a-contracts-11b-11c.md` (roadmap revisado pós-homologação).
+- Sinal, OS, agenda, contratos/O.C., financeiro amplo e RH: só planejamento documentado (Gate 4). Ver `sprint-11a-contracts-11b-11c.md` e o feedback `sprint-11a-client-feedback-2026-11-19.md` (sinal não bloqueia OS; O.C. ≠ OS).
 - Copiar fixtures do demo para o banco.
 - Migração ou deploy em Production. Merge em `main`.
 - Leads, oportunidades, Kanban, PDF, envio por e-mail ou WhatsApp.

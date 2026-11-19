@@ -25,14 +25,19 @@ O CRM demonstrativo continua no produto. Na produção, lead, oportunidade e Kan
 
 ## Sprint ativa / próximo planejamento
 
-**Sprint 11A** homologada tecnicamente na branch `sprint-11a-persistent-core` (HEAD `212ae41` + docs de pós-homologação). Sem merge em `main` e sem migração em Production até aceite do cliente.
+**Sprint 11A** homologada tecnicamente na branch `sprint-11a-persistent-core`. Sem merge em `main` e sem migração em Production até aceite do cliente na UI.
 
-- Relatório e auditoria: `docs/sprints/sprint-11a-report.md`, `docs/sprints/sprint-11a-homologation-audit.md`
-- Checklist do cliente: `docs/sprints/sprint-11a-client-homologation-checklist.md`
-- Roadmap revisado 11B/11C: `docs/sprints/sprint-11a-contracts-11b-11c.md`
-  - **11B (planejada):** sinal administrativo, emissão de OS, agendamento persistente
-  - **11C (planejada):** contratos periódicos, O.C., vínculo visitas/OS
-  - **Financeiro amplo** e **RH:** posteriores; escopo/comercial ainda aberto
+Feedback comercial de **19/11/2026** consolidado em `docs/sprints/sprint-11a-client-feedback-2026-11-19.md` (sinal não bloqueia OS universalmente; O.C. ≠ OS; agenda ajustável; financeiro inventariado).
+
+- Relatório / auditoria / readiness: `docs/sprints/sprint-11a-report.md`, `sprint-11a-homologation-audit.md`, `sprint-11a-client-readiness-report.md`
+- Checklist e acesso: `sprint-11a-client-homologation-checklist.md`, `sprint-11a-client-access-runbook.md`
+- Roadmap 11B/11C: `docs/sprints/sprint-11a-contracts-11b-11c.md`
+  - **11B (planejada):** contratação, sinal quando aplicável, OS por serviço, agendamento persistente
+  - **11C (planejada):** O.C. recebida, contratos, recorrência, relação documentos ↔ OS
+  - **Financeiro:** fases próprias — inventário `sprint-11a-finance-inventory-2026-11-19.md`
+  - **RH:** posterior
+- Hotfix demo 10.2 (plano, branch isolada): `sprint-10-2-signal-oc-hotfix-plan.md`
+- Pendências remanescentes: `docs/content/pending-client-validation.md`
 
 **Não iniciar 11B** sem aprovação explícita. A fila congelada abaixo **não é renumerada**.
 

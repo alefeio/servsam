@@ -1,169 +1,128 @@
-# Roadmap pós-11A — contratos 11B / 11C e pendências
+# Roadmap pós-11A — contratos 11B / 11C (feedback 19/11/2026)
 
 **Data:** 19/11/2026.  
-**Estado:** planejamento revisado após homologação da 11A. **Nada deste documento está implementado.**  
-Não há tabela, rota, permissão nova nem tela de sinal, OS, agenda, contrato, O.C., financeiro ou RH nesta entrega.
-
-A Sprint 11A permanece só com clientes e orçamentos persistentes. Este arquivo alinha a proposta de roadmap às **prioridades validadas pelo cliente** e distingue o que já está confirmado do que ainda é decisão pendente.
+**Estado:** planejamento. **Nada deste documento está implementado** (sem tabelas/rotas novas além da 11A).  
+Consolidação oficial: `sprint-11a-client-feedback-2026-11-19.md`.
 
 ## Como ler
 
 | Marcação | Significado |
 | --- | --- |
-| **Confirmado** | Prioridade ou restrição já validada com o cliente / homologação 11A |
-| **Proposta de arquitetura** | Desenho técnico sugerido; ainda não codificado |
-| **Pendente do cliente** | Regra comercial ou operacional sem fechamento; **não implementar como definitiva** |
+| **Confirmado** | Resposta oficial do cliente |
+| **Proposta de arquitetura** | Desenho técnico sugerido; não codificado |
+| **Pendente** | Ainda sem fechamento |
 
-## Encaixe na fila congelada
+## Encaixe na fila (sem renumerar 10–20)
 
-A fila numerada da Sprint 8 **não é renumerada** (`docs/product-backlog.md`). Os sufixos A/B/C organizam o trabalho intermediário:
-
-| Entrega | Escopo proposto | Estado |
+| Entrega | Escopo | Estado |
 | --- | --- | --- |
-| **11A** | Clientes, contatos, unidades e orçamentos (`Proposal`) em `/sistema` | Homologada tecnicamente (sem merge `main`) |
-| **11B** | Registro administrativo de sinal, emissão de OS e agendamento persistente | **Planejamento** |
-| **11C** | Contratos periódicos, O.C. e relacionamento com visitas/OS | **Planejamento** |
-| Financeiro (amplo) | Contas a receber/pagar, parcelas, conciliação etc. | **Pendente de definição** — não é 11C |
-| RH | Cadastro sensível, documentos, alertas NR/ASO | **Etapa posterior**, com permissões adequadas |
+| **11A** | Clientes, contatos, unidades, orçamentos em `/sistema` | Homologação técnica |
+| **11B** | Contratação, sinal administrativo quando aplicável, **OS por serviço**, agendamento persistente | Planejada |
+| **11C** | O.C. recebida, contratos, recorrência, relação documentos comerciais ↔ OS | Planejada |
+| **Financeiro** | Fases próprias (`sprint-11a-finance-inventory-2026-11-19.md`) | Inventário solicitado |
+| **RH** | Posterior + permissões sensíveis | Posterior |
 
-**Confirmado:** antecipar fatias de operação (sinal/OS/agenda) e de contratos antes do financeiro completo.  
-**Pendente do cliente:** datas de abertura de 11B/11C e se alguma fatia volta ao número original da fila (12, 13, 17).
+## Pré-condições 11A — Confirmado
 
-## O que a 11A garante (pré-condições) — Confirmado
+`Customer` / `Proposal` / `DocumentSequence` / RBAC / auditoria / HOMOL isolado.  
+Gancho comercial: `Proposal.accepted` **ou** contratação formalizada pelo cliente (O.C. etc.) para origem da OS na 11B+.
 
-Tudo abaixo existe em `prisma/schema.prisma` e está coberto por teste de integração no HOMOL.
+## Regras confirmadas que o roadmap deve respeitar
 
-| Garantia | Detalhe |
-| --- | --- |
-| `Customer`, `CustomerContact`, `CustomerUnit` | `organizationId`, soft delete, documento único entre ativos |
-| `Proposal` (UI: Orçamento) | Estados `draft`, `sent`, `accepted`, `rejected`, `expired` |
-| `ProposalItem` / totais | Centavos inteiros; `totalCents = soma(itens) - discountCents` |
-| Aceito imutável | Ajuste via nova proposta com `supersedesId` |
-| `DocumentSequence` | Numeração atômica (`proposal` → `ORC-AAAA-NNNN`) |
-| Auditoria e RBAC | `AuditLog` + chaves `customer.*` / `proposal.*` no servidor |
-| Isolamento | Preview HOMOL ≠ Production; fail-closed em `DATABASE_ENV=preview` |
+### Sinal
 
-### Ganchos deixados de propósito
+- Não obrigatório em todos os casos; **recomendado** em serviços avulsos.  
+- Não bloqueia universalmente a OS.  
+- Comercial **solicita** ao Financeiro; Financeiro **confirma** recebimento quando aplicável.  
+- Três eventos: aceite comercial → solicitação admin/fiscal → confirmação financeira.  
+- Sem confirmação automática, sem presumir 50%, sem NF real nesta etapa.
 
-- `Proposal.status = accepted` e `decidedAt` são o gancho comercial para a 11B. **Nenhuma** coluna de sinal, OS, agenda, contrato ou financeiro foi adicionada ao `Proposal`.
-- `DocumentSequence` é genérica (ex.: futuras chaves `service_order`, `contract`, `certificate`).
-- `writeAudit(input, client)` e `ServiceResult` / `runGuarded` são o padrão a reutilizar.
+### O.C. e documentos
 
-## Requisitos confirmados (pós-homologação)
+- Orçamento SERVSAM = proposta interna.  
+- O.C. = documento **recebido** do contratante (não só contrato periódico).  
+- OS = documento interno de execução; **cada serviço tem uma OS**.  
+- Pode haver O.C. sem orçamento interno prévio obrigatório.  
+- **Pendente:** visitas físicas distintas do mesmo serviço → OS separadas?
 
-1. Homologar 11A no Preview protegido antes de merge/`main`/Production.  
-2. Próximo foco operacional: **sinal → OS → agendamento**, não financeiro completo.  
-3. Em seguida: **contratos periódicos e O.C.**, ligados a visitas/OS.  
-4. Manter `/demonstracao` separada; não copiar fixtures para o banco.  
-5. Não abrir acesso anônimo ao banco de homologação.  
-6. Não implementar regra definitiva de obrigatoriedade de sinal, dispensas ou “uma OS por visita” enquanto essas perguntas estiverem **pendentes do cliente**.
+### Agenda
 
-## 11B — Sinal, OS e agendamento persistente
+- Sem Google Calendar.  
+- Alterar data/hora com persistência; responsável + histórico de remarcações.  
+- Sem inconsistências data/status; conflitos explícitos sem inventar bloqueio rígido.  
+- Drag-and-drop não obrigatório.
 
-### Objetivo (Confirmado como prioridade)
+## 11B — Contratação, sinal (quando aplicável), OS, agenda
 
-1. Registrar o **sinal** de forma administrativa após o orçamento aceito.  
-2. **Emitir OS** a partir do orçamento (sem redigitar cliente/unidade/escopo básico).  
-3. Persistir **agendamento** (compromisso na agenda SERVSAM), não só data solta na OS.
+### Objetivo — Confirmado como prioridade de produto
 
-### Proposta de arquitetura (não aplicada)
+1. Formalizar contratação a partir do orçamento aceito **ou** de entrada com documento do cliente.  
+2. Registrar sinal administrativamente **quando aplicável** (sem gate universal).  
+3. Emitir **OS por serviço**.  
+4. Agendamento persistente e ajustável.
 
-Esboço alinhado a `docs/architecture/v1/conceptual-model.md` e ao demo 10.2 (sem copiar fixture):
+### Proposta de arquitetura (não migrar agora)
 
 ```prisma
-// Proposta — NÃO migrar nesta entrega
-model ProposalSignal { /* amountCents, status expected|received|waived, … */ }
-model ServiceOrder { /* code OS-AAAA-NNNN, proposalId, customerId, status, … */ }
-model Schedule { /* vínculo OS/visita, início/fim, responsável — fonte da verdade da agenda */ }
+// Esboço — NÃO aplicar nesta entrega
+model ProposalSignal { /* opcional; status esperado/solicitado/confirmado_financeiro/dispensado */ }
+model ServiceOrder { /* uma por serviço; origem proposalId e/ou customerPurchaseOrderId */ }
+model Schedule { /* data/hora, responsável, histórico de remarcações */ }
 ```
 
-| Tema | Proposta de arquitetura | Pendente do cliente |
-| --- | --- | --- |
-| Sinal | Evento auditado ligado a `Proposal` `accepted`; valores em centavos | Obrigatório antes da OS? Percentual, valor fixo ou texto? Quem dispensa? |
-| Dispensa | Status `waived` + motivo (se existir) | Quando é permitida e quem autoriza |
-| OS | Cabeçalho com `proposalId`, `customerId`, `customerUnitId` herdados; estados de `state-machines.md` | Limite de OS por orçamento; emissão automática vs manual; uma OS por visita? |
-| Agenda | `Schedule` (ou equivalente) como fonte da verdade; Google Calendar não substitui | Campos mínimos da visita; quem escala técnico/veículo na 11B vs Sprint 12 |
-| Permissões | Reusar `service_order.*` / `schedule.*` existentes quando possível | Chave própria para sinal (`proposal.signal`?) vs `proposal.approve` / `finance.manage` |
+| Tema | Confirmado | Proposta | Pendente |
+| --- | --- | --- | --- |
+| Gate da OS | Aceite/contratação basta; sinal não bloqueia | `createServiceOrder` sem exigir sinal | — |
+| Sinal | Opcional / recomendado avulso | Evento + solicitação ao Financeiro | %/valor típico |
+| Pagamento | Só Financeiro confirma | Sem webhook automático | Forma do “recebido” |
+| OS | 1 serviço → 1 OS | Cabeçalho + estados V1 | OS por visita física? |
+| Agenda | Ajustável, persistente | `Schedule` + audit de remarque | Política de conflito |
 
-### Superfície de serviço alvo (Proposta)
+### Fora da 11B
 
-```ts
-recordProposalSignal(actor, proposalId, input): ServiceResult
-markSignalReceived(actor, signalId, input): ServiceResult
-// waive… só após regra de dispensa fechada pelo cliente
-createServiceOrderFromProposal(actor, proposalId, input): ServiceResult
-scheduleServiceOrder(actor, serviceOrderId, input): ServiceResult
-```
+O.C. completa / contratos / financeiro amplo / RH / NF / Google Calendar / execução de campo.
 
-### Explicitamente fora da 11B
+## 11C — O.C., contratos, recorrência
 
-Execução de campo, relatório técnico, certificado, estoque, contratos/O.C., financeiro completo, RH, mobile, NF-e, WhatsApp real.
+### Objetivo — Confirmado como prioridade seguinte
 
-## 11C — Contratos periódicos, O.C. e visitas/OS
+1. Registrar **O.C. recebida** do cliente (avulsa ou ligada a contrato).  
+2. Contratos periódicos e recorrência.  
+3. Relacionar documentos comerciais (orçamento, O.C., contrato) às OS.
 
-### Objetivo (Confirmado como prioridade)
-
-Modelar **contratos periódicos**, **ordem de compra (O.C.)** e o relacionamento com visitas/OS geradas a partir do contrato ou do orçamento recorrente.
-
-### Proposta de arquitetura (não aplicada)
+### Proposta de arquitetura (não migrar agora)
 
 ```prisma
-// Proposta — NÃO migrar nesta entrega
-model Contract { /* vigência, periodicidade, customerId, … */ }
-model ContractPurchaseOrder { /* O.C. do cliente, vínculo ao contrato */ }
-// Visitas / OS recorrentes apontam para Contract e/ou Proposal conforme regra fechada
+model CustomerPurchaseOrder { /* número externo, customerId, opcional contractId / proposalId */ }
+model Contract { /* vigência, periodicidade */ }
+// OS pode nascer de Proposal aceita OU de CustomerPurchaseOrder / Contract
 ```
 
-| Tema | Proposta de arquitetura | Pendente do cliente |
+| Tema | Confirmado | Pendente |
 | --- | --- | --- |
-| Contrato | Vigência, periodicidade, reajuste, unidade(s) atendidas | Campos obrigatórios; renovação; reajuste automático vs manual |
-| O.C. | Documento do cliente ligado ao contrato; número externo | Obrigatoriedade da O.C. antes de agendar; formato |
-| Visitas | Geração de OS/agenda a partir da periodicidade | Antecedência, tolerância, o que acontece se a visita falhar |
-| Orçamento | Contrato pode nascer de `Proposal` aceita | Sempre? Ou contrato avulso? |
+| O.C. não é só periódico | sim | Campos obrigatórios / anexo |
+| O.C. não substitui OS | sim | — |
+| Contratação sem orçamento interno | permitida | Fluxo de tela exato |
+| Recorrência → visitas/OS | desejada | Automação vs manual |
 
-### Explicitamente fora da 11C
+### Fora da 11C
 
-Financeiro amplo (parcelas, conciliação, DRE), RH, estoque, PDF fiscal, portal do cliente.
+Financeiro amplo (AP/AR, DRE, Open Finance), RH, estoque, portal.
 
-## Financeiro — escopo amplo (Pendente do cliente)
+## Financeiro — fases próprias
 
-Não confundir com a 11C revisada.
+Inventário completo das capturas: `sprint-11a-finance-inventory-2026-11-19.md`.  
+**Não** confundir com 11C. Reutilizar User/Role/Customer; Supplier separado; Empresas a esclarecer; agendas financeira ≠ operacional.
 
-| Tema | Situação |
-| --- | --- |
-| Contas a receber/pagar, parcelas, baixas | **Pendente de definição** de escopo e prioridade |
-| Ligação sinal ↔ lançamento | Só após decidir se o sinal é marco comercial ou título financeiro |
-| Perfis | Mantém-se a matriz atual: Administrativo/Gerência sem `finance.*` até nova decisão |
+## Ordem sugerida (proposta)
 
-Qualquer esboço antigo de `FinancialEntry` / `Installment` / `Payment` neste arquivo fica **arquivado como referência**, não como compromisso da 11C.
+1. Aceite do checklist 11A na UI.  
+2. Hotfix demo 10.2 (branch isolada) — alinhamento narrativo.  
+3. **11B** após autorização explícita.  
+4. **11C**.  
+5. Financeiro F1… conforme inventário.  
+6. RH.
 
-## RH — etapa posterior (Confirmado como posterior)
+## Hipóteses removidas do planejamento ativo
 
-Cadastro de colaboradores, documentos sensíveis (ASO, NR, EPI) e alertas exigem:
-
-- modelo mínimo alinhado à Sprint 12 / V1.1;  
-- **permissões específicas** para dados sensíveis (não reutilizar só `user.manage`);  
-- fora do caminho crítico 11B → 11C operacional.
-
-## Regras comuns (Confirmado / Proposta)
-
-1. Dinheiro em centavos inteiros ou `Decimal` com escala declarada.  
-2. Toda tabela nova: `organizationId`, timestamps; soft delete em cadastros; lançamentos financeiros (quando existirem) cancelam, não apagam.  
-3. Cliente = agregador de relacionamento; OS = agregador da operação.  
-4. Permissão por chave no servidor.  
-5. `/demonstracao` não muda.  
-6. Migration só em Preview HOMOL até decisão explícita (`persistence-transition.md`).  
-7. **Não** fechar em código regras de obrigatoriedade de sinal, dispensa ou cardinalidade OS↔visita enquanto estiverem **pendentes do cliente**.
-
-## Ordem sugerida (Proposta — sujeita a aprovação)
-
-1. Abrir 11B só após aceite formal do checklist da 11A pelo cliente.  
-2. 11B-1: sinal administrativo + testes HOMOL (sem regra rígida de obrigatoriedade até pendência fechar).  
-3. 11B-2: OS mínima a partir do orçamento.  
-4. 11B-3: agendamento persistente.  
-5. 11C: contratos + O.C. + vínculo visitas/OS.  
-6. Financeiro amplo e RH: backlog próprio, depois das pendências comerciais.
-
-## O que não entra em 11B/11C
-
-NF-e, contabilidade, folha, ERP, portal externo, mobile de campo, WhatsApp/e-mail reais, Google Calendar como agenda principal, estoque, certificados, licitações.
+Sinal sempre obrigatório · Comercial confirma recebimento · O.C. só periódica · O.C. = OS · Agenda imutável.

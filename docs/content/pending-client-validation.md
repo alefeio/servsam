@@ -83,3 +83,36 @@ A demonstração foi ajustada para perguntar. Nenhuma resposta abaixo está fech
 64. Veículos possuem identificação interna como F1/F2/F3?
 65. Quais são os veículos ativos?
 66. Quais documentos reais podem ser usados como modelo oficial no futuro?
+
+## Feedback oficial 19/11/2026 (homologação 11A)
+
+Fonte consolidada: `docs/sprints/sprint-11a-client-feedback-2026-11-19.md`.  
+Itens abaixo estavam abertos na Sprint 10.2 / operação; status atualizado.
+
+### Confirmados
+
+67. **Sinal obrigatório antes da OS?** Não em todos os casos. Recomendado em serviços avulsos. A ausência **não** bloqueia universalmente a emissão da OS.  
+68. **Exceções / tratamento do sinal:** Comercial solicita nota/trâmite ao Financeiro; o **Financeiro** confirma o recebimento quando aplicável. Três eventos: aceite comercial → solicitação ao Financeiro → confirmação financeira. Sem confirmação automática e sem presumir 50%.  
+73. **Tratamento financeiro do sinal:** solicitação administrativa/fiscal + confirmação pelo Financeiro (não pelo Comercial). Detalhe de parcela vs adiantamento no ERP financeiro permanece **pendente** no inventário financeiro.  
+74. **O.C.:** documento **recebido** do contratante quando já há contratação/proposta fechada; **não** exclusiva de contrato periódico; distinta de Orçamento SERVSAM e de OS. Pode haver contratação com O.C. sem orçamento interno prévio obrigatório.  
+75. **OS:** cada serviço possui uma OS. O.C. **não** substitui OS.  
+76. **Agenda:** sem Google Calendar; permitir alterar data/hora com persistência; responsável e histórico de remarcações; inconsistências de data/status impedidas; conflitos explícitos sem inventar bloqueio rígido; drag-and-drop **não** obrigatório.
+
+### Ainda pendentes (operação / documentos)
+
+69. A O.C. de contrato periódico deve gerar uma OS individual por visita? *(parcialmente cruzado com 75 — cada serviço tem OS; visitas físicas do mesmo serviço = OS separadas?)*  
+70. Se não gerar OS por visita, como execução e entregável vinculam-se à visita?  
+71. Indicadores de conversão de orçamento (emitido → aceito → contratado) estão corretos?  
+72. Profundidade de RH (férias, faltas, atestados, advertências…) na V1 ou depois?  
+77. Visitas físicas distintas de um único serviço exigem documentos OS separados?  
+78. Política fina de conflito de equipe/horário (só alerta vs bloqueio).  
+79. Interpretação de “Empresas” no financeiro (multiempresa?).  
+80. Prioridade das fases do inventário financeiro (AP/AR, conciliação, Open Finance, NF).
+
+### Hipóteses superadas (não usar no desenho)
+
+- Sinal sempre obrigatório.  
+- Comercial confirma recebimento do pagamento.  
+- O.C. somente em contrato periódico.  
+- O.C. substitui OS.  
+- Agendamento sem possibilidade de alteração.

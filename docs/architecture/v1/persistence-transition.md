@@ -24,9 +24,9 @@ O demo não migra para o banco. Não há importação de fixture, seed de client
 | Acesso (`Organization`, `User`, `Role`, `Permission`, `AuditLog`) | Não existe | **Persistente** | 9 |
 | `Customer`, `CustomerContact`, `CustomerUnit` | `DemoClient`, `DemoClientUnit` | **Persistente** | 11A |
 | `Proposal`, `ProposalItem` (UI: Orçamento) | `DemoProposal`, `DemoProposalItem` | **Persistente** | 11A |
-| Sinal, `ServiceOrder`, agenda persistente | Demo (sinal/OS/agenda) | Contrato escrito (prioridade cliente) | 11B |
-| Contratos periódicos, O.C., vínculo visitas/OS | `DemoContract` / O.C. demo | Contrato escrito (prioridade cliente) | 11C |
-| Financeiro amplo | `DemoFinancialTransaction` | Escopo pendente de definição | após 11C |
+| Sinal (opcional), `ServiceOrder` por serviço, agenda persistente | Demo 10.2 (ainda com gate de sinal — hotfix planejado) | Contrato escrito; sinal não bloqueia OS | 11B |
+| O.C. recebida, contratos, recorrência, docs ↔ OS | `DemoContract` / O.C. demo | Contrato escrito; O.C. ≠ só periódico | 11C |
+| Financeiro amplo | `DemoFinancialTransaction` | Inventário de menus 19/11/2026; fases próprias | após 11C |
 | RH / colaborador sensível | Parcial no demo | Etapa posterior + permissões | após 11C / Sprint 12 |
 | Leads, oportunidades, Kanban | `DemoLead`, `DemoOpportunity` | Só demo (V1.1) | — |
 | Agenda, colaboradores, veículos | Parcial no demo | Congelado | 12 |
