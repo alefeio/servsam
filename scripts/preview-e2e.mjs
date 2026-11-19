@@ -10,7 +10,14 @@ const { env, targetHostHash } = buildHomolEnv();
 console.log(JSON.stringify({ phase: "preflight", databaseEnv: "preview", targetHostHash }));
 
 const targets = process.argv.slice(2);
-const files = targets.length > 0 ? targets : ["e2e/production-auth.spec.ts", "e2e/sistema-core.spec.ts"];
+const files =
+  targets.length > 0
+    ? targets
+    : [
+        "e2e/production-auth.spec.ts",
+        "e2e/sistema-core.spec.ts",
+        "e2e/password-recovery.spec.ts",
+      ];
 const result = spawnSync("npx", ["playwright", "test", ...files, "--project=chromium"], {
   stdio: "inherit",
   shell: true,

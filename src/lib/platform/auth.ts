@@ -2,7 +2,10 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { getPrisma } from "@/lib/db/prisma";
+import { writeAudit } from "@/lib/platform/audit";
 import { getAuthBaseURL, getTrustedOrigins } from "@/lib/platform/auth-url";
+import { sendPasswordResetEmail } from "@/lib/platform/email";
+import { PASSWORD_RESET_TOKEN_TTL_SECONDS } from "@/lib/platform/password-reset";
 
 export const GENERIC_LOGIN_ERROR = "E-mail ou senha inválidos.";
 
@@ -36,6 +39,69 @@ export const auth = betterAuth({
     minPasswordLength: 8,
     maxPasswordLength: 128,
     autoSignIn: true,
+    resetPasswordTokenExpiresIn: PASSWORD_RESET_TOKEN_TTL_SECONDS,
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, url, token }) => {
+      const prisma = getPrisma();
+      const record = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { isActive: true, organizationId: true },
+      });
+
+      if (!record?.isActive) {
+        await prisma.verification.deleteMany({
+          where: { identifier: `reset-password:${token}` },
+        });
+        if (record?.organizationId) {
+          await writeAudit({
+            organizationId: record.organizationId,
+            actorUserId: null,
+            action: "PASSWORD_RESET_DENIED_INACTIVE",
+            entityType: "User",
+            entityId: user.id,
+            metadata: { reason: "inactive" },
+          });
+        }
+        return;
+      }
+
+      const sent = await sendPasswordResetEmail({
+        to: user.email,
+        resetUrl: url,
+      });
+
+      if (!sent.ok) {
+        await prisma.verification.deleteMany({
+          where: { identifier: `reset-password:${token}` },
+        });
+        console.error("[auth] password reset email not sent", { reason: sent.reason });
+        return;
+      }
+
+      await writeAudit({
+        organizationId: record.organizationId,
+        actorUserId: null,
+        action: "PASSWORD_RESET_REQUESTED",
+        entityType: "User",
+        entityId: user.id,
+        metadata: { provider: sent.provider },
+      });
+    },
+    onPasswordReset: async ({ user }) => {
+      const record = await getPrisma().user.findUnique({
+        where: { id: user.id },
+        select: { organizationId: true },
+      });
+      if (!record) return;
+      await writeAudit({
+        organizationId: record.organizationId,
+        actorUserId: user.id,
+        action: "PASSWORD_RESET_COMPLETED",
+        entityType: "User",
+        entityId: user.id,
+        metadata: {},
+      });
+    },
   },
   user: {
     additionalFields: {

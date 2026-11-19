@@ -63,18 +63,31 @@ Pré-requisito: operador com permissão `user.manage` (ex.: perfil Diretoria) j�
 - `BETTER_AUTH_URL` compartilhado no painel é ignorado em Preview (usa host do deployment).  
 - Sign-up público está desligado (`disableSignUp: true`).
 
-## 6. Responsável do projeto (homologação 11A) — sem credenciais neste doc
+## 6. Recuperação de senha (ACCESS-01)
+
+Fluxo documentado em `homol-access-01-password-recovery.md`.
+
+1. Em `/sistema/login`, usar **Esqueci minha senha**.  
+2. Informar o e-mail da conta **já cadastrada** e ativa.  
+3. Abrir o link do e-mail (Preview protegido + Deployment Protection).  
+4. Definir nova senha em `/sistema/redefinir-senha` e entrar pelo login.  
+
+Requer `RESEND_API_KEY` + `RESEND_FROM_EMAIL` (domínio verificado) no ambiente Preview. Sem isso o envio real fica BLOCKED.
+
+## 7. Responsável do projeto (homologação 11A) — sem credenciais neste doc
 
 O responsável precisa testar `/sistema` no Preview HOMOL, mas **senhas não circulam** em chat, Git, logs ou relatórios. Use o procedimento abaixo.
 
-### 6.1 Identificar a conta administrativa inicial (autorizado)
+**Situação 19/11/2026:** o e-mail de teste informado para ACCESS-01 **ainda não existe** no HOMOL. Recuperação sozinha não cria conta — é preciso provisionamento autorizado (seção 6.3 / 7.3) antes do fluxo de e-mail.
+
+### 7.1 Identificar a conta administrativa inicial (autorizado)
 
 1. Em máquina confiável, abrir o vault / gerenciador de senhas da equipe **ou** o `.env.local` local (gitignored).  
 2. Localizar `SEED_ADMIN_EMAIL` (e, se existir no vault, a senha correspondente a `SEED_ADMIN_PASSWORD`).  
 3. **Não** imprimir, colar em issue nem commitar esses valores.  
 4. Se o e-mail seed existir no HOMOL (usuário criado no seed da Sprint 9/11A), esse é o admin inicial — tipicamente com papel Diretoria / `user.manage`.
 
-### 6.2 Se a senha administrativa **não** estiver disponível
+### 7.2 Se a senha administrativa **não** estiver disponível
 
 **Não** resetar senha nem criar usuário sem autorização explícita do dono do vault.
 
@@ -88,7 +101,7 @@ Opções seguras (escolher com autorização):
 
 A senha da **demonstração** (`/demonstracao`) **não** autentica `/sistema`.
 
-### 6.3 Criar conta individual de homologação
+### 7.3 Criar conta individual de homologação
 
 1. Passar pela **Deployment Protection** Vercel com e-mail convidado (seção 1).  
 2. Entrar em `/sistema/login` com uma conta que tenha `user.manage` (seed ou outra).  
@@ -98,7 +111,7 @@ A senha da **demonstração** (`/demonstracao`) **não** autentica `/sistema`.
 6. Testar: login → Painel → criar cliente de teste → F5 → logout → login → dados persistidos.  
 7. Ao terminar a campanha de teste, desativar o usuário e revogar o e-mail na Vercel (seção 4).
 
-### 6.4 Bloqueios
+### 7.4 Bloqueios
 
 - Sem convite Vercel → não chega ao login SERVSAM.  
 - Sem `SEED_*` / vault / operador `user.manage` → não há como provisionar nesta conversa.  

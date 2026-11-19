@@ -50,6 +50,7 @@ Acesso anônimo ao Preview ou ao banco HOMOL **não** será liberado.
 | 1.2 | Ir para `/sistema/login` | Tela “Entrar no sistema”; **sem** textos do demo (`servsam-demo`, e-mails `@demo`) | ☐ |
 | 1.3 | Entrar com Better Auth (e-mail/senha do sistema) | Redireciona ao Painel `/sistema` | ☐ |
 | 1.4 | Conferir menu | Itens Clientes e Orçamentos conforme o perfil | ☐ |
+| 1.5 | Link **Esqueci minha senha** (ACCESS-01) | Abre `/sistema/esqueci-senha`; mensagem genérica; redefinição só com token válido (ver `homol-access-01-password-recovery.md`) | ☐ |
 
 ### 2. Cliente, contato e unidade
 

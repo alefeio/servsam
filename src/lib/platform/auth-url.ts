@@ -22,10 +22,27 @@ export function getAuthBaseURL(
   return "http://localhost:3000";
 }
 
+/** Em local, Playwright usa 127.0.0.1 e o auth costuma usar localhost — ambos HTTP. */
+function withLocalHostAliases(origin: string): string[] {
+  try {
+    const url = new URL(origin);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return [origin];
+    if (url.hostname === "localhost") {
+      return [origin, `${url.protocol}//127.0.0.1${url.port ? `:${url.port}` : ""}`];
+    }
+    if (url.hostname === "127.0.0.1") {
+      return [origin, `${url.protocol}//localhost${url.port ? `:${url.port}` : ""}`];
+    }
+  } catch {
+    return [origin];
+  }
+  return [origin];
+}
+
 export function getTrustedOrigins(
   env: Record<string, string | undefined> = process.env,
 ): string[] {
-  const origins = new Set<string>([getAuthBaseURL(env)]);
+  const origins = new Set<string>(withLocalHostAliases(getAuthBaseURL(env)));
 
   if (isPreviewAuthEnv(env)) {
     const vercelHost = env.VERCEL_URL?.trim();
