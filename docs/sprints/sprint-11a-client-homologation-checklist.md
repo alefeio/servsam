@@ -1,8 +1,9 @@
 # Checklist de homologação — Sprint 11A (cliente)
 
 **Objetivo:** validar Clientes e Orçamentos persistentes em `/sistema` no Preview de homologação.  
-**Branch:** `sprint-11a-persistent-core`  
-**Ambiente:** Preview Vercel com autenticação da Vercel (não é site público).
+**Branch:** `sprint-11a-persistent-core` (+ ACCESS-01 / PREP-01 em branches isoladas)  
+**Ambiente:** Preview Vercel com autenticação da Vercel (não é site público).  
+**Fechamento interno PREP-01:** ver `prep-01-11a-homologation-closure.md` (evidência visual ≠ aceite formal deste checklist).
 
 Não há credenciais neste documento. Contas e senhas ficam no vault / convite individual — nunca na UI pública nem no Git.
 
