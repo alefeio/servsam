@@ -2,6 +2,8 @@
 
 **Branch:** `prep/prep-01-next-presentation`  
 **Base:** `c6aa5d5` (ACCESS-01)  
+**HEAD:** `a16c0b0` (UX) · `22ebe2d` (docs)  
+**Preview:** https://servsam-7srxuqymr-alefeios-projects.vercel.app (protegido)  
 **Data:** 2026-11-20
 
 ## Entregáveis
