@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  EmptyState,
   LinkButton,
   NoAccess,
   PageHeader,
+  PlatformPage,
 } from "@/features/platform/form-parts";
 import {
   requireAuthenticatedUser,
@@ -43,7 +45,7 @@ export default async function CustomersPage({
   const canCreate = userHasPermission(actor, "customer.create");
 
   return (
-    <section className="mx-auto max-w-6xl space-y-6">
+    <PlatformPage width="wide">
       <PageHeader
         title="Clientes"
         description="O cliente concentra contatos, unidades e orçamentos."
@@ -81,27 +83,49 @@ export default async function CustomersPage({
       </form>
 
       {customers.length === 0 ? (
-        <p className="rounded-xl border border-border bg-background p-4 text-sm text-muted-foreground">
-          Nenhum cliente encontrado.
-        </p>
+        <EmptyState
+          title="Nenhum cliente encontrado"
+          description={
+            query || includeArchived
+              ? "Ajuste a busca ou os filtros e tente novamente."
+              : "Cadastre o primeiro cliente para começar a jornada comercial."
+          }
+          action={
+            canCreate && !query ? (
+              <LinkButton href="/sistema/clientes/novo">Novo cliente</LinkButton>
+            ) : null
+          }
+        />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border bg-background">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-border text-xs text-muted-foreground uppercase">
               <tr>
-                <th className="px-4 py-3 font-medium">Cliente</th>
-                <th className="px-4 py-3 font-medium">Documento</th>
-                <th className="px-4 py-3 font-medium">Segmento</th>
-                <th className="px-4 py-3 font-medium">Unidades</th>
-                <th className="px-4 py-3 font-medium">Contatos</th>
-                <th className="px-4 py-3 font-medium">Orçamentos</th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Cliente
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Documento
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Segmento
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Unidades
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Contatos
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Orçamentos
+                </th>
               </tr>
             </thead>
             <tbody>
               {customers.map((customer) => (
                 <tr
                   key={customer.id}
-                  className="border-b border-border last:border-0"
+                  className="border-b border-border last:border-0 hover:bg-muted/40"
                 >
                   <td className="px-4 py-3">
                     <Link
@@ -132,6 +156,6 @@ export default async function CustomersPage({
           </table>
         </div>
       )}
-    </section>
+    </PlatformPage>
   );
 }

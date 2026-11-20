@@ -95,8 +95,8 @@ export default async function CustomerDetailPage({
           Contatos
         </h2>
         {customer.contacts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Nenhum contato cadastrado.
+          <p className="rounded-xl border border-dashed border-border bg-background p-4 text-sm text-muted-foreground">
+            Nenhum contato cadastrado. Inclua o responsável comercial ou técnico do cliente.
           </p>
         ) : (
           <ul className="space-y-3">

@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { Button } from "@/components/ui/button";
+import { ProductionNavLink } from "@/features/platform/production-nav-link";
 import { logoutAction } from "@/lib/platform/actions";
 import type { AuthenticatedUser } from "@/lib/platform/access";
 import { getNavItems } from "@/lib/platform/nav";
@@ -13,6 +13,7 @@ export function ProductionShell({
   children: React.ReactNode;
 }) {
   const items = getNavItems(user.permissions);
+  const roleLabel = user.roleNames.join(", ") || user.roleCodes.join(", ") || "Sem perfil";
 
   return (
     <div className="flex min-h-screen bg-muted">
@@ -20,17 +21,15 @@ export function ProductionShell({
         <div className="border-b border-white/10 px-5 py-5">
           <p className="text-xs tracking-wide text-teal uppercase">Sistema</p>
           <SiteLogo unlinked surface="dark" className="mt-3" />
+          <p className="mt-3 text-xs text-primary-foreground/70">
+            Operação real · Homologação
+          </p>
         </div>
         <nav aria-label="Sistema" className="flex-1 p-3">
           <ul className="space-y-1">
             {items.map((item) => (
               <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="block rounded-md px-3 py-2 text-sm text-primary-foreground/80 hover:bg-white/10 hover:text-white"
-                >
-                  {item.label}
-                </Link>
+                <ProductionNavLink href={item.href} label={item.label} />
               </li>
             ))}
           </ul>
@@ -41,7 +40,9 @@ export function ProductionShell({
           <div>
             <p className="text-xs text-muted-foreground">Conta</p>
             <p className="font-medium">{user.name}</p>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
+            <p className="text-xs text-muted-foreground">
+              {user.email} · {roleLabel}
+            </p>
           </div>
           <form action={logoutAction}>
             <Button type="submit" variant="ghost">
@@ -56,12 +57,7 @@ export function ProductionShell({
           <ul className="flex flex-wrap gap-2">
             {items.map((item) => (
               <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="block rounded-md px-3 py-1.5 text-sm text-navy hover:bg-muted"
-                >
-                  {item.label}
-                </Link>
+                <ProductionNavLink href={item.href} label={item.label} compact />
               </li>
             ))}
           </ul>

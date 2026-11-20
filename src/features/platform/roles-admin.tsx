@@ -1,10 +1,20 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createRoleAction, updateRolePermissionsAction, type ActionState } from "@/lib/platform/actions";
+import {
+  FutureCapabilityNotice,
+  IMPLEMENTED_PERMISSION_PREFIXES,
+  PERMISSION_DOMAIN_LABELS,
+  permissionDomain,
+} from "@/features/platform/form-parts";
+import {
+  createRoleAction,
+  updateRolePermissionsAction,
+  type ActionState,
+} from "@/lib/platform/actions";
 
 export type PermissionOption = { key: string; description: string };
 export type RolePanel = {
@@ -15,6 +25,17 @@ export type RolePanel = {
   isSystem: boolean;
   permissionKeys: string[];
 };
+
+function groupPermissions(permissions: PermissionOption[]) {
+  const groups = new Map<string, PermissionOption[]>();
+  for (const permission of permissions) {
+    const domain = permissionDomain(permission.key);
+    const list = groups.get(domain) ?? [];
+    list.push(permission);
+    groups.set(domain, list);
+  }
+  return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
+}
 
 export function RolesAdmin({
   roles,
@@ -27,9 +48,18 @@ export function RolesAdmin({
 }) {
   return (
     <div className="space-y-8">
+      <FutureCapabilityNotice>
+        Permissões de agenda, OS, contratos, estoque e financeiro já existem no RBAC
+        para sprints futuras, mas não abrem módulos operacionais nesta versão.
+      </FutureCapabilityNotice>
       {canManage ? <CreateRoleForm /> : null}
       {roles.map((role) => (
-        <RolePermissionsForm key={role.id} role={role} permissions={permissions} canManage={canManage} />
+        <RolePermissionsForm
+          key={role.id}
+          role={role}
+          permissions={permissions}
+          canManage={canManage}
+        />
       ))}
     </div>
   );
@@ -56,7 +86,7 @@ function CreateRoleForm() {
       </div>
       {state?.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
       <Button type="submit" disabled={pending}>
-        Criar papel
+        {pending ? "Criando..." : "Criar papel"}
       </Button>
     </form>
   );
@@ -71,8 +101,13 @@ function RolePermissionsForm({
   permissions: PermissionOption[];
   canManage: boolean;
 }) {
-  const [state, action, pending] = useActionState(updateRolePermissionsAction, null as ActionState);
+  const [state, action, pending] = useActionState(
+    updateRolePermissionsAction,
+    null as ActionState,
+  );
   const selected = new Set(role.permissionKeys);
+  const groups = useMemo(() => groupPermissions(permissions), [permissions]);
+
   return (
     <form action={action} className="space-y-4 rounded-xl border border-border bg-background p-4">
       <input type="hidden" name="roleId" value={role.id} />
@@ -83,28 +118,59 @@ function RolePermissionsForm({
           {role.isSystem ? " · papel semente" : ""} — {role.description}
         </p>
       </div>
-      <fieldset className="grid gap-2 md:grid-cols-2">
-        <legend className="sr-only">Permissões de {role.name}</legend>
-        {permissions.map((permission) => (
-          <label key={permission.key} className="flex items-start gap-2 text-sm">
-            <input
-              type="checkbox"
-              name="permission"
-              value={permission.key}
-              defaultChecked={selected.has(permission.key)}
-              disabled={!canManage}
-            />
-            <span>
-              <span className="font-medium">{permission.key}</span>
-              <span className="block text-muted-foreground">{permission.description}</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
+      <div className="space-y-5">
+        {groups.map(([domain, items]) => {
+          const implemented = IMPLEMENTED_PERMISSION_PREFIXES.has(domain);
+          return (
+            <fieldset key={domain} className="space-y-2">
+              <legend className="flex flex-wrap items-center gap-2 text-sm font-semibold text-navy">
+                {PERMISSION_DOMAIN_LABELS[domain] ?? domain}
+                {!implemented ? (
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    Sprint futura
+                  </span>
+                ) : null}
+              </legend>
+              <div className="grid gap-2 md:grid-cols-2">
+                {items.map((permission) => (
+                  <label key={permission.key} className="flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      name="permission"
+                      value={permission.key}
+                      defaultChecked={selected.has(permission.key)}
+                      disabled={!canManage}
+                      className="mt-1"
+                    />
+                    <span>
+                      <span className="font-medium">{permission.description}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {permission.key}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          );
+        })}
+      </div>
       {state?.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
       {canManage ? (
-        <Button type="submit" disabled={pending}>
-          Salvar permissões
+        <Button
+          type="submit"
+          disabled={pending}
+          onClick={(event) => {
+            if (
+              !window.confirm(
+                `Salvar as permissões do perfil “${role.name}”? Alterações sensíveis afetam o acesso imediato.`,
+              )
+            ) {
+              event.preventDefault();
+            }
+          }}
+        >
+          {pending ? "Salvando..." : "Salvar permissões"}
         </Button>
       ) : null}
     </form>

@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PROPOSAL_STATUS_LABELS } from "@/data/platform/labels";
-import { LinkButton } from "@/features/platform/form-parts";
+import {
+  EmptyState,
+  FutureCapabilityNotice,
+  LinkButton,
+  PageHeader,
+  PlatformPage,
+} from "@/features/platform/form-parts";
 import {
   requireAuthenticatedUser,
   userHasPermission,
@@ -21,21 +27,34 @@ export default async function ProductionHomePage() {
   const user = await requireAuthenticatedUser();
   const canSeeProposals = userHasPermission(user, "proposal.view");
   const canSeeCustomers = userHasPermission(user, "customer.view");
+  const canCreateCustomer = userHasPermission(user, "customer.create");
+  const canCreateProposal = userHasPermission(user, "proposal.create");
 
   const [summary, customerCount] = await Promise.all([
     canSeeProposals ? getProposalSummary(user) : null,
     canSeeCustomers ? countActiveCustomers(user) : null,
   ]);
 
+  const roleLabel = user.roleNames.join(", ") || user.roleCodes.join(", ") || "Nenhum";
+
   return (
-    <section className="mx-auto max-w-5xl space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold text-navy">Painel</h1>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          Números calculados a partir dos cadastros reais do sistema. A
-          demonstração fica em outro endereço e não alimenta este painel.
-        </p>
-      </div>
+    <PlatformPage width="wide" className="space-y-8">
+      <PageHeader
+        title="Painel"
+        description="Indicadores calculados a partir dos cadastros reais do PostgreSQL de homologação. A demonstração fictícia fica em /demonstracao e não alimenta este painel."
+        actions={
+          <>
+            {canCreateCustomer ? (
+              <LinkButton href="/sistema/clientes/novo" variant="outline">
+                Novo cliente
+              </LinkButton>
+            ) : null}
+            {canCreateProposal ? (
+              <LinkButton href="/sistema/orcamentos/novo">Novo orçamento</LinkButton>
+            ) : null}
+          </>
+        }
+      />
 
       <dl className="grid gap-3 rounded-xl border border-border bg-background p-4 text-sm sm:grid-cols-3">
         <div>
@@ -43,22 +62,20 @@ export default async function ProductionHomePage() {
           <dd className="font-medium">SERVSAM</dd>
         </div>
         <div>
-          <dt className="text-muted-foreground">Papéis desta conta</dt>
-          <dd className="font-medium">
-            {user.roleCodes.join(", ") || "Nenhum"}
-          </dd>
+          <dt className="text-muted-foreground">Perfis desta conta</dt>
+          <dd className="font-medium">{roleLabel}</dd>
         </div>
         {customerCount !== null ? (
           <div>
             <dt className="text-muted-foreground">Clientes ativos</dt>
             <dd className="font-medium">
-              <Link
-                href="/sistema/clientes"
-                className="text-navy hover:underline"
-              >
+              <Link href="/sistema/clientes" className="text-navy hover:underline">
                 {customerCount}
               </Link>
             </dd>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Cadastros não arquivados. Não inclui resíduos de teste ocultos na listagem padrão.
+            </p>
           </div>
         ) : null}
       </dl>
@@ -66,12 +83,14 @@ export default async function ProductionHomePage() {
       {summary ? (
         <section className="space-y-4" aria-labelledby="orcamentos-resumo">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2
-              id="orcamentos-resumo"
-              className="text-lg font-semibold text-navy"
-            >
-              Orçamentos
-            </h2>
+            <div>
+              <h2 id="orcamentos-resumo" className="text-lg font-semibold text-navy">
+                Orçamentos
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Contagens e totais por situação. Valores são orçados, não faturamento.
+              </p>
+            </div>
             <LinkButton href="/sistema/orcamentos" variant="outline">
               Ver todos
             </LinkButton>
@@ -93,12 +112,9 @@ export default async function ProductionHomePage() {
             {PROPOSAL_STATUSES.map((status) => (
               <li
                 key={status}
-                className="rounded-xl border border-border bg-background p-4"
+                className="rounded-xl border border-border bg-background p-4 transition-colors hover:bg-muted/40"
               >
-                <Link
-                  href={`/sistema/orcamentos?situacao=${status}`}
-                  className="block"
-                >
+                <Link href={`/sistema/orcamentos?situacao=${status}`} className="block">
                   <p className="text-xs text-muted-foreground">
                     {PROPOSAL_STATUS_LABELS[status]}
                   </p>
@@ -115,9 +131,7 @@ export default async function ProductionHomePage() {
 
           <dl className="grid gap-3 rounded-xl border border-border bg-background p-4 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-muted-foreground">
-                Aguardando resposta (enviados)
-              </dt>
+              <dt className="text-muted-foreground">Aguardando resposta (enviados)</dt>
               <dd className="text-lg font-semibold text-navy">
                 {formatCents(summary.openPipelineCents)}
               </dd>
@@ -129,16 +143,18 @@ export default async function ProductionHomePage() {
               </dd>
             </div>
           </dl>
-          <p className="text-xs text-muted-foreground">
-            Valores orçados, não faturamento. Financeiro e ordens de serviço
-            entram em sprints próprias.
-          </p>
         </section>
       ) : (
-        <p className="text-sm text-muted-foreground">
-          Sua conta não tem permissão para ver o resumo de orçamentos.
-        </p>
+        <EmptyState
+          title="Resumo de orçamentos indisponível"
+          description="Sua conta não tem permissão para ver orçamentos neste ambiente."
+        />
       )}
-    </section>
+
+      <FutureCapabilityNotice>
+        Ordens de serviço, agenda persistente, O.C., contratos e financeiro operacional
+        entram em sprints próprias. Não há atalho operacional falso neste painel.
+      </FutureCapabilityNotice>
+    </PlatformPage>
   );
 }

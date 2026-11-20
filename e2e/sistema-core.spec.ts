@@ -19,6 +19,11 @@ test("clientes e orçamentos reais: do cadastro ao aceite", async ({ page }) => 
   const suffix = Date.now().toString().slice(-6);
   const customerName = `[E2E] Condomínio ${suffix}`;
 
+  // Confirmações de ações sensíveis (PREP-01) — aceitar no fluxo automatizado.
+  page.on("dialog", (dialog) => {
+    void dialog.accept();
+  });
+
   await page.goto("/sistema/login");
   await page.getByLabel("E-mail").fill(email ?? "");
   await page.getByLabel("Senha").fill(password ?? "");

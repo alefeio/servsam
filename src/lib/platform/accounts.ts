@@ -183,6 +183,36 @@ export async function updatePlatformUser(
   return { ok: true };
 }
 
+async function countActiveUserManagers(
+  organizationId: string,
+  excludingUserId?: string,
+): Promise<number> {
+  const prisma = getPrisma();
+  const managers = await prisma.user.findMany({
+    where: {
+      organizationId,
+      isActive: true,
+      ...(excludingUserId ? { id: { not: excludingUserId } } : {}),
+    },
+    select: {
+      userRoles: {
+        select: {
+          role: {
+            select: {
+              rolePermissions: { select: { permission: { select: { key: true } } } },
+            },
+          },
+        },
+      },
+    },
+  });
+  return managers.filter((user) =>
+    user.userRoles.some((link) =>
+      link.role.rolePermissions.some((grant) => grant.permission.key === "user.manage"),
+    ),
+  ).length;
+}
+
 export async function setPlatformUserActive(
   actor: AuthenticatedUser,
   userId: string,
@@ -198,10 +228,38 @@ export async function setPlatformUserActive(
   const prisma = getPrisma();
   const user = await prisma.user.findFirst({
     where: { id: userId, organizationId: actor.organizationId },
-    select: { id: true, isActive: true },
+    select: {
+      id: true,
+      isActive: true,
+      userRoles: {
+        select: {
+          role: {
+            select: {
+              rolePermissions: { select: { permission: { select: { key: true } } } },
+            },
+          },
+        },
+      },
+    },
   });
   if (!user) return { ok: false, message: "Usuário não encontrado." };
   if (user.isActive === isActive) return { ok: true };
+
+  if (!isActive) {
+    const managesUsers = user.userRoles.some((link) =>
+      link.role.rolePermissions.some((grant) => grant.permission.key === "user.manage"),
+    );
+    if (managesUsers) {
+      const remaining = await countActiveUserManagers(actor.organizationId, user.id);
+      if (remaining < 1) {
+        return {
+          ok: false,
+          message:
+            "Não é possível desativar o último usuário com permissão de administrar contas.",
+        };
+      }
+    }
+  }
 
   await prisma.user.update({
     where: { id: user.id },

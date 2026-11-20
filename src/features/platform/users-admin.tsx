@@ -33,13 +33,19 @@ export function UsersAdmin({
   return (
     <div className="space-y-8">
       {canManage ? <CreateUserForm roles={roles} /> : null}
-      <ul className="space-y-4">
-        {users.map((user) => (
-          <li key={user.id} className="rounded-xl border border-border bg-background p-4">
-            <UserEditor user={user} roles={roles} canManage={canManage} />
-          </li>
-        ))}
-      </ul>
+      {users.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
+          Nenhum usuário cadastrado nesta organização.
+        </p>
+      ) : (
+        <ul className="space-y-4">
+          {users.map((user) => (
+            <li key={user.id} className="rounded-xl border border-border bg-background p-4">
+              <UserEditor user={user} roles={roles} canManage={canManage} />
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -96,7 +102,19 @@ function UserEditor({
           Salvar
         </Button>
       </form>
-      <form action={setUserActiveAction}>
+      <form
+        action={setUserActiveAction}
+        onSubmit={(event) => {
+          if (!user.isActive) return;
+          if (
+            !window.confirm(
+              "Desativar este usuário? Ele perde o acesso imediato. O sistema impede desativar o último administrador de contas.",
+            )
+          ) {
+            event.preventDefault();
+          }
+        }}
+      >
         <input type="hidden" name="userId" value={user.id} />
         <input type="hidden" name="isActive" value={user.isActive ? "false" : "true"} />
         <Button type="submit" variant="outline">

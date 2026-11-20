@@ -157,3 +157,97 @@ export function PageHeader({
     </div>
   );
 }
+
+/** Largura padrão das páginas desktop do /sistema. */
+export function PlatformPage({
+  children,
+  width = "wide",
+  className,
+}: {
+  children: React.ReactNode;
+  width?: "wide" | "content" | "form";
+  className?: string;
+}) {
+  const max =
+    width === "wide" ? "max-w-6xl" : width === "content" ? "max-w-5xl" : "max-w-3xl";
+  return (
+    <section className={cn("mx-auto w-full space-y-6", max, className)}>
+      {children}
+    </section>
+  );
+}
+
+export function EmptyState({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div
+      role="status"
+      className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-border bg-background p-6"
+    >
+      <div className="space-y-1">
+        <p className="font-medium text-navy">{title}</p>
+        {description ? (
+          <p className="text-sm text-muted-foreground">{description}</p>
+        ) : null}
+      </div>
+      {action}
+    </div>
+  );
+}
+
+export function FutureCapabilityNotice({
+  children = "Este recurso está planejado para sprints futuras e ainda não opera neste ambiente.",
+}: {
+  children?: React.ReactNode;
+}) {
+  return (
+    <p
+      role="note"
+      className="rounded-xl border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+    >
+      {children}
+    </p>
+  );
+}
+
+export const PERMISSION_DOMAIN_LABELS: Record<string, string> = {
+  dashboard: "Painel",
+  customer: "Clientes",
+  proposal: "Orçamentos",
+  schedule: "Agenda (futuro)",
+  service_order: "Ordens de serviço (futuro)",
+  technical_report: "Relatórios técnicos (futuro)",
+  certificate: "Certificados (futuro)",
+  contract: "Contratos (futuro)",
+  stock: "Estoque (futuro)",
+  finance: "Financeiro (futuro)",
+  employee: "Colaboradores (futuro)",
+  vehicle: "Veículos (futuro)",
+  tender: "Licitações (futuro)",
+  document: "Documentos (futuro)",
+  report: "Relatórios gerenciais (futuro)",
+  user: "Usuários",
+  role: "Perfis",
+  audit: "Auditoria",
+};
+
+export const IMPLEMENTED_PERMISSION_PREFIXES = new Set([
+  "dashboard",
+  "customer",
+  "proposal",
+  "user",
+  "role",
+  "audit",
+]);
+
+export function permissionDomain(key: string): string {
+  const [prefix] = key.split(".");
+  return prefix || "outros";
+}

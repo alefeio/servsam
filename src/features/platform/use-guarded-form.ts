@@ -14,7 +14,10 @@ type FormAction = (
  * quando ela devolve erro de validação. Aqui o envio é interceptado, a ação roda em
  * transição e os campos permanecem. Sucesso redireciona no servidor.
  */
-export function useGuardedForm(action: FormAction) {
+export function useGuardedForm(
+  action: FormAction,
+  options?: { confirmMessage?: string },
+) {
   const [state, dispatch, pending] = useActionState(
     action,
     null as ActionState,
@@ -22,6 +25,9 @@ export function useGuardedForm(action: FormAction) {
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (options?.confirmMessage && !window.confirm(options.confirmMessage)) {
+      return;
+    }
     const data = new FormData(event.currentTarget);
     startTransition(() => dispatch(data));
   }

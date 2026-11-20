@@ -196,13 +196,19 @@ describe.skipIf(!integrationDatabaseGuard().allowed)(
         isActive: true,
         permissions: new Set(["user.manage", "role.manage"]),
         roleCodes: ["DIRETORIA"],
+        roleNames: ["Diretoria"],
       };
       const { createPlatformRole, updateRolePermissions } =
         await import("@/lib/platform/roles");
       const { createPlatformUser, setPlatformUserActive } =
         await import("@/lib/platform/accounts");
       const refused = await setPlatformUserActive(
-        { ...actor, permissions: new Set<string>(), roleCodes: ["DIRETORIA"] },
+        {
+          ...actor,
+          permissions: new Set<string>(),
+          roleCodes: ["DIRETORIA"],
+          roleNames: ["Diretoria"],
+        },
         holderId,
         false,
       );

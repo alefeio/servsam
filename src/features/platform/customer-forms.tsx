@@ -90,13 +90,16 @@ export function CustomerForm({ customer }: { customer?: CustomerFormValues }) {
 }
 
 export function ArchiveCustomerForm({ customerId }: { customerId: string }) {
-  const { state, onSubmit, pending } = useGuardedForm(archiveCustomerAction);
+  const { state, onSubmit, pending } = useGuardedForm(archiveCustomerAction, {
+    confirmMessage:
+      "Arquivar este cliente? Ele sai das listagens ativas, mas o histórico permanece. Orçamentos em andamento podem bloquear a ação.",
+  });
   return (
     <form onSubmit={onSubmit} className="space-y-2">
       <input type="hidden" name="customerId" value={customerId} />
       <FormError message={state?.error} />
       <Button type="submit" variant="destructive" disabled={pending}>
-        Arquivar cliente
+        {pending ? "Arquivando..." : "Arquivar cliente"}
       </Button>
     </form>
   );
@@ -193,13 +196,15 @@ export function ContactForm({
 }
 
 export function ArchiveContactForm({ contactId }: { contactId: string }) {
-  const { state, onSubmit, pending } = useGuardedForm(archiveContactAction);
+  const { state, onSubmit, pending } = useGuardedForm(archiveContactAction, {
+    confirmMessage: "Remover este contato da ficha do cliente?",
+  });
   return (
     <form onSubmit={onSubmit} className="space-y-2">
       <input type="hidden" name="contactId" value={contactId} />
       <FormError message={state?.error} />
       <Button type="submit" variant="ghost" size="sm" disabled={pending}>
-        Remover
+        {pending ? "Removendo..." : "Remover"}
       </Button>
     </form>
   );
@@ -276,13 +281,15 @@ export function UnitForm({
 }
 
 export function ArchiveUnitForm({ unitId }: { unitId: string }) {
-  const { state, onSubmit, pending } = useGuardedForm(archiveUnitAction);
+  const { state, onSubmit, pending } = useGuardedForm(archiveUnitAction, {
+    confirmMessage: "Remover esta unidade da ficha do cliente?",
+  });
   return (
     <form onSubmit={onSubmit} className="space-y-2">
       <input type="hidden" name="unitId" value={unitId} />
       <FormError message={state?.error} />
       <Button type="submit" variant="ghost" size="sm" disabled={pending}>
-        Remover
+        {pending ? "Removendo..." : "Remover"}
       </Button>
     </form>
   );

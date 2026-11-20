@@ -16,6 +16,7 @@ export type AuthenticatedUser = {
   isActive: boolean;
   permissions: Set<string>;
   roleCodes: string[];
+  roleNames: string[];
 };
 
 export async function getSessionUserId(): Promise<string | null> {
@@ -44,8 +45,10 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> 
 
   const permissions = new Set<string>();
   const roleCodes: string[] = [];
+  const roleNames: string[] = [];
   for (const link of user.userRoles) {
     roleCodes.push(link.role.code);
+    roleNames.push(link.role.name);
     for (const grant of link.role.rolePermissions) {
       permissions.add(grant.permission.key);
     }
@@ -59,6 +62,7 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> 
     isActive: user.isActive,
     permissions,
     roleCodes,
+    roleNames,
   };
 }
 

@@ -346,7 +346,15 @@ export function TransitionButton({
   variant?: "default" | "outline" | "destructive";
   withReason?: boolean;
 }) {
-  const { state, onSubmit, pending } = useGuardedForm(transitionProposalAction);
+  const confirmByStatus: Record<typeof to, string | undefined> = {
+    sent: "Marcar este orçamento como enviado ao cliente?",
+    accepted: "Registrar o aceite do cliente? Esta decisão alimenta o fluxo comercial.",
+    rejected: "Registrar a recusa deste orçamento?",
+    expired: "Marcar este orçamento como expirado?",
+  };
+  const { state, onSubmit, pending } = useGuardedForm(transitionProposalAction, {
+    confirmMessage: confirmByStatus[to],
+  });
   return (
     <form onSubmit={onSubmit} className="space-y-2">
       <input type="hidden" name="proposalId" value={proposalId} />
@@ -356,20 +364,22 @@ export function TransitionButton({
       ) : null}
       <FormError message={state?.error} />
       <Button type="submit" variant={variant} disabled={pending}>
-        {label}
+        {pending ? "Processando..." : label}
       </Button>
     </form>
   );
 }
 
 export function ArchiveProposalButton({ proposalId }: { proposalId: string }) {
-  const { state, onSubmit, pending } = useGuardedForm(archiveProposalAction);
+  const { state, onSubmit, pending } = useGuardedForm(archiveProposalAction, {
+    confirmMessage: "Arquivar este rascunho de orçamento?",
+  });
   return (
     <form onSubmit={onSubmit} className="space-y-2">
       <input type="hidden" name="proposalId" value={proposalId} />
       <FormError message={state?.error} />
       <Button type="submit" variant="destructive" disabled={pending}>
-        Arquivar rascunho
+        {pending ? "Arquivando..." : "Arquivar rascunho"}
       </Button>
     </form>
   );

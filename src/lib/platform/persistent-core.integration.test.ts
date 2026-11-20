@@ -53,6 +53,7 @@ async function createTenant(
     isActive: true,
     permissions: new Set(permissions),
     roleCodes: ["TESTE"],
+    roleNames: ["Teste"],
   };
 }
 
