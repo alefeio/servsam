@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ADMIN_CONTINUITY_LOCK_NS,
   grantsIncludeUserManage,
   permissionKeysIncludeUserManage,
 } from "@/lib/platform/admin-continuity";
@@ -21,6 +22,10 @@ describe("admin continuity helpers", () => {
     expect(
       grantsIncludeUserManage([{ permission: { key: "user.manage" } }]),
     ).toBe(true);
+  });
+
+  it("exposes a stable advisory lock namespace for org serialization", () => {
+    expect(ADMIN_CONTINUITY_LOCK_NS).toBe(872_014_501);
   });
 });
 

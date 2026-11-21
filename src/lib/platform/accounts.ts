@@ -5,6 +5,7 @@ import {
   LAST_ADMIN_MESSAGE,
   countActiveUserManagers,
   grantsIncludeUserManage,
+  withOrganizationAdminContinuity,
   wouldRetainManagerAfterUserRoleChange,
 } from "@/lib/platform/admin-continuity";
 import { writeAudit } from "@/lib/platform/audit";
@@ -122,9 +123,7 @@ export async function updatePlatformUser(
   const parsed = updateUserSchema.safeParse(input);
   if (!parsed.success) return { ok: false, message: "Revise os dados do usuário." };
 
-  const prisma = getPrisma();
-
-  return prisma.$transaction(async (tx) => {
+  return withOrganizationAdminContinuity(actor.organizationId, async (tx) => {
     const user = await tx.user.findFirst({
       where: { id: parsed.data.userId, organizationId: actor.organizationId },
       include: {
@@ -159,6 +158,7 @@ export async function updatePlatformUser(
         actor.organizationId,
         user.id,
         nextRoleIds,
+        tx,
       );
       if (!retains) {
         return { ok: false, message: LAST_ADMIN_MESSAGE };
@@ -239,9 +239,7 @@ export async function setPlatformUserActive(
     return { ok: false, message: "Você não pode desativar a própria conta." };
   }
 
-  const prisma = getPrisma();
-
-  return prisma.$transaction(async (tx) => {
+  return withOrganizationAdminContinuity(actor.organizationId, async (tx) => {
     const user = await tx.user.findFirst({
       where: { id: userId, organizationId: actor.organizationId },
       select: {
@@ -268,6 +266,7 @@ export async function setPlatformUserActive(
       if (managesUsers) {
         const remaining = await countActiveUserManagers(actor.organizationId, {
           treatUserAsInactive: user.id,
+          client: tx,
         });
         if (remaining < 1) {
           return { ok: false, message: LAST_ADMIN_MESSAGE };

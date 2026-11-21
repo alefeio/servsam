@@ -1,7 +1,16 @@
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { getPrisma } from "@/lib/db/prisma";
 
 export const LAST_ADMIN_MESSAGE =
   "A organização precisa manter ao menos um usuário ativo com permissão de administrar contas.";
+
+/**
+ * Classe de advisory lock (int4) exclusiva da continuidade administrativa.
+ * Combinada com `hashtext(organizationId)` serializa checagens e mutações por org.
+ */
+export const ADMIN_CONTINUITY_LOCK_NS = 872_014_501;
+
+export type ContinuityClient = PrismaClient | Prisma.TransactionClient;
 
 type PermissionGrant = { permission: { key: string } };
 
@@ -19,11 +28,12 @@ export function grantsIncludeUserManage(grants: PermissionGrant[]): boolean {
 }
 
 async function roleIdsGrantUserManage(
+  client: ContinuityClient,
   organizationId: string,
   roleIds: string[],
 ): Promise<boolean> {
   if (roleIds.length === 0) return false;
-  const roles = await getPrisma().role.findMany({
+  const roles = await client.role.findMany({
     where: { organizationId, id: { in: roleIds } },
     select: {
       rolePermissions: { select: { permission: { select: { key: true } } } },
@@ -36,16 +46,18 @@ async function roleIdsGrantUserManage(
  * Conta usuários ativos com `user.manage`.
  * - `treatUserAsInactive`: simula desativação (não conta o usuário).
  * - `roleOverride`: simula novos papéis para um usuário ativo.
+ * - `client`: deve ser o `tx` da mesma transação que muta (nunca o global fora do lock).
  */
 export async function countActiveUserManagers(
   organizationId: string,
   options?: {
     treatUserAsInactive?: string;
     roleOverride?: { userId: string; roleIds: string[] };
+    client?: ContinuityClient;
   },
 ): Promise<number> {
-  const prisma = getPrisma();
-  const users = await prisma.user.findMany({
+  const client = options?.client ?? getPrisma();
+  const users = await client.user.findMany({
     where: { organizationId, isActive: true },
     select: {
       id: true,
@@ -67,6 +79,7 @@ export async function countActiveUserManagers(
   let overrideManages: boolean | null = null;
   if (options?.roleOverride) {
     overrideManages = await roleIdsGrantUserManage(
+      client,
       organizationId,
       options.roleOverride.roleIds,
     );
@@ -94,9 +107,11 @@ export async function wouldRetainManagerAfterUserRoleChange(
   organizationId: string,
   userId: string,
   nextRoleIds: string[],
+  client?: ContinuityClient,
 ): Promise<boolean> {
   const remaining = await countActiveUserManagers(organizationId, {
     roleOverride: { userId, roleIds: nextRoleIds },
+    client,
   });
   return remaining >= 1;
 }
@@ -105,10 +120,11 @@ export async function wouldRetainManagerAfterRolePermissionChange(
   organizationId: string,
   roleId: string,
   nextPermissionKeys: string[],
+  client?: ContinuityClient,
 ): Promise<boolean> {
   const nextHasManage = permissionKeysIncludeUserManage(nextPermissionKeys);
-  const prisma = getPrisma();
-  const users = await prisma.user.findMany({
+  const db = client ?? getPrisma();
+  const users = await db.user.findMany({
     where: { organizationId, isActive: true },
     select: {
       userRoles: {
@@ -135,4 +151,32 @@ export async function wouldRetainManagerAfterRolePermissionChange(
     if (manages) count += 1;
   }
   return count >= 1;
+}
+
+/** Serializa continuidade administrativa da org até o fim da transação. */
+export async function lockOrganizationAdminContinuity(
+  tx: Prisma.TransactionClient,
+  organizationId: string,
+): Promise<void> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(${ADMIN_CONTINUITY_LOCK_NS}, hashtext(${organizationId}))`;
+}
+
+/**
+ * Transação interativa com advisory lock por organização.
+ * Leituras de continuidade e mutações devem usar o `tx` recebido.
+ *
+ * `timeout` acima do default (5s) para permitir espera no advisory lock
+ * quando duas mutações administrativas da mesma org chegam juntas.
+ */
+export async function withOrganizationAdminContinuity<T>(
+  organizationId: string,
+  run: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  return getPrisma().$transaction(
+    async (tx) => {
+      await lockOrganizationAdminContinuity(tx, organizationId);
+      return run(tx);
+    },
+    { maxWait: 10_000, timeout: 20_000 },
+  );
 }

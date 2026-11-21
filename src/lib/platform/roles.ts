@@ -2,6 +2,7 @@ import { z } from "zod";
 import { userHasPermission, type AuthenticatedUser } from "@/lib/platform/access";
 import {
   LAST_ADMIN_MESSAGE,
+  withOrganizationAdminContinuity,
   wouldRetainManagerAfterRolePermissionChange,
 } from "@/lib/platform/admin-continuity";
 import { writeAudit } from "@/lib/platform/audit";
@@ -77,51 +78,57 @@ export async function updateRolePermissions(
   const denied = denyWithout(actor, "role.manage");
   if (denied) return denied;
 
-  const prisma = getPrisma();
-  const role = await prisma.role.findFirst({
-    where: { id: roleId, organizationId: actor.organizationId },
-    include: { rolePermissions: { include: { permission: true } } },
-  });
-  if (!role) return { ok: false, message: "Papel não encontrado." };
-
   const uniqueKeys = [...new Set(permissionKeys)];
-  const permissions = await prisma.permission.findMany({
-    where: { key: { in: uniqueKeys } },
-    select: { id: true, key: true },
-  });
-  if (permissions.length !== uniqueKeys.length) {
-    return { ok: false, message: "Há permissão desconhecida na lista." };
-  }
 
-  if (role.code === "DIRETORIA") {
-    const missing = DIRETORIA_LOCKED_PERMISSIONS.filter((key) => !uniqueKeys.includes(key));
-    if (missing.length > 0) {
-      return {
-        ok: false,
-        message: "Diretoria precisa manter a administração de usuários, papéis e auditoria.",
-      };
+  return withOrganizationAdminContinuity(actor.organizationId, async (tx) => {
+    const role = await tx.role.findFirst({
+      where: { id: roleId, organizationId: actor.organizationId },
+      include: { rolePermissions: { include: { permission: true } } },
+    });
+    if (!role) return { ok: false, message: "Papel não encontrado." };
+
+    const permissions = await tx.permission.findMany({
+      where: { key: { in: uniqueKeys } },
+      select: { id: true, key: true },
+    });
+    if (permissions.length !== uniqueKeys.length) {
+      return { ok: false, message: "Há permissão desconhecida na lista." };
     }
-  }
 
-  const currentlyHasManage = role.rolePermissions.some(
-    (link) => link.permission.key === "user.manage",
-  );
-  const nextHasManage = uniqueKeys.includes("user.manage");
-  if (currentlyHasManage && !nextHasManage) {
-    const retains = await wouldRetainManagerAfterRolePermissionChange(
-      actor.organizationId,
-      role.id,
-      uniqueKeys,
+    if (role.code === "DIRETORIA") {
+      const missing = DIRETORIA_LOCKED_PERMISSIONS.filter(
+        (key) => !uniqueKeys.includes(key),
+      );
+      if (missing.length > 0) {
+        return {
+          ok: false,
+          message:
+            "Diretoria precisa manter a administração de usuários, papéis e auditoria.",
+        };
+      }
+    }
+
+    const currentlyHasManage = role.rolePermissions.some(
+      (link) => link.permission.key === "user.manage",
     );
-    if (!retains) {
-      return { ok: false, message: LAST_ADMIN_MESSAGE };
+    const nextHasManage = uniqueKeys.includes("user.manage");
+    if (currentlyHasManage && !nextHasManage) {
+      const retains = await wouldRetainManagerAfterRolePermissionChange(
+        actor.organizationId,
+        role.id,
+        uniqueKeys,
+        tx,
+      );
+      if (!retains) {
+        return { ok: false, message: LAST_ADMIN_MESSAGE };
+      }
     }
-  }
 
-  const nextIds = new Set(permissions.map((permission) => permission.id));
-  const current = new Map(role.rolePermissions.map((link) => [link.permissionId, link]));
+    const nextIds = new Set(permissions.map((permission) => permission.id));
+    const current = new Map(
+      role.rolePermissions.map((link) => [link.permissionId, link]),
+    );
 
-  await prisma.$transaction(async (tx) => {
     for (const link of role.rolePermissions) {
       if (nextIds.has(link.permissionId)) continue;
       await tx.rolePermission.delete({ where: { id: link.id } });
@@ -172,7 +179,7 @@ export async function updateRolePermissions(
       },
       tx,
     );
-  });
 
-  return { ok: true };
+    return { ok: true };
+  });
 }
