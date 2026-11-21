@@ -43,6 +43,7 @@ test("Direção survives persisted localStorage, mutation and reload", async ({ 
           stockMovements: [],
           publicTenders: [],
           financialTransactions: [],
+          receivedPurchaseOrders: [],
         }),
       );
     }, DATASET_KEY);

@@ -9,6 +9,7 @@ import { OperationsPageHeader } from "@/features/operations/operations-page-head
 import { fromDatetimeLocalValue } from "@/features/operations/work-order-schedule-format";
 import {
   WORK_ORDER_STATUS_LABELS,
+  findScheduleConflicts,
   getUnscheduledWorkOrders,
   getWorkOrdersInRange,
   scheduleWorkOrder,
@@ -203,13 +204,26 @@ export function AgendaView() {
   function handleSchedule(workOrderId: string) {
     const value = draftFor(workOrderId);
     if (!value) return;
-    mutate((current) =>
-      scheduleWorkOrder(current, workOrderId, fromDatetimeLocalValue(value)),
-    );
+    const scheduledAt = fromDatetimeLocalValue(value);
+    const conflicts = findScheduleConflicts(dataset, workOrderId, scheduledAt);
+    if (conflicts.length > 0) {
+      const codes = conflicts.map((item) => item.code).join(", ");
+      window.alert(
+        `Possível conflito de equipe/horário com ${codes}. A agenda não bloqueia automaticamente nesta demonstração (política definitiva pendente).`,
+      );
+    }
+    mutate((current) => scheduleWorkOrder(current, workOrderId, scheduledAt));
     setScheduleDrafts((current) =>
       Object.fromEntries(Object.entries(current).filter(([id]) => id !== workOrderId)),
     );
   }
+
+  const reschedulable = dataset.workOrders.filter(
+    (item) =>
+      item.scheduledAt &&
+      item.status !== "cancelled" &&
+      item.status !== "completed",
+  );
 
   const rangeLabel =
     mode === "day"
@@ -233,7 +247,7 @@ export function AgendaView() {
     <div className="space-y-6">
       <OperationsPageHeader
         title="Agenda"
-        description="Grade diária, semanal e mensal no estilo de calendário. A agenda SERVSAM é a fonte da verdade; Google Calendar não está ligado nesta demonstração."
+        description="Grade diária, semanal e mensal. Agende e remarque data/hora com histórico no localStorage. Sem Google Calendar e sem drag-and-drop obrigatório."
       />
 
       <Card>
@@ -288,6 +302,70 @@ export function AgendaView() {
                       onClick={() => handleSchedule(workOrder.id)}
                     >
                       Agendar
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Remarcar OS já agendadas ({reschedulable.length})</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p className="text-muted-foreground">
+            Altere data e horário; o histórico de remarcação permanece no dataset demonstrativo.
+            Conflitos de equipe são sinalizados, sem bloqueio automático definitivo.
+          </p>
+          {reschedulable.length === 0 ? (
+            <p className="text-muted-foreground">Nenhuma OS remarcável no momento.</p>
+          ) : (
+            <ul className="space-y-3">
+              {reschedulable.slice(0, 8).map((workOrder) => (
+                <li
+                  key={`reschedule-${workOrder.id}`}
+                  className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border px-4 py-3"
+                >
+                  <div>
+                    <Link
+                      href={`/demonstracao/ordens-servico/${workOrder.id}`}
+                      className="font-medium text-navy hover:text-teal"
+                    >
+                      {workOrder.code} · {workOrder.serviceName}
+                    </Link>
+                    <p className="text-muted-foreground">
+                      Atual: {formatTime(workOrder.scheduledAt)} · {workOrder.technicianAlias}
+                      {(workOrder.scheduleHistory?.length ?? 0) > 0
+                        ? ` · ${workOrder.scheduleHistory?.length} registro(s) no histórico`
+                        : ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-end gap-2">
+                    <label className="text-xs text-muted-foreground">
+                      Nova data e hora
+                      <input
+                        type="datetime-local"
+                        value={draftFor(workOrder.id)}
+                        onChange={(event) =>
+                          setScheduleDrafts((current) => ({
+                            ...current,
+                            [workOrder.id]: event.target.value,
+                          }))
+                        }
+                        className="mt-1 block h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground"
+                      />
+                    </label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={!draftFor(workOrder.id)}
+                      onClick={() => handleSchedule(workOrder.id)}
+                    >
+                      Remarcar
                     </Button>
                   </div>
                 </li>

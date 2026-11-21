@@ -140,7 +140,7 @@ export function ContractDetailView({ contractId }: ContractDetailViewProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>O.C. do contrato</CardTitle>
+          <CardTitle>O.C. recebida no contrato</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           {contract.purchaseOrder ? (
@@ -154,8 +154,13 @@ export function ContractDetailView({ contractId }: ContractDetailViewProps) {
                 {contract.purchaseOrder.statusLabel}
               </p>
               <p>
-                <span className="text-muted-foreground">Emitida em:</span>{" "}
-                {contract.purchaseOrder.issuedAt}
+                <span className="text-muted-foreground">Recebida em:</span>{" "}
+                {(
+                  contract.purchaseOrder.receivedAt ?? contract.purchaseOrder.issuedAt
+                )
+                  .split("-")
+                  .reverse()
+                  .join("/")}
               </p>
               <p>
                 <span className="text-muted-foreground">Valor:</span>{" "}
@@ -172,10 +177,16 @@ export function ContractDetailView({ contractId }: ContractDetailViewProps) {
             </p>
           )}
           <p className="rounded-md border border-dashed border-teal/50 px-3 py-2 text-xs text-muted-foreground">
-            A O.C. do contrato periódico é distinta da formalização do orçamento avulso (OCS/OC
-            da proposta). A emissão de uma OS por visita ainda aguarda validação do cliente. Dados
-            demonstrativos.
+            A O.C. é documento do cliente (também existe em avulsos). Não substitui a OS.
+            Visitas previstas ≠ regra definitiva de uma OS por visita física — pendente de
+            validação. Dados demonstrativos.
           </p>
+          <Link
+            href="/demonstracao/comercial/ordens-compra"
+            className="inline-flex text-sm font-medium text-navy hover:text-teal"
+          >
+            Ver O.C. recebidas no Comercial →
+          </Link>
         </CardContent>
       </Card>
 

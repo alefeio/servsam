@@ -14,7 +14,7 @@ export function ProposalsListView() {
     <div className="space-y-6">
       <DemoPageHeader
         title="Orçamentos"
-        description="Orçamentos demonstrativos com itens, validade e status. Abra a ficha para simular envio, aceite, sinal e emissão da OS."
+        description="Orçamentos demonstrativos com itens, validade e status. Abra a ficha para simular envio, aceite, solicitação financeira opcional e emissão da OS."
         backHref="/demonstracao/comercial"
         backLabel="Comercial"
       />

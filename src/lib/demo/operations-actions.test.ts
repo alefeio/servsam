@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import { seedDemoDataset } from "@/data/demo/demo-dataset";
 import {
   canIssueWorkOrderFromProposal,
+  canIssueWorkOrderFromPurchaseOrder,
   completeWorkOrder,
   createWorkOrderFromProposal,
+  createWorkOrderFromPurchaseOrder,
   filterWorkOrdersByStatus,
+  findScheduleConflicts,
   getUnscheduledWorkOrders,
   getWorkOrdersInRange,
   scheduleWorkOrder,
@@ -61,11 +64,11 @@ describe("operations demo actions", () => {
     );
   });
 
-  it("issues a work order from an accepted proposal with confirmed signal, without scheduling", () => {
+  it("issues a work order from an accepted proposal without requiring a signal", () => {
     const proposal = seedDemoDataset.proposals.find(
       (item) =>
         item.status === "accepted" &&
-        item.paymentSignal?.status === "confirmed" &&
+        !item.paymentSignal &&
         !seedDemoDataset.workOrders.some((workOrder) => workOrder.proposalId === item.id),
     );
     expect(proposal).toBeDefined();
@@ -87,10 +90,21 @@ describe("operations demo actions", () => {
     ).toHaveLength(1);
   });
 
-  it("does not issue a work order without confirmed payment signal", () => {
+  it("still allows issuing a work order when the signal is only pending", () => {
     const proposal = seedDemoDataset.proposals.find(
       (item) => item.paymentSignal?.status === "pending",
     );
+    expect(proposal).toBeDefined();
+    expect(canIssueWorkOrderFromProposal(seedDemoDataset, proposal!.id).ok).toBe(true);
+
+    const created = createWorkOrderFromProposal(seedDemoDataset, proposal!.id);
+    expect(
+      created.workOrders.some((item) => item.proposalId === proposal!.id),
+    ).toBe(true);
+  });
+
+  it("does not issue a work order from a proposal that is not accepted", () => {
+    const proposal = seedDemoDataset.proposals.find((item) => item.status === "sent");
     expect(proposal).toBeDefined();
     expect(canIssueWorkOrderFromProposal(seedDemoDataset, proposal!.id).ok).toBe(false);
 
@@ -100,11 +114,39 @@ describe("operations demo actions", () => {
     ).toHaveLength(0);
   });
 
-  it("schedules an issued work order in a separate step", () => {
+  it("issues a work order from a received purchase order without internal proposal", () => {
+    const purchaseOrder = seedDemoDataset.receivedPurchaseOrders.find(
+      (item) => item.withoutInternalProposal && !item.workOrderId,
+    );
+    expect(purchaseOrder).toBeDefined();
+    expect(canIssueWorkOrderFromPurchaseOrder(seedDemoDataset, purchaseOrder!.id).ok).toBe(
+      true,
+    );
+
+    const created = createWorkOrderFromPurchaseOrder(
+      seedDemoDataset,
+      purchaseOrder!.id,
+    );
+    const workOrder = created.workOrders.find(
+      (item) => item.purchaseOrderId === purchaseOrder!.id,
+    );
+    expect(workOrder).toBeDefined();
+    expect(workOrder?.proposalId).toBeUndefined();
+    expect(
+      created.receivedPurchaseOrders.find((item) => item.id === purchaseOrder!.id)
+        ?.workOrderId,
+    ).toBe(workOrder?.id);
+
+    const duplicated = createWorkOrderFromPurchaseOrder(created, purchaseOrder!.id);
+    expect(
+      duplicated.workOrders.filter((item) => item.purchaseOrderId === purchaseOrder!.id),
+    ).toHaveLength(1);
+  });
+
+  it("schedules and reschedules with history", () => {
     const proposal = seedDemoDataset.proposals.find(
       (item) =>
         item.status === "accepted" &&
-        item.paymentSignal?.status === "confirmed" &&
         !seedDemoDataset.workOrders.some((workOrder) => workOrder.proposalId === item.id),
     );
     expect(proposal).toBeDefined();
@@ -118,9 +160,33 @@ describe("operations demo actions", () => {
       workOrder!.id,
       "2026-09-10T09:00:00",
     );
-    const changed = scheduled.workOrders.find((item) => item.id === workOrder!.id);
-    expect(changed?.status).toBe("scheduled");
-    expect(changed?.scheduledAt).toBe("2026-09-10T09:00:00");
+    const first = scheduled.workOrders.find((item) => item.id === workOrder!.id);
+    expect(first?.status).toBe("scheduled");
+    expect(first?.scheduledAt).toBe("2026-09-10T09:00:00");
+    expect(first?.scheduleHistory).toHaveLength(1);
+
+    const rescheduled = scheduleWorkOrder(
+      scheduled,
+      workOrder!.id,
+      "2026-09-11T14:00:00",
+    );
+    const second = rescheduled.workOrders.find((item) => item.id === workOrder!.id);
+    expect(second?.scheduledAt).toBe("2026-09-11T14:00:00");
+    expect(second?.scheduleHistory).toHaveLength(2);
+    expect(second?.scheduleStatusLabel).toBe("Remarcada");
+  });
+
+  it("signals soft schedule conflicts without blocking", () => {
+    const scheduled = seedDemoDataset.workOrders.find(
+      (item) => item.scheduledAt && item.status === "scheduled",
+    );
+    expect(scheduled).toBeDefined();
+    const conflicts = findScheduleConflicts(
+      seedDemoDataset,
+      scheduled!.id,
+      scheduled!.scheduledAt!,
+    );
+    expect(Array.isArray(conflicts)).toBe(true);
   });
 
   it("updates work order status directly", () => {

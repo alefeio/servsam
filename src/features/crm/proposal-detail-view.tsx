@@ -66,7 +66,7 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
     <div className="space-y-6">
       <DemoPageHeader
         title={`Orçamento ${proposal.code}`}
-        description="Composição demonstrativa com itens, quantidades e fluxo simulado: aceite, sinal e emissão da OS."
+        description="Composição demonstrativa: aceite da contratação, solicitação financeira opcional e emissão da OS. Eventos simulados no navegador."
         backHref="/demonstracao/comercial/propostas"
         backLabel="Orçamentos"
       />
@@ -166,7 +166,8 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
               {PROPOSAL_STATUS_LABELS[proposal.status]}
             </p>
             <p className="text-muted-foreground">
-              Fluxo principal: rascunho, enviado, aceito, sinal confirmado e OS emitida. Recusado, expirado e cancelado também existem nesta demonstração.
+              Fluxo principal: rascunho → enviado → aceito → (opcional) solicitação ao
+              Financeiro → OS. O sinal não bloqueia universalmente a emissão da OS.
             </p>
             <p>
               <span className="text-muted-foreground">Valor cadastrado:</span>{" "}
@@ -196,7 +197,9 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
             ) : null}
             {proposal.status === "accepted" ? (
               <p className="rounded-md bg-secondary px-3 py-2">
-                Orçamento aceito. Próximos passos: registrar e confirmar o sinal, depois emitir a OS. O agendamento é um passo separado.
+                Orçamento aceito — contratação liberada. Você pode emitir a OS agora. O sinal
+                é recomendado quando aplicável (Comercial solicita; Financeiro confirma), sem
+                ser pré-requisito universal. Agendamento é passo separado.
               </p>
             ) : null}
             {opportunity ? (
@@ -251,32 +254,48 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
       {proposal.status === "accepted" || paymentSignal || linkedWorkOrder ? (
         <Card>
           <CardHeader>
-            <CardTitle>Sinal e emissão da OS</CardTitle>
+            <CardTitle>Contratação, financeiro simulado e OS</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <p className="text-muted-foreground">
-              Fluxo demonstrativo: Aceite → Registrar/Confirmar sinal → Emitir OS. Sem cobrança real.
+              Três eventos distintos (simulados): (1) aceite comercial; (2) Comercial solicita
+              providência ao Financeiro; (3) Financeiro confirma recebimento. A OS depende do
+              aceite — não da etapa 3.
             </p>
             {paymentSignal ? (
               <dl className="grid gap-2 md:grid-cols-2">
                 <div>
-                  <dt className="text-muted-foreground">Status do sinal</dt>
+                  <dt className="text-muted-foreground">Status financeiro</dt>
                   <dd className="font-medium">
-                    {paymentSignal.status === "confirmed" ? "Confirmado" : "Pendente"}
+                    {paymentSignal.status === "confirmed"
+                      ? "Recebimento confirmado (Financeiro)"
+                      : "Solicitação pendente (Comercial)"}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Valor do sinal</dt>
+                  <dt className="text-muted-foreground">Valor solicitado</dt>
                   <dd className="font-medium">{formatCurrencyBrl(paymentSignal.amount)}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Registrado em</dt>
+                  <dt className="text-muted-foreground">Solicitado em</dt>
                   <dd>{paymentSignal.registeredAt.split("-").reverse().join("/")}</dd>
                 </div>
                 {paymentSignal.confirmedAt ? (
                   <div>
                     <dt className="text-muted-foreground">Confirmado em</dt>
                     <dd>{paymentSignal.confirmedAt.split("-").reverse().join("/")}</dd>
+                  </div>
+                ) : null}
+                {paymentSignal.requestedByRole ? (
+                  <div>
+                    <dt className="text-muted-foreground">Solicitado por</dt>
+                    <dd>Comercial (simulado)</dd>
+                  </div>
+                ) : null}
+                {paymentSignal.confirmedByRole ? (
+                  <div>
+                    <dt className="text-muted-foreground">Confirmado por</dt>
+                    <dd>Financeiro (simulado)</dd>
                   </div>
                 ) : null}
                 {paymentSignal.note ? (
@@ -287,23 +306,27 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
                 ) : null}
               </dl>
             ) : (
-              <p>Nenhum sinal registrado para este orçamento.</p>
+              <p>
+                Nenhum sinal solicitado. Você pode emitir a OS sem esta etapa ou solicitar
+                providência ao Financeiro quando fizer sentido.
+              </p>
             )}
             <p className="rounded-md bg-secondary px-3 py-2 text-muted-foreground">
-              Exceções à exigência de sinal ainda precisam de validação do cliente.
+              Sem cobrança bancária real, sem NF-e e sem RBAC persistente nesta demonstração.
+              Valor sugerido não é percentual obrigatório.
             </p>
             {!linkedWorkOrder && !issueCheck.ok && issueCheck.reason ? (
               <p className="text-muted-foreground">{issueCheck.reason}</p>
             ) : null}
             <div className="flex flex-wrap gap-2">
               {proposal.status === "accepted" && !paymentSignal ? (
-                <Button type="button" onClick={registerSignal}>
-                  Registrar sinal
+                <Button type="button" variant="outline" onClick={registerSignal}>
+                  Comercial: solicitar ao Financeiro
                 </Button>
               ) : null}
               {proposal.status === "accepted" && paymentSignal?.status === "pending" ? (
-                <Button type="button" onClick={confirmSignal}>
-                  Confirmar sinal
+                <Button type="button" variant="outline" onClick={confirmSignal}>
+                  Financeiro: confirmar recebimento
                 </Button>
               ) : null}
               {!linkedWorkOrder ? (
@@ -321,9 +344,49 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
             </div>
             {linkedWorkOrder && !linkedWorkOrder.scheduledAt ? (
               <p className="text-muted-foreground">
-                OS emitida e aguardando agendamento. O agendamento é feito na própria OS.
+                OS emitida e aguardando agendamento. O agendamento é feito na própria OS ou na
+                Agenda.
               </p>
             ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {proposal.receivedPurchaseOrder ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>O.C. recebida (avulso)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <p>
+              <span className="text-muted-foreground">Código:</span>{" "}
+              {proposal.receivedPurchaseOrder.code}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Situação:</span>{" "}
+              {proposal.receivedPurchaseOrder.statusLabel}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Recebida em:</span>{" "}
+              {(
+                proposal.receivedPurchaseOrder.receivedAt ??
+                proposal.receivedPurchaseOrder.issuedAt
+              )
+                .split("-")
+                .reverse()
+                .join("/")}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Valor:</span>{" "}
+              {formatCurrencyBrl(proposal.receivedPurchaseOrder.amount)}
+            </p>
+            <p className="text-muted-foreground">{proposal.receivedPurchaseOrder.note}</p>
+            <Link
+              href="/demonstracao/comercial/ordens-compra"
+              className="inline-flex text-sm font-medium text-navy hover:text-teal"
+            >
+              Ver todas as O.C. recebidas →
+            </Link>
           </CardContent>
         </Card>
       ) : null}
@@ -353,7 +416,9 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
               Outras formas nesta demonstração: orçamento assinado, OS do cliente, OC, OCS ou outro. Ainda sem regra definitiva.
             </p>
             <p className="text-muted-foreground">
-              OCS (aceite do orçamento) e OC de contrato são documentos distintos nesta demonstração. A distinção ainda precisa de validação do cliente.
+              Orçamento SERVSAM, O.C. recebida do cliente e OS de execução são documentos
+              distintos. A O.C. também existe em serviços avulsos, não só em contratos
+              periódicos.
             </p>
             <Button
               type="button"

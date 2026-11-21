@@ -38,9 +38,9 @@ export function WorkOrderDetailView({ workOrderId }: WorkOrderDetailViewProps) {
   const unit = dataset.clientUnits.find((item) => item.id === workOrder.clientUnitId);
   const proposal = dataset.proposals.find((item) => item.id === workOrder.proposalId);
   const canSchedule =
-    !workOrder.scheduledAt &&
     workOrder.status !== "cancelled" &&
     workOrder.status !== "completed";
+  const isReschedule = Boolean(workOrder.scheduledAt);
   const checkedCount = workOrder.planningChecklist.filter((item) => item.checked).length;
 
   return (
@@ -201,7 +201,12 @@ export function WorkOrderDetailView({ workOrderId }: WorkOrderDetailViewProps) {
               {canSchedule ? (
                 <div className="space-y-2 rounded-lg border border-dashed border-teal/50 p-3">
                   <p className="text-xs text-muted-foreground">
-                    OS emitida sem data. Escolha data e hora para agendar nesta demonstração.
+                    {isReschedule
+                      ? "Remarque data e horário. O histórico fica no dataset demonstrativo (localStorage). Sem Google Calendar."
+                      : "OS emitida sem data. Escolha data e hora para agendar nesta demonstração."}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Responsável atual: {workOrder.technicianAlias}
                   </p>
                   <label className="block text-xs text-muted-foreground">
                     Data e hora
@@ -225,8 +230,21 @@ export function WorkOrderDetailView({ workOrderId }: WorkOrderDetailViewProps) {
                       )
                     }
                   >
-                    Agendar OS (simulado)
+                    {isReschedule ? "Remarcar OS (simulado)" : "Agendar OS (simulado)"}
                   </Button>
+                  {(workOrder.scheduleHistory?.length ?? 0) > 0 ? (
+                    <ul className="space-y-1 border-t border-border pt-2 text-xs text-muted-foreground">
+                      {workOrder.scheduleHistory?.map((entry, index) => (
+                        <li key={`${entry.scheduledAt}-${index}`}>
+                          {entry.previousScheduledAt
+                            ? `Remarcado: ${entry.previousScheduledAt} → ${entry.scheduledAt}`
+                            : `Agendado: ${entry.scheduledAt}`}{" "}
+                          · {entry.technicianAlias}
+                          {entry.note ? ` · ${entry.note}` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </div>
               ) : null}
               {workOrder.status === "scheduled" || workOrder.status === "overdue" ? (

@@ -106,7 +106,11 @@ export type DemoProposalNarrative = {
 
 export type PaymentSignalStatus = "pending" | "confirmed";
 
-/** Registro demonstrativo do sinal após o aceite do orçamento. Sem cobrança real. */
+/**
+ * Sinal demonstrativo após o aceite.
+ * Recomendado quando aplicável; não bloqueia universalmente a emissão da OS.
+ * Comercial solicita; Financeiro confirma — eventos simulados, sem cobrança real.
+ */
 export type DemoPaymentSignal = {
   status: PaymentSignalStatus;
   amount: number;
@@ -114,6 +118,10 @@ export type DemoPaymentSignal = {
   confirmedAt?: string;
   note?: string;
   financialTransactionId?: string;
+  /** Papel que registrou a solicitação (simulado). */
+  requestedByRole?: "comercial";
+  /** Papel que confirmou o recebimento (simulado). */
+  confirmedByRole?: "financeiro";
 };
 
 export type DemoProposal = Provenanced<{
@@ -135,8 +143,10 @@ export type DemoProposal = Provenanced<{
   serviceFamily?: DemoServiceFamily;
   formalization?: DemoProposalFormalization;
   narrative?: DemoProposalNarrative;
-  /** Sinal de pagamento demonstrativo; libera a emissão da OS quando confirmado. */
+  /** Sinal opcional/recomendado; não é pré-requisito universal da OS. */
   paymentSignal?: DemoPaymentSignal;
+  /** O.C. recebida do cliente neste orçamento avulso (≠ OS). */
+  receivedPurchaseOrder?: DemoReceivedPurchaseOrderRef;
 }>;
 
 export type DemoProposalItem = Provenanced<{
@@ -195,7 +205,19 @@ export type DemoWorkOrder = Provenanced<{
   technicalResponsibleId?: string;
   clientResponsible?: string;
   vehicleId?: string;
+  /** Histórico demonstrativo de agendamentos/remarcações. */
+  scheduleHistory?: DemoScheduleChange[];
+  /** O.C. de origem quando a OS não veio de orçamento interno. */
+  purchaseOrderId?: string;
 }>;
+
+export type DemoScheduleChange = {
+  recordedAt: string;
+  previousScheduledAt?: string;
+  scheduledAt: string;
+  technicianAlias: string;
+  note?: string;
+};
 
 export type DemoWorkOrderVisit = {
   id: string;
@@ -216,14 +238,43 @@ export type DemoContractVisit = {
   workOrderId?: string;
 };
 
-/** O.C. do contrato periódico — distinta da formalização (OCS/OC) do orçamento avulso. */
-export type DemoContractPurchaseOrder = {
+/**
+ * Referência à O.C. recebida do contratante.
+ * Documento do cliente — não é a OS interna nem o orçamento SERVSAM.
+ */
+export type DemoReceivedPurchaseOrderRef = {
   code: string;
+  /** Mantido por compatibilidade com fixtures antigos. */
   issuedAt: string;
+  receivedAt?: string;
   statusLabel: string;
   amount: number;
   note: string;
+  engagementKind?: "avulso" | "periodico" | "oc-direta";
 };
+
+/** @deprecated Preferir DemoReceivedPurchaseOrderRef — alias de compatibilidade. */
+export type DemoContractPurchaseOrder = DemoReceivedPurchaseOrderRef;
+
+/**
+ * O.C. recebida como entidade demonstrativa (pode existir sem orçamento interno).
+ */
+export type DemoReceivedPurchaseOrder = Provenanced<{
+  id: string;
+  code: string;
+  clientId: string;
+  serviceName: string;
+  categoryId: "water-sanitation" | "environmental-pest";
+  receivedAt: string;
+  statusLabel: string;
+  amount: number;
+  note: string;
+  engagementKind: "avulso" | "periodico" | "oc-direta";
+  proposalId?: string;
+  contractId?: string;
+  workOrderId?: string;
+  withoutInternalProposal?: boolean;
+}>;
 
 export type DemoContract = Provenanced<{
   id: string;
@@ -239,7 +290,7 @@ export type DemoContract = Provenanced<{
   nextAdjustmentDate?: string;
   status: ContractStatus;
   scheduledVisits: DemoContractVisit[];
-  purchaseOrder?: DemoContractPurchaseOrder;
+  purchaseOrder?: DemoReceivedPurchaseOrderRef;
 }>;
 
 export type DemoDocument = Provenanced<{
@@ -523,4 +574,6 @@ export type DemoDataset = Provenanced<{
   regulatoryCredentials: DemoRegulatoryCredential[];
   preServiceDocuments: DemoPreServiceDocument[];
   environmentalProcesses: DemoEnvironmentalProcess[];
+  /** O.C. recebidas do cliente (avulsa, periódica ou sem orçamento interno). */
+  receivedPurchaseOrders: DemoReceivedPurchaseOrder[];
 }>;

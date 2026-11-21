@@ -31,7 +31,8 @@ export const plannedModules: PlannedModule[] = [
     href: "/demonstracao/comercial/propostas",
     name: "Orçamentos",
     navLabel: "Orçamentos",
-    objective: "Orçamento com itens, validade, aceite, sinal e emissão de OS simulados.",
+    objective:
+      "Orçamento com itens, validade, aceite, solicitação financeira opcional e emissão de OS simulados.",
     plannedSprint: 3,
   },
   {
@@ -48,7 +49,7 @@ export const plannedModules: PlannedModule[] = [
     name: "Agenda",
     navLabel: "Agenda",
     objective:
-      "Agenda semanal e mensal administrativa em desktop, sem execução mobile de campo.",
+      "Agenda diária/semanal/mensal com agendamento e remarcação no localStorage; sem Google Calendar.",
     plannedSprint: 4,
   },
   {
@@ -122,6 +123,12 @@ export const demoNavItems = [
   { href: "/demonstracao", label: "Visão geral", implemented: true, section: "Fluxo" },
   { href: "/demonstracao/clientes", label: "Clientes", implemented: true, section: "Fluxo" },
   { href: "/demonstracao/comercial/propostas", label: "Orçamentos", implemented: true, section: "Fluxo" },
+  {
+    href: "/demonstracao/comercial/ordens-compra",
+    label: "O.C. recebidas",
+    implemented: true,
+    section: "Fluxo",
+  },
   { href: "/demonstracao/agenda", label: "Agenda", implemented: true, section: "Fluxo" },
   { href: "/demonstracao/ordens-servico", label: "Ordens de serviço", implemented: true, section: "Fluxo" },
   { href: "/demonstracao/relatorios/fotograficos", label: "Relatório fotográfico", implemented: true, section: "Fluxo" },

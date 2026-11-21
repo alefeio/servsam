@@ -130,10 +130,19 @@ export function hydrateDemoDataset(dataset: DemoDataset): DemoDataset {
         paymentSignal: proposal.paymentSignal ?? fromSeed?.paymentSignal,
         formalization: proposal.formalization ?? fromSeed?.formalization,
         narrative: proposal.narrative ?? fromSeed?.narrative,
+        receivedPurchaseOrder:
+          proposal.receivedPurchaseOrder ?? fromSeed?.receivedPurchaseOrder,
       };
     }),
     proposalItems: mergeById(dataset.proposalItems, seed.proposalItems),
-    workOrders: mergeById(dataset.workOrders, seed.workOrders),
+    workOrders: mergeById(dataset.workOrders, seed.workOrders).map((workOrder) => {
+      const fromSeed = seed.workOrders.find((item) => item.id === workOrder.id);
+      return {
+        ...workOrder,
+        scheduleHistory: workOrder.scheduleHistory ?? fromSeed?.scheduleHistory ?? [],
+        purchaseOrderId: workOrder.purchaseOrderId ?? fromSeed?.purchaseOrderId,
+      };
+    }),
     documents: mergeById(dataset.documents, seed.documents),
     products: mergeById(dataset.products, seed.products),
     contracts: mergeById(dataset.contracts, seed.contracts).map((contract) => {
@@ -143,6 +152,10 @@ export function hydrateDemoDataset(dataset: DemoDataset): DemoDataset {
         purchaseOrder: contract.purchaseOrder ?? fromSeed?.purchaseOrder,
       };
     }),
+    receivedPurchaseOrders: mergeById(
+      dataset.receivedPurchaseOrders ?? [],
+      seed.receivedPurchaseOrders,
+    ),
     financialTransactions: mergeById(dataset.financialTransactions, seed.financialTransactions),
     employees: hydrateEmployees(dataset.employees, seed.employees),
     certificates: mergeById(dataset.certificates, seed.certificates),

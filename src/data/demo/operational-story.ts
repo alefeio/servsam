@@ -296,13 +296,16 @@ export const hotelProposalStory: Pick<
 > = {
   serviceFamily: "rsv",
   observations:
-    "Orçamento-guia. Após o aceite, o sinal confirmado libera a emissão da OS; o agendamento é um passo separado.",
+    "Orçamento-guia do Hotel Amazonas Plaza. Aceite libera a contratação; sinal é recomendado e confirmado pelo Financeiro (simulado), sem bloquear a OS. Agendamento é passo separado.",
   paymentSignal: {
     status: "confirmed",
     amount: 4900,
     registeredAt: "2026-06-06",
     confirmedAt: "2026-06-06",
-    note: "Sinal demonstrativo (50% do orçamento). Não é cobrança real. Exceções à exigência ainda precisam de validação.",
+    requestedByRole: "comercial",
+    confirmedByRole: "financeiro",
+    note:
+      "Sinal demonstrativo sugerido na massa (não percentual obrigatório). Confirmado pelo Financeiro — evento simulado.",
     financialTransactionId: "fin-signal-005",
   },
   formalization: {
@@ -311,7 +314,8 @@ export const hotelProposalStory: Pick<
     kindLabel: "Ordem de Compra de Serviço",
     documentCode: "OCS-DEMO-014",
     receivedAt: "2026-08-27",
-    note: "Formalização do orçamento avulso (OCS). Distinta da O.C. vinculada a contratos periódicos.",
+    note:
+      "Formalização do orçamento avulso com O.C. recebida do cliente. Orçamento SERVSAM ≠ O.C. ≠ OS.",
   },
   narrative: {
     technicalScope: [

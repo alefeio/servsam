@@ -18,7 +18,14 @@ const links = [
   {
     href: "/demonstracao/comercial/propostas",
     title: "Orçamentos",
-    description: "Itens, validade, status, aceite, sinal e emissão de OS fictícios.",
+    description:
+      "Aceite, solicitação financeira opcional e emissão de OS — sinal não bloqueia universalmente.",
+  },
+  {
+    href: "/demonstracao/comercial/ordens-compra",
+    title: "O.C. recebidas",
+    description:
+      "Documento do contratante (avulso, periódico ou sem orçamento interno). Distinto da OS.",
   },
   {
     href: "/demonstracao/clientes",
@@ -32,7 +39,7 @@ export function CommercialHubView() {
     <div className="space-y-6">
       <DemoPageHeader
         title="Comercial"
-        description="Fluxo demonstrativo do lead até o orçamento aceito e a OS emitida. Todas as ações são simuladas e ficam no navegador."
+        description="Fluxo demonstrativo do lead ao orçamento aceito, O.C. recebida e OS. Ações simuladas no navegador — não é ERP persistente."
       />
       <div className="grid gap-4 md:grid-cols-2">
         {links.map((link) => (

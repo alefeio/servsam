@@ -116,7 +116,7 @@ describe("CRM demo actions", () => {
     ).toBe("proposal");
   });
 
-  it("registers and confirms a payment signal without real billing", () => {
+  it("registers a commercial finance request and confirms via finance role without real billing", () => {
     const draft = seedDemoDataset.proposals.find((item) => item.status === "draft");
     expect(draft).toBeDefined();
 
@@ -124,16 +124,25 @@ describe("CRM demo actions", () => {
     const withSignal = registerPaymentSignal(accepted, draft!.id);
     const pending = withSignal.proposals.find((item) => item.id === draft!.id);
     expect(pending?.paymentSignal?.status).toBe("pending");
+    expect(pending?.paymentSignal?.requestedByRole).toBe("comercial");
     expect(pending?.paymentSignal?.amount).toBe(Math.round(draft!.value * 0.5));
+    expect(pending?.paymentSignal?.note).toMatch(/não depende/i);
 
     const confirmed = confirmPaymentSignal(withSignal, draft!.id);
     const proposal = confirmed.proposals.find((item) => item.id === draft!.id);
     expect(proposal?.paymentSignal?.status).toBe("confirmed");
+    expect(proposal?.paymentSignal?.confirmedByRole).toBe("financeiro");
     expect(proposal?.paymentSignal?.financialTransactionId).toBeDefined();
     expect(
       confirmed.financialTransactions.some(
         (item) => item.id === proposal?.paymentSignal?.financialTransactionId,
       ),
     ).toBe(true);
+
+    // Confirmação comercial direta não existe: sem pending, confirmPaymentSignal não altera.
+    const skipped = confirmPaymentSignal(accepted, draft!.id);
+    expect(
+      skipped.proposals.find((item) => item.id === draft!.id)?.paymentSignal,
+    ).toBeUndefined();
   });
 });

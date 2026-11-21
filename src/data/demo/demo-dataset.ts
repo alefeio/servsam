@@ -10,6 +10,7 @@ import { demoProducts } from "@/data/demo/products";
 import { demoProposalItems } from "@/data/demo/proposal-items";
 import { demoProposals } from "@/data/demo/proposals";
 import { demoPublicTenders } from "@/data/demo/public-tenders";
+import { demoReceivedPurchaseOrders } from "@/data/demo/received-purchase-orders";
 import { demoStockMovements } from "@/data/demo/stock-movements";
 import { demoWorkOrders } from "@/data/demo/work-orders";
 import {
@@ -50,6 +51,7 @@ export const seedDemoDataset: DemoDataset = {
   regulatoryCredentials: storyCredentials,
   preServiceDocuments: storyPreServiceDocuments,
   environmentalProcesses: storyProcesses,
+  receivedPurchaseOrders: demoReceivedPurchaseOrders,
   provenance: createProvenance({
     sourceType: "DEMO_FICTIONAL",
     notes:

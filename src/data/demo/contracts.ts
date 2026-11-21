@@ -35,9 +35,12 @@ export const demoContracts: DemoContract[] = [
     purchaseOrder: {
       code: "OC-DEMO-CT-001",
       issuedAt: "2026-01-05",
+      receivedAt: "2026-01-05",
       statusLabel: "Vigente",
       amount: 33600,
-      note: "O.C. do contrato periódico. Não se confunde com a OCS de formalização de orçamento avulso. OS por visita ainda pendente de validação.",
+      engagementKind: "periodico",
+      note:
+        "O.C. recebida no contrato periódico. Documento do cliente ≠ OS. Se cada visita física exige OS separada permanece pendente de validação.",
     },
     scheduledVisits: [
       {
@@ -68,9 +71,12 @@ export const demoContracts: DemoContract[] = [
     purchaseOrder: {
       code: "OC-DEMO-CT-002",
       issuedAt: "2026-03-02",
+      receivedAt: "2026-03-02",
       statusLabel: "Vigente",
       amount: 50400,
-      note: "O.C. associada ao contrato e às visitas previstas. A emissão automática de OS por visita permanece em aberto.",
+      engagementKind: "periodico",
+      note:
+        "O.C. associada ao contrato periódico e às visitas previstas. Sem afirmar OS automática por visita.",
     },
     scheduledVisits: [
       {

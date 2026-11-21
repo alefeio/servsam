@@ -1,41 +1,65 @@
-# Roteiro da reunião — Sprint 10.2
+# Roteiro da reunião — Hotfix demo 10.2 (sinal / O.C. / agenda)
 
-Objetivo: validar o fluxo comercial com Orçamento como ponto de partida, o sinal antes da OS, a agenda em calendário, a O.C. nos contratos periódicos e o RH ampliado. Tudo continua demonstrativo.
+Objetivo: percorrer três jornadas alinhadas ao feedback de 19/11/2026, sem as hipóteses superadas (sinal obrigatório, comercial confirma pagamento, O.C. só em periódico, O.C. = OS, agenda sem remarcação). Tudo continua **demonstrativo** (fixtures + `localStorage`).
+
+**Branch:** `hotfix/demo-10-2-signal-oc`  
+**Não** usar Production nem `/sistema` nesta reunião.
 
 ## Preparação
 
-1. Abrir o Preview da Sprint 10.2 (não a produção).
+1. Abrir o Preview desta branch (protegido).
 2. Entrar em `/demonstracao` com um perfil de gestão.
-3. Se a massa local estiver confusa, restaurar os dados demonstrativos nas configurações.
+3. **Restaurar dados demonstrativos** em Configurações (ou limpar a chave do demo no `localStorage`) se a massa local estiver misturada com testes anteriores.
+4. Confirmar que a sessão é só da demo — não há vínculo com PostgreSQL/HOMOL.
 
-## Roteiro principal (serviço avulso)
+## Cenário A — Serviço avulso (sem sinal obrigatório)
 
-1. Dashboard / Comercial: mostrar indicadores de orçamentos (emitidos, aceitos, convertidos, taxa, valores em negociação).
-2. Abrir um Orçamento (rota ainda `/comercial/propostas/...`). Destacar que a UI diz Orçamento.
-3. Aceite do orçamento.
-4. Registrar o sinal (demonstrativo, sem cobrança real).
-5. Emitir a OS — só liberada com aceite + sinal confirmado.
-6. Conferir que a OS nasce sem data automática.
-7. Ir à Agenda (visão calendário) e agendar a OS.
-8. Seguir execução e entregáveis do Hotel Amazonas, se já estiverem na jornada.
+1. Comercial → Orçamentos → **DEMO-001** (aceito, sem sinal).
+2. Destacar: aceite libera contratação; botão **Emitir OS** habilitado sem confirmação financeira.
+3. Emitir OS → abrir a OS → agendar data/hora (ou ir à Agenda).
+4. Opcional: em DEMO-002, mostrar **Comercial: solicitar ao Financeiro** e **Financeiro: confirmar recebimento** como eventos separados — sem confundir solicitação com confirmação.
+5. Hotel Amazonas (**DEMO-005**): preservar jornada técnica (formalização, O.C. avulsa, execução, fotos, certificado).
 
-## Roteiro paralelo (contrato periódico)
+## Cenário B — O.C. do cliente (sem orçamento interno obrigatório)
 
-1. Abrir um contrato periódico com O.C. vinculada.
-2. Mostrar visitas/agenda já previstas.
-3. Explicar que a O.C. do contrato não se confunde com a OCS de formalização do orçamento avulso.
-4. Perguntar: cada visita deve gerar OS individual?
+1. Comercial → **O.C. recebidas**.
+2. Abrir **OC-DEMO-DIR-021** (escola / sanitização emergencial).
+3. Destacar: documento do contratante; `Sem orçamento interno prévio obrigatório`.
+4. **Emitir OS a partir da O.C.** → Agenda → agendar.
+5. Reforçar: Orçamento SERVSAM ≠ O.C. ≠ OS.
 
-## RH
+## Cenário C — Contrato periódico + O.C.
 
-1. Abrir Colaboradores e o detalhe de um colaborador fictício.
-2. Mostrar férias, faltas, atestados, advertências, suspensões e ocorrências.
-3. Reforçar: dados fictícios; sem informação clínica sensível.
+1. Contratos → **CT-DEMO-001**.
+2. Mostrar **O.C. recebida no contrato** e cronograma de visitas.
+3. Explicar que a programação periódica existe; **não afirmar** que cada visita física exige OS separada (pendente de validação).
+4. Opcional: listar a mesma O.C. em Comercial → O.C. recebidas.
 
-## Perguntas a confirmar
+## Agenda
 
-Ver itens novos em `docs/content/pending-client-validation.md` (a partir do item 67).
+1. Visões Diária / Semanal / Mensal.
+2. Agendar OS emitidas; **Remarcar** OS já agendadas; ver responsável e histórico.
+3. Conflito de equipe: alerta informativo, sem bloqueio automático definitivo.
+4. Sem Google Calendar; sem drag-and-drop obrigatório.
+
+## Financeiro, RH e execução
+
+- Financeiro: lançamentos demonstrativos; distinguir valor orçado / solicitado / recebido; **sem** integração bancária.
+- RH: férias, faltas, atestados, advertências, suspensões, ocorrências fictícias.
+- Execução: checklists, relatórios, fotos, certificados do Hotel Amazonas — já nas sprints anteriores.
+
+## Restaurar massa antes da reunião
+
+1. Em `/demonstracao/.../configuracoes` (ou equivalente), usar **Restaurar dados demonstrativos**.
+2. Ou no DevTools: remover a chave do dataset demo no `localStorage` e recarregar.
+3. Não misturar com cookies/sessão de `/sistema`.
+
+## Pendências que ainda dependem do cliente
+
+- Se cada visita física distinta exige OS separada.
+- Política fina de bloqueio por conflito de agenda.
+- Percentuais / formas de pagamento reais (não inventar na demo).
 
 ## Fora do roteiro
 
-Financeiro completo, Prisma, Google Calendar real, merge em produção.
+Prisma, HOMOL, 11B, NF-e, Google Calendar, merge em `main`, Production.

@@ -149,7 +149,10 @@ function nextFinancialId(dataset: DemoDataset): string {
   return `fin-signal-${String(next).padStart(3, "0")}`;
 }
 
-/** Registra o sinal como pendente após o aceite (sem cobrança real). */
+/**
+ * Comercial solicita providência financeira (sinal recomendado quando aplicável).
+ * Evento simulado — não é confirmação de pagamento nem cobrança real.
+ */
 export function registerPaymentSignal(
   dataset: DemoDataset,
   proposalId: string,
@@ -178,7 +181,9 @@ export function registerPaymentSignal(
               status: "pending",
               amount: signalAmount,
               registeredAt: DEMO_TODAY,
-              note: "Sinal registrado na demonstração. Sem cobrança real. Confirme para liberar a emissão da OS.",
+              requestedByRole: "comercial",
+              note:
+                "Solicitação financeira do Comercial (simulada). Valor sugerido só para a demo — não é percentual obrigatório. A OS não depende desta etapa.",
             },
           }
         : item,
@@ -186,7 +191,10 @@ export function registerPaymentSignal(
   };
 }
 
-/** Confirma o sinal e cria lançamento financeiro mínimo demonstrativo. */
+/**
+ * Financeiro registra a confirmação do recebimento (simulada).
+ * Não afirma pagamento bancário real nem libera/bloqueia a OS.
+ */
 export function confirmPaymentSignal(
   dataset: DemoDataset,
   proposalId: string,
@@ -195,10 +203,12 @@ export function confirmPaymentSignal(
   if (!proposal || proposal.status !== "accepted") {
     return dataset;
   }
+  if (!proposal.paymentSignal || proposal.paymentSignal.status !== "pending") {
+    return dataset;
+  }
 
-  const amount =
-    proposal.paymentSignal?.amount ?? Math.round(proposal.value * 0.5);
-  const existingTxId = proposal.paymentSignal?.financialTransactionId;
+  const amount = proposal.paymentSignal.amount;
+  const existingTxId = proposal.paymentSignal.financialTransactionId;
   const opportunity = dataset.opportunities.find(
     (item) => item.id === proposal.opportunityId,
   );
@@ -215,7 +225,7 @@ export function confirmPaymentSignal(
         id: financialTransactionId,
         clientId: proposal.clientId,
         type: "revenue" as const,
-        description: `Sinal do orçamento ${proposal.code} (demonstrativo)`,
+        description: `Recebimento confirmado (Financeiro) — orçamento ${proposal.code} (demonstrativo)`,
         amount,
         dueDate: DEMO_TODAY,
         paidAt: DEMO_TODAY,
@@ -239,7 +249,10 @@ export function confirmPaymentSignal(
               amount,
               registeredAt: item.paymentSignal?.registeredAt ?? DEMO_TODAY,
               confirmedAt: DEMO_TODAY,
-              note: "Sinal confirmado na demonstração. Libera a emissão da OS. Exceções à exigência ainda precisam de validação.",
+              requestedByRole: item.paymentSignal?.requestedByRole ?? "comercial",
+              confirmedByRole: "financeiro",
+              note:
+                "Confirmação financeira simulada pelo perfil Financeiro. Não há integração bancária nem NF-e nesta demonstração.",
               financialTransactionId,
             },
           }

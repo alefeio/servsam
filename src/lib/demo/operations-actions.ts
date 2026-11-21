@@ -56,6 +56,40 @@ export function getUnscheduledWorkOrders(dataset: DemoDataset) {
   );
 }
 
+/**
+ * Conflitos soft: mesma equipe/técnico no mesmo horário (janela de 1h).
+ * Não bloqueia — apenas sinaliza; política definitiva pendente.
+ */
+export function findScheduleConflicts(
+  dataset: DemoDataset,
+  workOrderId: string,
+  scheduledAt: string,
+): { workOrderId: string; code: string; technicianAlias: string }[] {
+  const target = dataset.workOrders.find((item) => item.id === workOrderId);
+  if (!target) return [];
+  const slot = new Date(scheduledAt).getTime();
+  const windowMs = 60 * 60 * 1000;
+
+  return dataset.workOrders
+    .filter((item) => {
+      if (item.id === workOrderId) return false;
+      if (!item.scheduledAt) return false;
+      if (item.status === "cancelled" || item.status === "completed") return false;
+      const other = new Date(item.scheduledAt).getTime();
+      if (Math.abs(other - slot) > windowMs) return false;
+      const sameTech = item.technicianAlias === target.technicianAlias;
+      const overlappingTeam = item.teamAliases.some((alias) =>
+        target.teamAliases.includes(alias),
+      );
+      return sameTech || overlappingTeam;
+    })
+    .map((item) => ({
+      workOrderId: item.id,
+      code: item.code,
+      technicianAlias: item.technicianAlias,
+    }));
+}
+
 export function updateWorkOrderStatus(
   dataset: DemoDataset,
   workOrderId: string,
@@ -141,7 +175,8 @@ function nextWorkOrderCode(dataset: DemoDataset): string {
 }
 
 /**
- * Emite OS a partir do orçamento aceito com sinal confirmado.
+ * Emite OS a partir do orçamento aceito.
+ * Sinal é opcional/recomendado — não bloqueia a emissão.
  * Não agenda: scheduledAt fica ausente até scheduleWorkOrder.
  */
 export function createWorkOrderFromProposal(
@@ -150,10 +185,6 @@ export function createWorkOrderFromProposal(
 ): DemoDataset {
   const proposal = dataset.proposals.find((item) => item.id === proposalId);
   if (!proposal || proposal.status !== "accepted") {
-    return dataset;
-  }
-
-  if (proposal.paymentSignal?.status !== "confirmed") {
     return dataset;
   }
 
@@ -175,6 +206,13 @@ export function createWorkOrderFromProposal(
       ?.description ??
     "Serviço demonstrativo";
 
+  const signalNote =
+    proposal.paymentSignal?.status === "confirmed"
+      ? " Sinal já confirmado pelo Financeiro (simulado)."
+      : proposal.paymentSignal?.status === "pending"
+        ? " Sinal solicitado ao Financeiro (ainda pendente; não bloqueia a OS)."
+        : " Sem sinal registrado (permitido nesta demonstração).";
+
   const newWorkOrder = {
     id: nextWorkOrderId(dataset),
     code: nextWorkOrderCode(dataset),
@@ -189,9 +227,9 @@ export function createWorkOrderFromProposal(
     teamAliases: [leadTechnician, DEMO_FIELD_TEAMS[1]],
     plannedMaterials: createDefaultPlannedMaterials(categoryId),
     planningChecklist: createDefaultPlanningChecklist(),
-    notes:
-      "OS emitida a partir do orçamento aceito com sinal confirmado. Agendamento é passo separado.",
+    notes: `OS emitida a partir do orçamento aceito.${signalNote} Agendamento é passo separado.`,
     scheduleStatusLabel: "Aguardando agendamento",
+    scheduleHistory: [],
     provenance: proposal.provenance,
   };
 
@@ -201,11 +239,87 @@ export function createWorkOrderFromProposal(
   };
 }
 
+/**
+ * Emite OS a partir de O.C. recebida (pode ser sem orçamento interno).
+ * Uma OS por serviço demonstrativo; não duplica se já houver vínculo.
+ */
+export function createWorkOrderFromPurchaseOrder(
+  dataset: DemoDataset,
+  purchaseOrderId: string,
+): DemoDataset {
+  const purchaseOrder = dataset.receivedPurchaseOrders.find(
+    (item) => item.id === purchaseOrderId,
+  );
+  if (!purchaseOrder) return dataset;
+  if (purchaseOrder.workOrderId) return dataset;
+  if (
+    dataset.workOrders.some((item) => item.purchaseOrderId === purchaseOrderId)
+  ) {
+    return dataset;
+  }
+
+  const clientUnit = dataset.clientUnits.find(
+    (item) => item.clientId === purchaseOrder.clientId,
+  );
+  const leadTechnician = DEMO_FIELD_TEAMS[0];
+  const workOrderId = nextWorkOrderId(dataset);
+
+  const newWorkOrder = {
+    id: workOrderId,
+    code: nextWorkOrderCode(dataset),
+    clientId: purchaseOrder.clientId,
+    clientUnitId: clientUnit?.id,
+    proposalId: purchaseOrder.proposalId,
+    contractId: purchaseOrder.contractId,
+    purchaseOrderId: purchaseOrder.id,
+    serviceName: purchaseOrder.serviceName,
+    categoryId: purchaseOrder.categoryId,
+    status: "issued" as const,
+    issuedAt: DEMO_TODAY,
+    technicianAlias: leadTechnician,
+    teamAliases: [leadTechnician, DEMO_FIELD_TEAMS[1]],
+    plannedMaterials: createDefaultPlannedMaterials(purchaseOrder.categoryId),
+    planningChecklist: createDefaultPlanningChecklist(),
+    notes:
+      "OS emitida a partir de O.C. recebida do cliente (documento do contratante ≠ OS). Dados demonstrativos.",
+    scheduleStatusLabel: "Aguardando agendamento",
+    scheduleHistory: [],
+    provenance: purchaseOrder.provenance,
+  };
+
+  return {
+    ...dataset,
+    workOrders: [...dataset.workOrders, newWorkOrder],
+    receivedPurchaseOrders: dataset.receivedPurchaseOrders.map((item) =>
+      item.id === purchaseOrderId ? { ...item, workOrderId } : item,
+    ),
+  };
+}
+
+export function canIssueWorkOrderFromPurchaseOrder(
+  dataset: DemoDataset,
+  purchaseOrderId: string,
+): { ok: boolean; reason?: string } {
+  const purchaseOrder = dataset.receivedPurchaseOrders.find(
+    (item) => item.id === purchaseOrderId,
+  );
+  if (!purchaseOrder) {
+    return { ok: false, reason: "O.C. não encontrada." };
+  }
+  if (
+    purchaseOrder.workOrderId ||
+    dataset.workOrders.some((item) => item.purchaseOrderId === purchaseOrderId)
+  ) {
+    return { ok: false, reason: "Já existe OS vinculada a esta O.C." };
+  }
+  return { ok: true };
+}
+
 export function scheduleWorkOrder(
   dataset: DemoDataset,
   workOrderId: string,
   scheduledAt: string,
-  options?: { technicianAlias?: string; vehicleLabel?: string },
+  options?: { technicianAlias?: string; vehicleLabel?: string; note?: string },
 ): DemoDataset {
   return {
     ...dataset,
@@ -217,13 +331,30 @@ export function scheduleWorkOrder(
         return workOrder;
       }
 
+      const technicianAlias =
+        options?.technicianAlias ?? workOrder.technicianAlias;
+      const previousScheduledAt = workOrder.scheduledAt;
+      const isReschedule = Boolean(previousScheduledAt);
+      const historyEntry = {
+        recordedAt: DEMO_TODAY,
+        previousScheduledAt,
+        scheduledAt,
+        technicianAlias,
+        note:
+          options?.note ??
+          (isReschedule
+            ? "Remarcação demonstrativa (localStorage)."
+            : "Agendamento inicial demonstrativo."),
+      };
+
       return {
         ...workOrder,
         scheduledAt,
         status: workOrder.status === "issued" ? ("scheduled" as const) : workOrder.status,
-        technicianAlias: options?.technicianAlias ?? workOrder.technicianAlias,
+        technicianAlias,
         vehicleLabel: options?.vehicleLabel ?? workOrder.vehicleLabel,
-        scheduleStatusLabel: "Agendada",
+        scheduleStatusLabel: isReschedule ? "Remarcada" : "Agendada",
+        scheduleHistory: [...(workOrder.scheduleHistory ?? []), historyEntry],
       };
     }),
   };
@@ -243,13 +374,6 @@ export function canIssueWorkOrderFromProposal(
   }
   if (proposal.status !== "accepted") {
     return { ok: false, reason: "O orçamento precisa estar aceito." };
-  }
-  if (proposal.paymentSignal?.status !== "confirmed") {
-    return {
-      ok: false,
-      reason:
-        "Confirme o sinal antes de emitir a OS. Exceções à exigência ainda precisam de validação do cliente.",
-    };
   }
   if (dataset.workOrders.some((item) => item.proposalId === proposalId)) {
     return { ok: false, reason: "Já existe OS vinculada a este orçamento." };
