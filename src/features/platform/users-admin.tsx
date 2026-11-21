@@ -108,7 +108,7 @@ function UserEditor({
           if (!user.isActive) return;
           if (
             !window.confirm(
-              "Desativar este usuário? Ele perde o acesso imediato. O sistema impede desativar o último administrador de contas.",
+              "Desativar este usuário? Ele perde o acesso imediato. A organização precisa manter ao menos um administrador de contas ativo.",
             )
           ) {
             event.preventDefault();

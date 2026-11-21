@@ -16,6 +16,7 @@ import { countActiveCustomers } from "@/lib/platform/customers";
 import { formatCents } from "@/lib/platform/money";
 import { PROPOSAL_STATUSES } from "@/lib/platform/proposal-state";
 import { getProposalSummary } from "@/lib/platform/proposals";
+import { getRuntimeEnvironmentLabel } from "@/lib/platform/runtime-environment";
 import { pageTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -36,12 +37,13 @@ export default async function ProductionHomePage() {
   ]);
 
   const roleLabel = user.roleNames.join(", ") || user.roleCodes.join(", ") || "Nenhum";
+  const environment = getRuntimeEnvironmentLabel();
 
   return (
     <PlatformPage width="wide" className="space-y-8">
       <PageHeader
         title="Painel"
-        description="Indicadores calculados a partir dos cadastros reais do PostgreSQL de homologação. A demonstração fictícia fica em /demonstracao e não alimenta este painel."
+        description={`Indicadores calculados a partir dos cadastros persistentes deste ambiente (${environment.label}). A demonstração fictícia fica em /demonstracao e não alimenta este painel.`}
         actions={
           <>
             {canCreateCustomer ? (
@@ -62,11 +64,15 @@ export default async function ProductionHomePage() {
           <dd className="font-medium">SERVSAM</dd>
         </div>
         <div>
+          <dt className="text-muted-foreground">Ambiente</dt>
+          <dd className="font-medium">{environment.shortLabel}</dd>
+        </div>
+        <div>
           <dt className="text-muted-foreground">Perfis desta conta</dt>
           <dd className="font-medium">{roleLabel}</dd>
         </div>
         {customerCount !== null ? (
-          <div>
+          <div className="sm:col-span-3">
             <dt className="text-muted-foreground">Clientes ativos</dt>
             <dd className="font-medium">
               <Link href="/sistema/clientes" className="text-navy hover:underline">
@@ -74,7 +80,7 @@ export default async function ProductionHomePage() {
               </Link>
             </dd>
             <p className="mt-1 text-xs text-muted-foreground">
-              Cadastros não arquivados. Não inclui resíduos de teste ocultos na listagem padrão.
+              Quantidade de cadastros não arquivados visíveis na listagem padrão.
             </p>
           </div>
         ) : null}

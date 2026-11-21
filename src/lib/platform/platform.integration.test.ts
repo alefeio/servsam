@@ -275,5 +275,86 @@ describe.skipIf(!integrationDatabaseGuard().allowed)(
       if (extraRole) await prisma.role.delete({ where: { id: extraRole.id } });
       await prisma.role.delete({ where: { id: customRole.id } });
     });
+
+    it("keeps Diretoria locked and blocks orphaning the last user.manage grant path", async () => {
+      const { getPrisma } = await import("@/lib/db/prisma");
+      const { updatePlatformUser } = await import("@/lib/platform/accounts");
+      const { updateRolePermissions } = await import("@/lib/platform/roles");
+      const {
+        LAST_ADMIN_MESSAGE,
+        wouldRetainManagerAfterUserRoleChange,
+      } = await import("@/lib/platform/admin-continuity");
+      const prisma = getPrisma();
+
+      const actor = {
+        id: userId,
+        name: "Teste Sprint 9",
+        email,
+        organizationId,
+        isActive: true,
+        permissions: new Set(["user.manage", "role.manage"]),
+        roleCodes: ["DIRETORIA"],
+        roleNames: ["Diretoria"],
+      };
+
+      const diretoria = await prisma.role.findUnique({
+        where: {
+          organizationId_code: { organizationId, code: "DIRETORIA" },
+        },
+      });
+      if (!diretoria) throw new Error("Papel DIRETORIA ausente.");
+
+      const locked = await updateRolePermissions(actor, diretoria.id, [
+        "dashboard.view",
+      ]);
+      expect(locked.ok).toBe(false);
+
+      const gerencia = await prisma.role.findUnique({
+        where: {
+          organizationId_code: { organizationId, code: "GERENCIA" },
+        },
+      });
+      if (!gerencia) throw new Error("Papel GERENCIA ausente.");
+
+      const otherManagers = await prisma.user.count({
+        where: {
+          organizationId,
+          isActive: true,
+          id: { not: userId },
+          userRoles: {
+            some: {
+              role: {
+                rolePermissions: {
+                  some: { permission: { key: "user.manage" } },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (otherManagers === 0) {
+        const retains = await wouldRetainManagerAfterUserRoleChange(
+          organizationId,
+          userId,
+          [gerencia.id],
+        );
+        expect(retains).toBe(false);
+        const stripped = await updatePlatformUser(actor, {
+          userId,
+          name: "Teste Sprint 9",
+          roleIds: [gerencia.id],
+        });
+        expect(stripped.ok).toBe(false);
+        if (!stripped.ok) expect(stripped.message).toBe(LAST_ADMIN_MESSAGE);
+      } else {
+        const retains = await wouldRetainManagerAfterUserRoleChange(
+          organizationId,
+          userId,
+          [gerencia.id],
+        );
+        expect(retains).toBe(true);
+      }
+    });
   },
 );

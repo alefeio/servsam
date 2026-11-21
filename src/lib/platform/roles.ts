@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { userHasPermission, type AuthenticatedUser } from "@/lib/platform/access";
+import {
+  LAST_ADMIN_MESSAGE,
+  wouldRetainManagerAfterRolePermissionChange,
+} from "@/lib/platform/admin-continuity";
 import { writeAudit } from "@/lib/platform/audit";
 import { getPrisma } from "@/lib/db/prisma";
 import { DIRETORIA_LOCKED_PERMISSIONS } from "@/lib/platform/permissions";
@@ -99,49 +103,75 @@ export async function updateRolePermissions(
     }
   }
 
+  const currentlyHasManage = role.rolePermissions.some(
+    (link) => link.permission.key === "user.manage",
+  );
+  const nextHasManage = uniqueKeys.includes("user.manage");
+  if (currentlyHasManage && !nextHasManage) {
+    const retains = await wouldRetainManagerAfterRolePermissionChange(
+      actor.organizationId,
+      role.id,
+      uniqueKeys,
+    );
+    if (!retains) {
+      return { ok: false, message: LAST_ADMIN_MESSAGE };
+    }
+  }
+
   const nextIds = new Set(permissions.map((permission) => permission.id));
   const current = new Map(role.rolePermissions.map((link) => [link.permissionId, link]));
 
-  for (const link of role.rolePermissions) {
-    if (nextIds.has(link.permissionId)) continue;
-    await prisma.rolePermission.delete({ where: { id: link.id } });
-    await writeAudit({
-      organizationId: actor.organizationId,
-      actorUserId: actor.id,
-      action: "PERMISSION_REVOKED",
-      entityType: "RolePermission",
-      entityId: role.id,
-      metadata: { permission: link.permission.key },
-    });
-  }
+  await prisma.$transaction(async (tx) => {
+    for (const link of role.rolePermissions) {
+      if (nextIds.has(link.permissionId)) continue;
+      await tx.rolePermission.delete({ where: { id: link.id } });
+      await writeAudit(
+        {
+          organizationId: actor.organizationId,
+          actorUserId: actor.id,
+          action: "PERMISSION_REVOKED",
+          entityType: "RolePermission",
+          entityId: role.id,
+          metadata: { permission: link.permission.key },
+        },
+        tx,
+      );
+    }
 
-  for (const permission of permissions) {
-    if (current.has(permission.id)) continue;
-    await prisma.rolePermission.create({
-      data: {
-        id: crypto.randomUUID(),
-        roleId: role.id,
-        permissionId: permission.id,
-        grantedById: actor.id,
+    for (const permission of permissions) {
+      if (current.has(permission.id)) continue;
+      await tx.rolePermission.create({
+        data: {
+          id: crypto.randomUUID(),
+          roleId: role.id,
+          permissionId: permission.id,
+          grantedById: actor.id,
+        },
+      });
+      await writeAudit(
+        {
+          organizationId: actor.organizationId,
+          actorUserId: actor.id,
+          action: "PERMISSION_GRANTED",
+          entityType: "RolePermission",
+          entityId: role.id,
+          metadata: { permission: permission.key },
+        },
+        tx,
+      );
+    }
+
+    await writeAudit(
+      {
+        organizationId: actor.organizationId,
+        actorUserId: actor.id,
+        action: "ROLE_UPDATED",
+        entityType: "Role",
+        entityId: role.id,
+        metadata: { permissionCount: permissions.length },
       },
-    });
-    await writeAudit({
-      organizationId: actor.organizationId,
-      actorUserId: actor.id,
-      action: "PERMISSION_GRANTED",
-      entityType: "RolePermission",
-      entityId: role.id,
-      metadata: { permission: permission.key },
-    });
-  }
-
-  await writeAudit({
-    organizationId: actor.organizationId,
-    actorUserId: actor.id,
-    action: "ROLE_UPDATED",
-    entityType: "Role",
-    entityId: role.id,
-    metadata: { permissionCount: permissions.length },
+      tx,
+    );
   });
 
   return { ok: true };

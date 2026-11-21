@@ -84,7 +84,11 @@ function CreateRoleForm() {
         <Label htmlFor="role-description">Descrição</Label>
         <Input id="role-description" name="description" required />
       </div>
-      {state?.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
+      {state?.error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {state.error}
+        </p>
+      ) : null}
       <Button type="submit" disabled={pending}>
         {pending ? "Criando..." : "Criar papel"}
       </Button>
@@ -118,44 +122,69 @@ function RolePermissionsForm({
           {role.isSystem ? " · papel semente" : ""} — {role.description}
         </p>
       </div>
-      <div className="space-y-5">
+      <div className="space-y-3">
         {groups.map(([domain, items]) => {
           const implemented = IMPLEMENTED_PERMISSION_PREFIXES.has(domain);
+          const selectedInGroup = items.filter((item) => selected.has(item.key)).length;
           return (
-            <fieldset key={domain} className="space-y-2">
-              <legend className="flex flex-wrap items-center gap-2 text-sm font-semibold text-navy">
-                {PERMISSION_DOMAIN_LABELS[domain] ?? domain}
-                {!implemented ? (
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                    Sprint futura
+            <details
+              key={domain}
+              className="rounded-lg border border-border bg-muted/20 open:bg-background"
+              open={implemented}
+            >
+              <summary className="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-navy marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span aria-hidden="true" className="text-muted-foreground">
+                    ▾
                   </span>
-                ) : null}
-              </legend>
-              <div className="grid gap-2 md:grid-cols-2">
-                {items.map((permission) => (
-                  <label key={permission.key} className="flex items-start gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      name="permission"
-                      value={permission.key}
-                      defaultChecked={selected.has(permission.key)}
-                      disabled={!canManage}
-                      className="mt-1"
-                    />
-                    <span>
-                      <span className="font-medium">{permission.description}</span>
-                      <span className="block text-xs text-muted-foreground">
-                        {permission.key}
-                      </span>
+                  {PERMISSION_DOMAIN_LABELS[domain] ?? domain}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    {selectedInGroup}/{items.length}
+                  </span>
+                  {!implemented ? (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                      Sprint futura
                     </span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+                  ) : null}
+                </span>
+              </summary>
+              <fieldset className="space-y-2 border-t border-border px-3 py-3">
+                <legend className="sr-only">
+                  Permissões do domínio {PERMISSION_DOMAIN_LABELS[domain] ?? domain}
+                </legend>
+                <div className="grid gap-2 md:grid-cols-2">
+                  {items.map((permission) => (
+                    <label
+                      key={permission.key}
+                      className="flex items-start gap-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        name="permission"
+                        value={permission.key}
+                        defaultChecked={selected.has(permission.key)}
+                        disabled={!canManage}
+                        className="mt-1"
+                      />
+                      <span>
+                        <span className="font-medium">{permission.description}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {permission.key}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            </details>
           );
         })}
       </div>
-      {state?.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
+      {state?.error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {state.error}
+        </p>
+      ) : null}
       {canManage ? (
         <Button
           type="submit"

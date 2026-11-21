@@ -4,6 +4,7 @@ import { ProductionNavLink } from "@/features/platform/production-nav-link";
 import { logoutAction } from "@/lib/platform/actions";
 import type { AuthenticatedUser } from "@/lib/platform/access";
 import { getNavItems } from "@/lib/platform/nav";
+import { getRuntimeEnvironmentLabel } from "@/lib/platform/runtime-environment";
 
 export function ProductionShell({
   user,
@@ -14,6 +15,7 @@ export function ProductionShell({
 }) {
   const items = getNavItems(user.permissions);
   const roleLabel = user.roleNames.join(", ") || user.roleCodes.join(", ") || "Sem perfil";
+  const environment = getRuntimeEnvironmentLabel();
 
   return (
     <div className="flex min-h-screen bg-muted">
@@ -22,7 +24,7 @@ export function ProductionShell({
           <p className="text-xs tracking-wide text-teal uppercase">Sistema</p>
           <SiteLogo unlinked surface="dark" className="mt-3" />
           <p className="mt-3 text-xs text-primary-foreground/70">
-            Operação real · Homologação
+            Operação real · {environment.shortLabel}
           </p>
         </div>
         <nav aria-label="Sistema" className="flex-1 p-3">

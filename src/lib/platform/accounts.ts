@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { auth } from "@/lib/platform/auth";
 import { userHasPermission, type AuthenticatedUser } from "@/lib/platform/access";
+import {
+  LAST_ADMIN_MESSAGE,
+  countActiveUserManagers,
+  grantsIncludeUserManage,
+  wouldRetainManagerAfterUserRoleChange,
+} from "@/lib/platform/admin-continuity";
 import { writeAudit } from "@/lib/platform/audit";
 import { getPrisma } from "@/lib/db/prisma";
 
@@ -117,100 +123,108 @@ export async function updatePlatformUser(
   if (!parsed.success) return { ok: false, message: "Revise os dados do usuário." };
 
   const prisma = getPrisma();
-  const user = await prisma.user.findFirst({
-    where: { id: parsed.data.userId, organizationId: actor.organizationId },
-    include: { userRoles: true },
-  });
-  if (!user) return { ok: false, message: "Usuário não encontrado." };
 
-  const roles = await prisma.role.findMany({
-    where: { id: { in: parsed.data.roleIds }, organizationId: actor.organizationId },
-    select: { id: true },
-  });
-  if (roles.length !== new Set(parsed.data.roleIds).size) {
-    return { ok: false, message: "Papel inválido para esta organização." };
-  }
-
-  const nextRoleIds = new Set(roles.map((role) => role.id));
-  const currentRoleIds = new Set(user.userRoles.map((link) => link.roleId));
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { name: parsed.data.name, updatedAt: new Date() },
-  });
-  await writeAudit({
-    organizationId: actor.organizationId,
-    actorUserId: actor.id,
-    action: "USER_UPDATED",
-    entityType: "User",
-    entityId: user.id,
-    metadata: { name: parsed.data.name },
-  });
-
-  for (const link of user.userRoles) {
-    if (nextRoleIds.has(link.roleId)) continue;
-    await prisma.userRole.delete({ where: { id: link.id } });
-    await writeAudit({
-      organizationId: actor.organizationId,
-      actorUserId: actor.id,
-      action: "ROLE_REMOVED",
-      entityType: "UserRole",
-      entityId: user.id,
-      metadata: { roleId: link.roleId },
-    });
-  }
-
-  for (const role of roles) {
-    if (currentRoleIds.has(role.id)) continue;
-    await prisma.userRole.create({
-      data: {
-        id: crypto.randomUUID(),
-        userId: user.id,
-        roleId: role.id,
-        assignedById: actor.id,
-      },
-    });
-    await writeAudit({
-      organizationId: actor.organizationId,
-      actorUserId: actor.id,
-      action: "ROLE_ASSIGNED",
-      entityType: "UserRole",
-      entityId: user.id,
-      metadata: { roleId: role.id },
-    });
-  }
-
-  return { ok: true };
-}
-
-async function countActiveUserManagers(
-  organizationId: string,
-  excludingUserId?: string,
-): Promise<number> {
-  const prisma = getPrisma();
-  const managers = await prisma.user.findMany({
-    where: {
-      organizationId,
-      isActive: true,
-      ...(excludingUserId ? { id: { not: excludingUserId } } : {}),
-    },
-    select: {
-      userRoles: {
-        select: {
-          role: {
-            select: {
-              rolePermissions: { select: { permission: { select: { key: true } } } },
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.findFirst({
+      where: { id: parsed.data.userId, organizationId: actor.organizationId },
+      include: {
+        userRoles: {
+          include: {
+            role: {
+              include: {
+                rolePermissions: { include: { permission: true } },
+              },
             },
           },
         },
       },
-    },
+    });
+    if (!user) return { ok: false, message: "Usuário não encontrado." };
+
+    const roles = await tx.role.findMany({
+      where: { id: { in: parsed.data.roleIds }, organizationId: actor.organizationId },
+      select: { id: true },
+    });
+    if (roles.length !== new Set(parsed.data.roleIds).size) {
+      return { ok: false, message: "Papel inválido para esta organização." };
+    }
+
+    const nextRoleIds = roles.map((role) => role.id);
+    const currentlyManages = user.userRoles.some((link) =>
+      grantsIncludeUserManage(link.role.rolePermissions),
+    );
+
+    if (user.isActive && currentlyManages) {
+      const retains = await wouldRetainManagerAfterUserRoleChange(
+        actor.organizationId,
+        user.id,
+        nextRoleIds,
+      );
+      if (!retains) {
+        return { ok: false, message: LAST_ADMIN_MESSAGE };
+      }
+    }
+
+    const nextRoleIdSet = new Set(nextRoleIds);
+    const currentRoleIds = new Set(user.userRoles.map((link) => link.roleId));
+
+    await tx.user.update({
+      where: { id: user.id },
+      data: { name: parsed.data.name, updatedAt: new Date() },
+    });
+    await writeAudit(
+      {
+        organizationId: actor.organizationId,
+        actorUserId: actor.id,
+        action: "USER_UPDATED",
+        entityType: "User",
+        entityId: user.id,
+        metadata: { name: parsed.data.name },
+      },
+      tx,
+    );
+
+    for (const link of user.userRoles) {
+      if (nextRoleIdSet.has(link.roleId)) continue;
+      await tx.userRole.delete({ where: { id: link.id } });
+      await writeAudit(
+        {
+          organizationId: actor.organizationId,
+          actorUserId: actor.id,
+          action: "ROLE_REMOVED",
+          entityType: "UserRole",
+          entityId: user.id,
+          metadata: { roleId: link.roleId },
+        },
+        tx,
+      );
+    }
+
+    for (const role of roles) {
+      if (currentRoleIds.has(role.id)) continue;
+      await tx.userRole.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: user.id,
+          roleId: role.id,
+          assignedById: actor.id,
+        },
+      });
+      await writeAudit(
+        {
+          organizationId: actor.organizationId,
+          actorUserId: actor.id,
+          action: "ROLE_ASSIGNED",
+          entityType: "UserRole",
+          entityId: user.id,
+          metadata: { roleId: role.id },
+        },
+        tx,
+      );
+    }
+
+    return { ok: true };
   });
-  return managers.filter((user) =>
-    user.userRoles.some((link) =>
-      link.role.rolePermissions.some((grant) => grant.permission.key === "user.manage"),
-    ),
-  ).length;
 }
 
 export async function setPlatformUserActive(
@@ -226,57 +240,61 @@ export async function setPlatformUserActive(
   }
 
   const prisma = getPrisma();
-  const user = await prisma.user.findFirst({
-    where: { id: userId, organizationId: actor.organizationId },
-    select: {
-      id: true,
-      isActive: true,
-      userRoles: {
-        select: {
-          role: {
-            select: {
-              rolePermissions: { select: { permission: { select: { key: true } } } },
+
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.findFirst({
+      where: { id: userId, organizationId: actor.organizationId },
+      select: {
+        id: true,
+        isActive: true,
+        userRoles: {
+          select: {
+            role: {
+              select: {
+                rolePermissions: { select: { permission: { select: { key: true } } } },
+              },
             },
           },
         },
       },
-    },
-  });
-  if (!user) return { ok: false, message: "Usuário não encontrado." };
-  if (user.isActive === isActive) return { ok: true };
+    });
+    if (!user) return { ok: false, message: "Usuário não encontrado." };
+    if (user.isActive === isActive) return { ok: true };
 
-  if (!isActive) {
-    const managesUsers = user.userRoles.some((link) =>
-      link.role.rolePermissions.some((grant) => grant.permission.key === "user.manage"),
-    );
-    if (managesUsers) {
-      const remaining = await countActiveUserManagers(actor.organizationId, user.id);
-      if (remaining < 1) {
-        return {
-          ok: false,
-          message:
-            "Não é possível desativar o último usuário com permissão de administrar contas.",
-        };
+    if (!isActive) {
+      const managesUsers = user.userRoles.some((link) =>
+        grantsIncludeUserManage(link.role.rolePermissions),
+      );
+      if (managesUsers) {
+        const remaining = await countActiveUserManagers(actor.organizationId, {
+          treatUserAsInactive: user.id,
+        });
+        if (remaining < 1) {
+          return { ok: false, message: LAST_ADMIN_MESSAGE };
+        }
       }
     }
-  }
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { isActive, updatedAt: new Date() },
+    await tx.user.update({
+      where: { id: user.id },
+      data: { isActive, updatedAt: new Date() },
+    });
+    if (!isActive) {
+      await tx.session.deleteMany({ where: { userId: user.id } });
+    }
+
+    await writeAudit(
+      {
+        organizationId: actor.organizationId,
+        actorUserId: actor.id,
+        action: isActive ? "USER_ACTIVATED" : "USER_DISABLED",
+        entityType: "User",
+        entityId: user.id,
+        metadata: {},
+      },
+      tx,
+    );
+
+    return { ok: true };
   });
-  if (!isActive) {
-    await prisma.session.deleteMany({ where: { userId: user.id } });
-  }
-
-  await writeAudit({
-    organizationId: actor.organizationId,
-    actorUserId: actor.id,
-    action: isActive ? "USER_ACTIVATED" : "USER_DISABLED",
-    entityType: "User",
-    entityId: user.id,
-    metadata: {},
-  });
-
-  return { ok: true };
 }
