@@ -2,6 +2,8 @@
 
 **Branch:** `prep/prep-01-next-presentation`  
 **Base:** `54b9794`  
+**HEAD:** `6231bdf` (`5404558` código + `6231bdf` docs)  
+**Preview:** https://servsam-4foeyi0cu-alefeios-projects.vercel.app (`dpl_EF8wDrv3zP9QXfsQ44k4YYed5Y8h`, protegido)  
 **Gate:** READY FOR FINAL REVIEW  
 **Sem** limpeza HOMOL, massa fictícia, 11B, migration, merge `main` ou Production.
 
@@ -44,7 +46,7 @@ Contrato atualizado com riscos de duplicidade, permissão financeira dedicada e 
 | `npm run build` | PASS |
 | `npm run test:e2e:preview` | PASS — 3 passed |
 
-E2E não apaga nem altera massa de apresentação. Preview protegido a publicar após push.
+E2E não apaga nem altera massa de apresentação. Preview protegido publicado.
 
 ## Pendências humanas
 
