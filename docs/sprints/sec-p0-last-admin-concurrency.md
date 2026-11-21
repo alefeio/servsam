@@ -1,7 +1,10 @@
 # SEC-P0 — Garantia concorrente do último administrador
 
 **Branch:** `fix/sec-p0-last-admin-concurrency`  
-**Base:** `prep/prep-01-next-presentation` @ `22252e9`
+**Base:** `prep/prep-01-next-presentation` @ `22252e9`  
+**HEAD:** `592503b`  
+**Preview:** https://servsam-bcfzys3q8-alefeios-projects.vercel.app  
+**Gate:** SEC-P0 READY FOR REVIEW
 
 ## Auditoria (Gate 1)
 
