@@ -104,7 +104,13 @@ try {
       missingPermissionRow: plan.filter((item) => item.action === "missing_permission_row")
         .length,
     },
-    plan: plan.map(({ roleId, permissionId, ...rest }) => rest),
+    plan: plan.map((item) => ({
+      role: item.role,
+      permission: item.permission,
+      action: item.action,
+      wouldCreatePermission: item.wouldCreatePermission,
+      wouldGrant: item.wouldGrant,
+    })),
     authorizationRequired:
       needsGrant.length > 0 || missingPermissionRows.length > 0
         ? "CONFIRM=YES GRANT_AUTHORIZE=YES GRANT_ACTOR_EMAIL=<ator> para aplicar grants faltantes"

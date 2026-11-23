@@ -22,7 +22,8 @@ const files =
 const result = spawnSync("npx", ["playwright", "test", ...files, "--project=chromium"], {
   stdio: "inherit",
   shell: true,
-  env: { ...env, CI: "1" },
+  // Porta dedicada evita colisão com `next dev` local; CI=1 impede reuseExistingServer.
+  env: { ...env, CI: "1", PORT: process.env.PORT || "3461" },
   cwd: resolve("."),
 });
 process.exit(result.status ?? 1);

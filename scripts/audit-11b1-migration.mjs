@@ -6,7 +6,7 @@
  */
 import { createHash } from "node:crypto";
 import pg from "pg";
-import { buildHomolEnv, parseEnvFile, HOMOL_ENV_FILE } from "./lib/homol-env.mjs";
+import { buildHomolEnv, parseEnvFile } from "./lib/homol-env.mjs";
 
 const MIGRATION = "20261123140000_engagements_purchase_orders";
 const EXPECTED_TABLES_11A = [

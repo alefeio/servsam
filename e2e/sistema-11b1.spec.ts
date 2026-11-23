@@ -9,6 +9,8 @@ loadEnv({ path: ".env.local" });
  * Dados com prefixo [E2E]; não usa /demonstracao nem localStorage.
  */
 test.describe("11B.1 contratação e O.C. reais", () => {
+  test.describe.configure({ mode: "serial" });
+
   test.beforeEach(() => {
     test.skip(
       process.env.DATABASE_ENV !== "preview" ||
@@ -24,7 +26,7 @@ test.describe("11B.1 contratação e O.C. reais", () => {
     test.setTimeout(240_000);
     const email = process.env.SEED_ADMIN_EMAIL ?? "";
     const password = process.env.SEED_ADMIN_PASSWORD ?? "";
-    const suffix = Date.now().toString().slice(-6);
+    const suffix = `${Date.now().toString().slice(-6)}-a`;
     const customerName = `[E2E] CTR-A ${suffix}`;
 
     page.on("dialog", (dialog) => {
@@ -47,6 +49,9 @@ test.describe("11B.1 contratação e O.C. reais", () => {
     await page.getByRole("link", { name: "Novo cliente" }).click();
     await page.getByLabel("Nome ou razão social").fill(customerName);
     await page.getByRole("button", { name: "Cadastrar cliente" }).click();
+    await expect(page).toHaveURL(/\/sistema\/clientes\/(?!novo$)[^/?#]+/, {
+      timeout: 60_000,
+    });
     await expect(page.getByRole("heading", { name: customerName })).toBeVisible({
       timeout: 30_000,
     });
@@ -61,6 +66,9 @@ test.describe("11B.1 contratação e O.C. reais", () => {
     await page.getByLabel("Quantidade").fill("1");
     await page.getByLabel("Valor unitário (R$)").fill("1.200,00");
     await page.getByRole("button", { name: "Criar rascunho" }).click();
+    await expect(page).toHaveURL(/\/sistema\/orcamentos\/(?!novo$)[^/?#]+/, {
+      timeout: 120_000,
+    });
     await expect(page.getByText(/ORC-\d{4}-\d{4}/).first()).toBeVisible({
       timeout: 30_000,
     });
@@ -68,13 +76,16 @@ test.describe("11B.1 contratação e O.C. reais", () => {
     await page.getByRole("button", { name: "Marcar como enviado" }).click();
     await expect(
       page.getByRole("button", { name: "Registrar aceite" }),
-    ).toBeVisible({ timeout: 30_000 });
+    ).toBeVisible({ timeout: 60_000 });
     await page.getByRole("button", { name: "Registrar aceite" }).click();
     await expect(
       page.getByRole("button", { name: "Gerar contratação" }),
-    ).toBeVisible({ timeout: 30_000 });
+    ).toBeVisible({ timeout: 60_000 });
 
     await page.getByRole("button", { name: "Gerar contratação" }).click();
+    await expect(page).toHaveURL(/\/sistema\/contratacoes\/[^/?#]+/, {
+      timeout: 120_000,
+    });
     await expect(page.getByText(/CTR-\d{4}-\d{4}/).first()).toBeVisible({
       timeout: 30_000,
     });
@@ -107,7 +118,7 @@ test.describe("11B.1 contratação e O.C. reais", () => {
     test.setTimeout(240_000);
     const email = process.env.SEED_ADMIN_EMAIL ?? "";
     const password = process.env.SEED_ADMIN_PASSWORD ?? "";
-    const suffix = Date.now().toString().slice(-6);
+    const suffix = `${Date.now().toString().slice(-6)}-b`;
     const customerName = `[E2E] CTR-B ${suffix}`;
     const externalNumber = `OC-E2E-${suffix}`;
 
@@ -127,13 +138,18 @@ test.describe("11B.1 contratação e O.C. reais", () => {
     await page.getByRole("link", { name: "Novo cliente" }).click();
     await page.getByLabel("Nome ou razão social").fill(customerName);
     await page.getByRole("button", { name: "Cadastrar cliente" }).click();
+    await expect(page).toHaveURL(/\/sistema\/clientes\/(?!novo$)[^/?#]+/, {
+      timeout: 60_000,
+    });
     await expect(page.getByRole("heading", { name: customerName })).toBeVisible({
       timeout: 30_000,
     });
 
     await nav.getByRole("link", { name: "Ordens de compra" }).click();
     await page.getByRole("link", { name: "Registrar O.C." }).click();
-    await page.getByLabel("Cliente").selectOption({ label: customerName });
+    await page
+      .getByLabel("Cliente", { exact: true })
+      .selectOption({ label: customerName });
     await page.getByLabel("Número da O.C. do cliente").fill(externalNumber);
     await page.getByLabel("Data de recebimento").fill("2026-11-20");
     await page
@@ -147,19 +163,25 @@ test.describe("11B.1 contratação e O.C. reais", () => {
     await page.locator('input[name="itemUnitPrice"]').first().fill("900,00");
     await page.getByRole("button", { name: "Registrar O.C. recebida" }).click();
 
-    await expect(page.getByText(/OC-\d{4}-\d{4}/).first()).toBeVisible({
-      timeout: 30_000,
-    });
-    await expect(page.getByText(externalNumber)).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: new RegExp(`OC-\\d{4}-\\d{4} · O\\.C\\. ${externalNumber}`),
+      }),
+    ).toBeVisible({ timeout: 30_000 });
     await expect(
       page.getByRole("button", { name: "Gerar contratação" }),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Gerar contratação" }).click();
+    await expect(page).toHaveURL(/\/sistema\/contratacoes\/[^/]+$/, {
+      timeout: 60_000,
+    });
     await expect(page.getByText(/CTR-\d{4}-\d{4}/).first()).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByText("O.C. recebida")).toBeVisible();
+    await expect(
+      page.getByRole("definition").filter({ hasText: "O.C. recebida" }),
+    ).toBeVisible();
     await expect(page.getByText("Item OC 1")).toBeVisible();
     const engagementUrl = page.url();
 
