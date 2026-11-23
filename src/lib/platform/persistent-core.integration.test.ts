@@ -102,6 +102,14 @@ describe.skipIf(!integrationDatabaseGuard().allowed)(
       const prisma = getPrisma();
       for (const organizationId of orgIds) {
         await prisma.auditLog.deleteMany({ where: { organizationId } });
+        await prisma.engagementItem.deleteMany({ where: { organizationId } });
+        await prisma.engagement.deleteMany({ where: { organizationId } });
+        await prisma.receivedPurchaseOrderItem.deleteMany({
+          where: { organizationId },
+        });
+        await prisma.receivedPurchaseOrder.deleteMany({
+          where: { organizationId },
+        });
         await prisma.proposalItem.deleteMany({ where: { organizationId } });
         await prisma.proposal.deleteMany({ where: { organizationId } });
         await prisma.customerContact.deleteMany({ where: { organizationId } });
@@ -740,6 +748,179 @@ describe.skipIf(!integrationDatabaseGuard().allowed)(
       expect(
         (await getCustomerDetail(owner, customer.data.id))?.deletedAt,
       ).toBeNull();
+    });
+
+    it("orçamento aceito gera contratação única com itens e auditoria", async () => {
+      const { createCustomer } = await import("@/lib/platform/customers");
+      const { createProposal, transitionProposal, getProposalDetail } =
+        await import("@/lib/platform/proposals");
+      const {
+        createEngagementFromProposal,
+        getEngagementDetail,
+        listEngagements,
+      } = await import("@/lib/platform/engagements");
+      const { getPrisma } = await import("@/lib/db/prisma");
+
+      const customer = await createCustomer(owner, {
+        legalName: "Cliente contratação proposta",
+      });
+      if (!customer.ok) throw new Error("setup");
+      const draft = await createProposal(
+        owner,
+        proposalInput(customer.data.id),
+        new Date("2026-11-23T12:00:00Z"),
+      );
+      if (!draft.ok) throw new Error("proposal");
+      expect(
+        (await createEngagementFromProposal(owner, {
+          proposalId: draft.data.id,
+        })).ok,
+      ).toBe(false);
+
+      expect(
+        (await transitionProposal(owner, draft.data.id, "sent")).ok,
+      ).toBe(true);
+      expect(
+        (await transitionProposal(owner, draft.data.id, "accepted")).ok,
+      ).toBe(true);
+
+      const first = await createEngagementFromProposal(
+        owner,
+        { proposalId: draft.data.id },
+        new Date("2026-11-23T12:00:00Z"),
+      );
+      expect(first.ok).toBe(true);
+      if (!first.ok) return;
+      expect(first.data.code).toMatch(/^CTR-2026-\d{4}$/);
+
+      const duplicate = await createEngagementFromProposal(owner, {
+        proposalId: draft.data.id,
+      });
+      expect(duplicate.ok).toBe(false);
+
+      const [again, concurrent] = await Promise.all([
+        createEngagementFromProposal(owner, { proposalId: draft.data.id }),
+        createEngagementFromProposal(owner, { proposalId: draft.data.id }),
+      ]);
+      expect(again.ok).toBe(false);
+      expect(concurrent.ok).toBe(false);
+
+      const detail = await getEngagementDetail(owner, first.data.id);
+      expect(detail?.items).toHaveLength(2);
+      expect(detail?.origin).toBe("proposal");
+      expect(detail?.proposal?.id).toBe(draft.data.id);
+      expect(detail?.totalCents).toBe(34000);
+
+      const proposal = await getProposalDetail(owner, draft.data.id);
+      expect(proposal?.engagement?.id).toBe(first.data.id);
+
+      expect(
+        (await listEngagements(outsider)).some(
+          (item) => item.id === first.data.id,
+        ),
+      ).toBe(false);
+
+      const audits = await getPrisma().auditLog.findMany({
+        where: {
+          organizationId: owner.organizationId,
+          entityType: "Engagement",
+          entityId: first.data.id,
+        },
+      });
+      expect(audits.map((entry) => entry.action)).toContain("ENGAGEMENT_CREATED");
+    });
+
+    it("O.C. recebida sem orçamento gera contratação e impede duplicar número externo", async () => {
+      const { createCustomer } = await import("@/lib/platform/customers");
+      const { createPurchaseOrder, getPurchaseOrderDetail } =
+        await import("@/lib/platform/purchase-orders");
+      const {
+        createEngagementFromPurchaseOrder,
+        getEngagementDetail,
+      } = await import("@/lib/platform/engagements");
+
+      const customer = await createCustomer(owner, {
+        legalName: "Cliente O.C. recebida",
+      });
+      if (!customer.ok) throw new Error("setup");
+
+      const input = {
+        customerId: customer.data.id,
+        externalNumber: "OC-CLI-7788",
+        receivedAt: "2026-11-20",
+        description: "Serviços de dedetização sob contrato anual",
+        documentReference: "e-mail compras 20/11",
+        items: [
+          {
+            description: "Dedetização área comum",
+            quantity: 1,
+            unitPriceCents: 250000,
+          },
+          {
+            description: "Descupinização",
+            quantity: 2,
+            unitPriceCents: 80000,
+          },
+        ],
+      };
+
+      const created = await createPurchaseOrder(
+        owner,
+        input,
+        new Date("2026-11-23T15:00:00Z"),
+      );
+      expect(created.ok).toBe(true);
+      if (!created.ok) return;
+      expect(created.data.code).toMatch(/^OC-2026-\d{4}$/);
+
+      const dupExternal = await createPurchaseOrder(owner, input);
+      expect(dupExternal.ok).toBe(false);
+
+      const foreignCustomer = await (
+        await import("@/lib/platform/customers")
+      ).createCustomer(outsider, { legalName: "Org externa OC" });
+      if (!foreignCustomer.ok) throw new Error("foreign");
+      expect(
+        (
+          await createPurchaseOrder(owner, {
+            ...input,
+            customerId: foreignCustomer.data.id,
+            externalNumber: "OC-OUTRA-ORG",
+          })
+        ).ok,
+      ).toBe(false);
+      expect(
+        (
+          await createPurchaseOrder(outsider, {
+            ...input,
+            customerId: customer.data.id,
+            externalNumber: "OC-CROSS-ORG",
+          })
+        ).ok,
+      ).toBe(false);
+
+      const engagement = await createEngagementFromPurchaseOrder(
+        owner,
+        { purchaseOrderId: created.data.id },
+        new Date("2026-11-23T16:00:00Z"),
+      );
+      expect(engagement.ok).toBe(true);
+      if (!engagement.ok) return;
+
+      const again = await createEngagementFromPurchaseOrder(owner, {
+        purchaseOrderId: created.data.id,
+      });
+      expect(again.ok).toBe(false);
+
+      const po = await getPurchaseOrderDetail(owner, created.data.id);
+      expect(po?.status).toBe("contracted");
+      expect(po?.engagement?.id).toBe(engagement.data.id);
+      expect(po?.agreedAmountCents).toBe(410000);
+
+      const detail = await getEngagementDetail(owner, engagement.data.id);
+      expect(detail?.origin).toBe("purchase_order");
+      expect(detail?.items).toHaveLength(2);
+      expect(detail?.purchaseOrder?.id).toBe(created.data.id);
     });
   },
 );

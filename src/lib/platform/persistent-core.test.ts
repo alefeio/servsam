@@ -458,6 +458,8 @@ describe("papéis semente e chaves", () => {
         "customer.update",
         "proposal.view",
         "proposal.send",
+        "contract.view",
+        "contract.manage",
       ]) {
         expect(granted.has(key), `${role} ${key}`).toBe(true);
       }
@@ -471,9 +473,14 @@ describe("papéis semente e chaves", () => {
       "proposals.ts",
       "proposal-actions.ts",
       "proposal-state.ts",
+      "engagements.ts",
+      "engagement-actions.ts",
+      "purchase-orders.ts",
+      "purchase-order-actions.ts",
       "nav.ts",
     ];
-    const pattern = /"((?:customer|proposal|audit|dashboard)\.[a-z_]+)"/g;
+    const pattern =
+      /"((?:customer|proposal|audit|dashboard|contract)\.[a-z_]+)"/g;
     const used = new Set<string>();
     for (const file of files) {
       const source = readFileSync(

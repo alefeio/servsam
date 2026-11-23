@@ -16,6 +16,7 @@ const files =
     : [
         "e2e/production-auth.spec.ts",
         "e2e/sistema-core.spec.ts",
+        "e2e/sistema-11b1.spec.ts",
         "e2e/password-recovery.spec.ts",
       ];
 const result = spawnSync("npx", ["playwright", "test", ...files, "--project=chromium"], {
