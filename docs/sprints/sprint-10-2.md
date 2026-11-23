@@ -1,44 +1,47 @@
 # Sprint 10.2 — Adequação da demonstração (Orçamento, sinal, agenda e RH)
 
-A Sprint 10.1 alinhou a demonstração aos documentos operacionais. As prioridades seguintes pedem Orçamento como ponto de partida comercial, registro do sinal antes da OS, agenda em calendário, O.C. nos contratos periódicos e RH ampliado.
+> **Atualização DEMO-HF (`hotfix/demo-10-2-signal-oc`):** o feedback de 19/11/2026 superou a hipótese “sinal obrigatório antes da OS” e “O.C. só em periódico”. O fluxo vigente da demo está no roteiro `sprint-10-2-client-demo-guide.md` e no relatório `demo-hf-10-2-report.md`. O texto abaixo descreve o escopo original da 10.2 e aponta o que o hotfix corrigiu.
 
-Esta sprint atualiza somente `/demonstracao`, em fixture e `localStorage`. Não há modelo novo no Prisma. `/sistema` não recebe esses fluxos. A home pública não muda. Google Calendar continua desligado. O financeiro amplo aguarda orientação; só o mínimo do sinal entra agora.
+A Sprint 10.1 alinhou a demonstração aos documentos operacionais. A 10.2 atualizou `/demonstracao` (fixture + `localStorage`): Orçamento como ponto de partida, sinal demonstrativo, agenda em calendário, O.C. e RH ampliado.
 
-## Fluxo principal para validação
+Somente `/demonstracao`. Sem modelo novo no Prisma. `/sistema` fora. Google Calendar desligado.
+
+## Fluxo vigente após o hotfix (19/11/2026)
 
 ```text
-Orçamento → Aceite → Registro do sinal → OS → Agendamento → Execução → Entregáveis
+Orçamento → Aceite → (opcional) solicitação Comercial → (opcional) confirmação Financeiro
+                  └→ OS → Agendamento/remarcação → Execução → Entregáveis
+
+O.C. recebida do cliente (avulso | periódico | sem orçamento interno) → contratação → OS
 ```
 
-Contratos periódicos (paralelo): Contrato → O.C. vinculada → visitas/agenda. A emissão de OS individual por visita permanece pendente de validação do cliente.
+- Sinal é **recomendado** quando aplicável; **não** bloqueia universalmente a OS.
+- Comercial solicita; Financeiro confirma (eventos simulados).
+- O.C. é documento do contratante ≠ orçamento SERVSAM ≠ OS.
+- Agenda permite remarcar com histórico no `localStorage`.
 
-## O que a demonstração passa a mostrar
+## O que a 10.2 original entregou
 
-1. Nomenclatura **Orçamento** na interface (internamente `DemoProposal`; rotas `/comercial/propostas` preservadas). “Proposta Comercial” pode aparecer em documentos.
-2. Indicadores comerciais derivados: emitidos, aceitos, convertidos em contratação, taxa de conversão e valores em negociação.
-3. Registro demonstrativo do sinal após o aceite, liberando a emissão da OS. Sem cobrança real.
-4. Emissão da OS separada do agendamento: OS emitida sem data fictícia automática.
-5. Agenda com visualização em calendário (dia/semana/mês), só dados locais.
-6. Ordem de Compra (O.C.) associada a contratos periódicos, distinta da OCS/formalização do orçamento avulso.
-7. RH em Colaboradores: férias, faltas, atestados, advertências, suspensões e ocorrências estruturadas, só com dados fictícios e sem informação clínica sensível.
+1. Nomenclatura **Orçamento** na UI (internamente `DemoProposal`; rotas `/comercial/propostas`).
+2. Indicadores comerciais derivados.
+3. Registro demonstrativo do sinal (a 10.2 ainda tratava o sinal como pré-requisito da OS — **corrigido no hotfix**).
+4. Emissão da OS separada do agendamento.
+5. Agenda dia/semana/mês.
+6. O.C. em contratos periódicos (a 10.2 ainda não cobria O.C. avulsa/direta — **ampliado no hotfix**).
+7. RH estruturado (férias, faltas, atestados, advertências, suspensões, ocorrências fictícias).
 
-## O que continua hipótese
+## O que continua pendente do cliente
 
-- Exceções à exigência do sinal antes da OS.
-- Se cada visita de contrato/O.C. gera OS individual.
-- Escopo completo do Financeiro.
-
-Lista em `docs/content/pending-client-validation.md` e roteiro `docs/sprints/sprint-10-2-client-demo-guide.md`.
+- Se cada visita física distinta exige OS separada.
+- Política fina de bloqueio por conflito de agenda.
+- Percentuais / formas de pagamento reais.
+- Escopo completo do Financeiro na V1.
 
 ## Compatibilidade
 
-- Hotel Amazonas e jornadas das Sprints 10 e 10.1 preservados.
-- Menu mobile e correção do React #185 mantidos.
-- Massa antiga no `localStorage` continua válida via hydrate/merge.
+- Hotel Amazonas e jornadas 10 / 10.1 preservados.
+- Massa antiga no `localStorage` via hydrate/merge (inclui `receivedPurchaseOrders` e `scheduleHistory` após o hotfix).
 
-## Fora desta sprint
+## Fora desta sprint / do hotfix
 
-- Domínios de negócio no Prisma.
-- Cobrança real, NF-e, integração Google Calendar.
-- Merge automático em `main` (somente Preview Vercel).
-- Financeiro além do mínimo do sinal.
+- Domínios no Prisma, cobrança real, NF-e, Google Calendar, merge automático em `main`, Production.
