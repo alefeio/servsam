@@ -2,6 +2,8 @@
 
 **Branch:** `hotfix/demo-10-2-signal-oc`  
 **Base:** `sprint-10-2-demo-adequacao` @ `4ca2190`  
+**HEAD:** `d4d1cec`  
+**Preview:** https://servsam-j2r8jx1kb-alefeios-projects.vercel.app  
 **Gate:** DEMO-HF READY FOR REVIEW
 
 ## O que mudou
