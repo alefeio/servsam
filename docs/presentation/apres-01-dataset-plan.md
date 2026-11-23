@@ -5,7 +5,7 @@
 **SHA APRES-01.1:** `27c9789030b295562e8f398a8f2212a250a9a01f`  
 **Preview protegido:** https://servsam-ivkalbyuv-alefeios-projects.vercel.app  
 **Estratégia:** B (`docs/sprints/prep-01-1-presentation-data-strategy.md`) — manter HOMOL + cenários `[APRES]`  
-**Estado APRES-01.1:** hardening concluído (dry-run). **Sem escrita no HOMOL nesta entrega.**
+**Estado APRES-01.1a:** lock de sessão dedicada. **Sem escrita no HOMOL nesta entrega.**
 
 ## 1. Inventário (somente leitura)
 
@@ -103,7 +103,8 @@ O Painel (`/sistema`) usa `countActiveCustomers` e `getProposalSummary` sobre **
   - Dry-run por padrão.
   - Escrita: `CONFIRM=YES` + `APRES_DATA_AUTHORIZE=YES` + `APRES_ACTOR_EMAIL`.
   - Ator pretendido (mediante autorização): `alexandrefpenha@gmail.com` — sem auto-seleção, sem seed.
-  - Advisory lock PostgreSQL; revalidação do plano; progresso por cenário; retomada idempotente.
+  - Advisory lock em `pg.Client` dedicado (não pool Prisma); `assertAlive` entre cenários; `finally` na mesma sessão.
+  - Revalidação do plano; progresso por cenário; retomada idempotente.
   - Serviços de negócio apenas; sem `UPDATE` artificial de aceito; numeração oficial preservada.
 
 ### Verificações que impedem banco incorreto
@@ -130,13 +131,17 @@ Até autorização humana: apenas inventário e dry-run.
 
 | Comando | Resultado |
 | --- | --- |
-| Inventário + identidade | PASS (`instanceId` alinhado ao env) |
+| Inventário + identidade | PASS (`instanceId` + marcadores + ≠ legado) |
 | Dry-run | `awaiting_authorization` (0 writes) |
-| Identidade incorreta | BLOQUEADO `instance_id_mismatch` |
-| Escrita sem `APRES_ACTOR_EMAIL` | BLOQUEADO `apres_actor_email_required` |
-| `npm run lint` | PASS |
-| `npm run typecheck` | PASS |
-| `npm test` | 146 PASS |
-| `npm run build` | PASS |
+| Lock concorrente (integração) | PASS — A segura, B recusado, A libera, B adquire |
+| Lock + erro + finally | PASS — B adquire após falha de A |
+| Sessão perdida | PASS — `assertAlive` / acquire bloqueiam |
+| `npm run lint` / `typecheck` / `test` / `build` | PASS (150 unit; integração lock ok) |
 
-Gate: **APRES-01.1 READY FOR WRITE AUTHORIZATION**
+Gate: **APRES-01.1a READY FOR WRITE AUTHORIZATION**
+
+### Riscos remanescentes
+
+- Atomicidade global inexistente (transações por serviço); retomada depende de idempotência.
+- Pooler de transação incompatível com session lock — exige URL HOMOL direta.
+- Escrita ainda depende de autorização humana explícita (`CONFIRM` + `APRES_DATA_AUTHORIZE` + ator).

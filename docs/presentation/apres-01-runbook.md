@@ -1,31 +1,42 @@
-# APRES-01 / APRES-01.1 — Runbook de apresentação e provisionamento
+# APRES-01 / APRES-01.1 / APRES-01.1a — Runbook
 
 **Ambiente:** HOMOL Preview  
-**Identidade:** host hash `22e5c2dd2d93` **e** `HOMOL_APPROVED_INSTANCE_ID` (fora do código)  
+**Identidade:** host hash `22e5c2dd2d93` + `HOMOL_APPROVED_INSTANCE_ID` + marcadores Gate 0  
 **Não usar:** Production, merge `main`, Sprint 11B, seed automática.
 
-## Pré-requisitos de identidade (Gate A)
+## Pré-requisitos de identidade (Gate A / 01.1a)
 
-1. Garantir `.env.gate0.preview.local` com URLs `HOMOL_*`.
+1. Garantir `.env.gate0.preview.local` com URLs `HOMOL_*` (preferir URL **direta**, não pooler).
 2. Calcular o instanceId (somente leitura):
 
 ```bash
 npx tsx scripts/homol-print-instance-id.mjs
 ```
 
-3. Gravar no **mesmo arquivo de env** (não commitado):
+3. Cruzar o valor com evidência independente do Gate 0 (org `servsam` + migration `20261118160000_customers_proposals`) — não gravar um hash só porque a conexão candidata o imprimiu.
+4. Gravar no env local (não commitado):
 
 ```bash
-HOMOL_APPROVED_INSTANCE_ID=<instanceId impresso>
+HOMOL_APPROVED_INSTANCE_ID=<instanceId validado>
 ```
 
-4. Inventário e provisionamento **interrompem** se:
-   - `HOMOL_APPROVED_INSTANCE_ID` ausente;
-   - instanceId live ≠ aprovado (`instance_id_mismatch`);
+5. Inventário/provisionamento **interrompem** se:
+   - `HOMOL_APPROVED_INSTANCE_ID` ausente ou divergente;
    - host hash ≠ `22e5c2dd2d93`;
-   - URL alvo igual ao `RUNTIME_DATABASE_URL` legado (`.env.local`).
+   - URL completa = `RUNTIME_DATABASE_URL` legado;
+   - instanceId live = instanceId do legado;
+   - faltam marcadores independentes (org/migration 11A).
 
-Essas checagens impedem escrita em banco incorreto mesmo quando o hostname Prisma é compartilhado.
+## Lock de provisionamento (APRES-01.1a)
+
+- Tipo: `pg_try_advisory_lock` / `pg_advisory_unlock` em **sessão dedicada** (`pg.Client`).
+- Não usa o pool Prisma (sessões diferentes quebrariam o lock).
+- URL do lock: `pickLockConnectionUrl` prefere `HOMOL_POSTGRES_URL` / `HOMOL_DATABASE_URL` e recusa pooler de transação.
+- Ciclo: abrir conexão → acquire → `assertAlive` entre cenários → `close()` no `finally` (mesma sessão).
+- Segunda execução recebe `concurrent_apres_provision_lock` enquanto a primeira mantém a sessão.
+- Perda da conexão de controle (`assertAlive` falha) interrompe o fluxo — não continua desprotegido.
+
+Evidência automatizada: `src/lib/platform/apres-session-lock.integration.test.ts` (conexões PostgreSQL distintas via `npm run test:integration`).
 
 ## Dry-run seguro
 
@@ -42,14 +53,14 @@ CONFIRM=YES APRES_DATA_AUTHORIZE=YES APRES_ACTOR_EMAIL=alexandrefpenha@gmail.com
 ```
 
 Exige:
-- Identidade HOMOL válida;
+- Identidade HOMOL válida (env + marcadores independentes + ≠ legado);
 - Ator explícito ativo em `servsam` com permissões de cliente/orçamento;
 - Recusa da conta `SEED_ADMIN_EMAIL`;
-- Advisory lock (bloqueia execução concorrente);
+- Lock de sessão dedicada (APRES-01.1a);
 - Revalidação do plano antes e entre cenários;
 - Sem alteração direta de orçamento já aceito (só `transitionProposal`).
 
-Não há atomicidade global: cada serviço usa sua própria transação. Em falha parcial, reexecute — o plano é idempotente.
+Não há atomicidade global: cada serviço usa sua própria transação. Em falha parcial, o `finally` libera o lock e a reexecução retoma de forma idempotente.
 
 ## Antes da reunião
 

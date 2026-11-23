@@ -11,7 +11,7 @@
  *
  * Gate A: identidade real (system_identifier+database vs HOMOL_APPROVED_INSTANCE_ID).
  * Gate B: APRES_ACTOR_EMAIL obrigatório na escrita; sem auto-seleção; sem seed.
- * Gate C: advisory lock, revalidação do plano, retomada idempotente por cenário.
+ * Gate C: advisory lock em sessão dedicada (pg.Client), revalidação e retomada.
  *
  * Não imprime URL/senha. Não cria usuários. Não altera papéis. Não roda migration.
  */
@@ -22,6 +22,10 @@ import {
   EXPECTED_HOMOL_HOST_HASH,
   HOMOL_APPROVED_INSTANCE_ENV,
 } from "./lib/homol-identity.mjs";
+import {
+  openApresSessionLock,
+  pickLockConnectionUrl,
+} from "../src/lib/platform/apres-session-lock.ts";
 
 const forceDryRun = process.argv.includes("--dry-run");
 const confirm = (process.env.CONFIRM ?? "").trim().toUpperCase() === "YES";
@@ -75,7 +79,6 @@ const {
   proposalTotalCents,
 } = await import("../src/lib/platform/apres-01-plan.ts");
 const {
-  APRES_ADVISORY_LOCK,
   classifyScenarioProgress,
   refuseSeedActor,
   requireActorEmail,
@@ -265,7 +268,14 @@ const reportBase = {
     hostHash: identity.hostHash,
     instanceId: identity.instanceId,
     approvedEnv: HOMOL_APPROVED_INSTANCE_ENV,
-    legacyCompared: identity.legacyCompared,
+    legacyUrlCompared: identity.legacyUrlCompared === true,
+    legacyInstanceCompared: identity.legacyInstanceCompared === true,
+    independentMarkers: identity.independentMarkers,
+  },
+  lockStrategy: {
+    type: "postgres_session_advisory_lock",
+    client: "dedicated_pg_Client",
+    note: "Não usa o pool Prisma; acquire/release na mesma sessão; finally fecha a conexão.",
   },
   productionContact: false,
   organizationSlug: organization.slug,
@@ -351,26 +361,43 @@ if (plan.summary.conflicts > 0) {
   process.exit(1);
 }
 
-const lockRows = await prisma.$queryRawUnsafe(
-  `SELECT pg_try_advisory_lock(${APRES_ADVISORY_LOCK.classId}, ${APRES_ADVISORY_LOCK.objectId}) AS acquired`,
-);
-const lockAcquired = Boolean(lockRows?.[0]?.acquired);
-if (!lockAcquired) {
+let lockUrl;
+try {
+  lockUrl = pickLockConnectionUrl(process.env);
+} catch (error) {
   console.error(
     JSON.stringify({
       ok: false,
-      reason: "concurrent_apres_provision_lock",
-      hint: "Outro provisionamento APRES-01 está em andamento.",
+      reason: error instanceof Error ? error.message : "lock_url_unavailable",
     }),
   );
   await prisma.$disconnect();
   process.exit(1);
 }
 
+const sessionLock = await openApresSessionLock(lockUrl.url);
+const lockAcquired = await sessionLock.tryAcquire();
+if (!lockAcquired) {
+  console.error(
+    JSON.stringify({
+      ok: false,
+      reason: "concurrent_apres_provision_lock",
+      hint: "Outro provisionamento APRES-01 está em andamento.",
+      lockSource: lockUrl.source,
+    }),
+  );
+  await sessionLock.close();
+  await prisma.$disconnect();
+  process.exit(1);
+}
+
 const results = [];
 const scenarioReports = [];
+let failed = false;
 
 try {
+  await sessionLock.assertAlive();
+
   // Revalidação imediata antes de qualquer escrita.
   const fresh = await loadSnapshot();
   let livePlan = buildApresProvisionPlan(
@@ -383,6 +410,7 @@ try {
   }
 
   for (const scenario of APRES_01_SCENARIOS) {
+    await sessionLock.assertAlive();
     const mid = await loadSnapshot();
     livePlan = buildApresProvisionPlan([scenario], mid.customers, mid.proposals);
     const scenarioPlan = livePlan.scenarios[0];
@@ -566,12 +594,18 @@ try {
         },
         atomicity:
           "Per-service transactions only; resume via idempotent re-run after partial failure.",
+        lock: {
+          source: lockUrl.source,
+          connectionId: sessionLock.connectionId,
+          heldAcrossScenarios: true,
+        },
       },
       null,
       2,
     ),
   );
 } catch (error) {
+  failed = true;
   console.error(
     JSON.stringify({
       ok: false,
@@ -582,14 +616,10 @@ try {
         "Corrigir a causa e reexecutar com os mesmos envs; o plano é idempotente por cenário.",
     }),
   );
-  await prisma.$queryRawUnsafe(
-    `SELECT pg_advisory_unlock(${APRES_ADVISORY_LOCK.classId}, ${APRES_ADVISORY_LOCK.objectId})`,
-  );
-  await prisma.$disconnect();
-  process.exit(1);
+} finally {
+  // Release + close na mesma sessão dedicada (sucesso ou falha).
+  await sessionLock.close().catch(() => undefined);
 }
 
-await prisma.$queryRawUnsafe(
-  `SELECT pg_advisory_unlock(${APRES_ADVISORY_LOCK.classId}, ${APRES_ADVISORY_LOCK.objectId})`,
-);
 await prisma.$disconnect();
+process.exit(failed ? 1 : 0);

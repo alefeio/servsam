@@ -7,6 +7,49 @@ import { createHash } from "node:crypto";
 export const EXPECTED_HOMOL_HOST_HASH = "22e5c2dd2d93";
 export const HOMOL_APPROVED_INSTANCE_ENV = "HOMOL_APPROVED_INSTANCE_ID";
 
+/**
+ * Marcadores independentes do Gate 0 / Sprint 11A (documentados, não derivados
+ * só da conexão candidata). Validam que a base aprovada é o HOMOL e não o legado.
+ */
+export const HOMOL_INDEPENDENT_MARKERS = {
+  organizationSlug: "servsam",
+  requiredMigration: "20261118160000_customers_proposals",
+  /** Fundação do store legado — se a conexão tiver só essa, não é HOMOL. */
+  legacyFoundationMigration: "20261022140103_platform_foundation",
+} as const;
+
+export function evaluateIndependentHomolMarkers(input: {
+  organizationSlug: string | null | undefined;
+  migrationNames: readonly string[];
+}): { ok: true } | { ok: false; reason: string } {
+  if (input.organizationSlug !== HOMOL_INDEPENDENT_MARKERS.organizationSlug) {
+    return { ok: false, reason: "independent_org_slug_mismatch" };
+  }
+  const onlyLegacyFoundation =
+    input.migrationNames.length === 1 &&
+    input.migrationNames[0] === HOMOL_INDEPENDENT_MARKERS.legacyFoundationMigration;
+  if (onlyLegacyFoundation) {
+    return { ok: false, reason: "independent_looks_like_legacy_foundation_only" };
+  }
+  if (!input.migrationNames.includes(HOMOL_INDEPENDENT_MARKERS.requiredMigration)) {
+    return { ok: false, reason: "independent_required_migration_missing" };
+  }
+  return { ok: true };
+}
+
+export function refuseIfSameInstanceAsLegacy(
+  liveInstanceId: string,
+  legacyInstanceId: string | null | undefined,
+): { ok: true; legacyCompared: boolean } | { ok: false; reason: string } {
+  if (!legacyInstanceId) {
+    return { ok: true, legacyCompared: false };
+  }
+  if (liveInstanceId === legacyInstanceId) {
+    return { ok: false, reason: "live_instance_matches_legacy_instance" };
+  }
+  return { ok: true, legacyCompared: true };
+}
+
 export function sha12(value: string): string {
   return createHash("sha256").update(String(value)).digest("hex").slice(0, 12);
 }
