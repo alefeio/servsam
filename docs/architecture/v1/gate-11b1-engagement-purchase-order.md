@@ -8,7 +8,7 @@ Status: **11B.1 PUBLISHED — READY FOR FINAL REVIEW**
 |---|---|
 | Branch | `feature/11b-real-commercial-operations` |
 | Base | `c40ae97` (`fix/sec-p0-last-admin-concurrency`) |
-| SHA remoto | `0b3e65ac9cdcaa207ed6f6b8dae193652bc5a935` |
+| SHA remoto | `b0985db0c35ca8e726a9bb3dc00ca545d61b2207` |
 | Preview | https://servsam-k6v1btwnr-alefeios-projects.vercel.app (protegido) |
 | Remoto | publicado sem force push; sem merge em `main` |
 
