@@ -8,9 +8,18 @@ Status: **11B.1 PUBLISHED — READY FOR FINAL REVIEW**
 |---|---|
 | Branch | `feature/11b-real-commercial-operations` |
 | Base | `c40ae97` (`fix/sec-p0-last-admin-concurrency`) |
+| SHA remoto | `0b3e65ac9cdcaa207ed6f6b8dae193652bc5a935` |
+| Preview | https://servsam-k6v1btwnr-alefeios-projects.vercel.app (protegido) |
 | Remoto | publicado sem force push; sem merge em `main` |
 
-Atualizar o SHA remoto neste documento após o push.
+## Quality Gate (fechamento)
+
+| Check | Resultado |
+|---|---|
+| lint / typecheck / unit / integration / build | OK (execução pré-push) |
+| E2E `sistema-11b1` fluxos A e B | 2 passed (`npm run test:e2e:preview`) |
+| Auditoria migration | registrada; 11A íntegra |
+| Grants HOMOL `contract.*` | 8/8 já concedidos; sem escrita necessária |
 
 ## Escopo entregue
 
