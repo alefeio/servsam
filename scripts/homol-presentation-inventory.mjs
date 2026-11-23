@@ -17,6 +17,7 @@ function sha(value) {
 }
 
 function residueKind(name) {
+  if (/\[APRES\]/i.test(name)) return "APRES";
   if (/\[E2E\]/i.test(name)) return "E2E";
   if (/\[GATEF\]/i.test(name)) return "GATEF";
   if (/Homol|Condom/i.test(name)) return "TEST_HINT";
@@ -102,9 +103,40 @@ const customerRows = customers.map((customer) => {
   };
 });
 
-const presentationCandidates = customerRows.filter((row) => row.kind === "OTHER" && !row.archived);
-const residueActive = customerRows.filter((row) => row.kind !== "OTHER" && !row.archived);
-const residueArchived = customerRows.filter((row) => row.kind !== "OTHER" && row.archived);
+const byKind = (kind, archived) =>
+  customerRows.filter((row) => row.kind === kind && row.archived === archived);
+
+const apresActive = byKind("APRES", false);
+const apresArchived = byKind("APRES", true);
+const e2eActive = byKind("E2E", false);
+const e2eArchived = byKind("E2E", true);
+const gatefActive = byKind("GATEF", false);
+const gatefArchived = byKind("GATEF", true);
+const otherActive = byKind("OTHER", false);
+const otherArchived = byKind("OTHER", true);
+const testHintActive = byKind("TEST_HINT", false);
+const residueActive = customerRows.filter(
+  (row) => !row.archived && (row.kind === "E2E" || row.kind === "GATEF" || row.kind === "TEST_HINT"),
+);
+const residueArchived = customerRows.filter(
+  (row) => row.archived && (row.kind === "E2E" || row.kind === "GATEF" || row.kind === "TEST_HINT"),
+);
+
+const proposalClasses = proposals.map((proposal) => {
+  let kind = "OTHER";
+  if (/\[APRES\]/i.test(proposal.title)) kind = "APRES";
+  else if (/\[E2E\]/i.test(proposal.title)) kind = "E2E";
+  else if (/\[GATEF\]/i.test(proposal.title)) kind = "GATEF";
+  return {
+    code: proposal.code,
+    status: proposal.status,
+    archived: Boolean(proposal.deletedAt),
+    kind,
+    titleHint: proposal.title.slice(0, 48),
+    totalCents: proposal.totalCents,
+    createdAt: proposal.createdAt,
+  };
+});
 
 console.log(
   JSON.stringify(
@@ -128,22 +160,37 @@ console.log(
         proposalsTotal: proposals.length,
         proposalsByStatus: byStatus,
         auditLogs: auditCount,
+        byKindActive: {
+          APRES: apresActive.length,
+          E2E: e2eActive.length,
+          GATEF: gatefActive.length,
+          TEST_HINT: testHintActive.length,
+          OTHER: otherActive.length,
+        },
+        byKindArchived: {
+          APRES: apresArchived.length,
+          E2E: e2eArchived.length,
+          GATEF: gatefArchived.length,
+          OTHER: otherArchived.length,
+        },
       },
-      presentationCandidates,
+      apresActive,
+      apresArchived,
+      e2eActive,
+      e2eArchived,
+      gatefActive,
+      gatefArchived,
+      otherActive,
+      presentationCandidates: otherActive,
       residueActive,
       residueArchived,
-      proposalHints: proposals.map((proposal) => ({
-        code: proposal.code,
-        status: proposal.status,
-        archived: Boolean(proposal.deletedAt),
-        titleHint: proposal.title.slice(0, 48),
-        totalCents: proposal.totalCents,
-        createdAt: proposal.createdAt,
-      })),
+      proposalHints: proposalClasses,
+      panelNote:
+        "O Painel de /sistema contabiliza todos os clientes ativos e orçamentos não arquivados do ambiente, inclusive resíduos E2E/GATEF. Não altera indicadores oficiais para maquiar a apresentação.",
       presentationProposal: {
-        keep: "Clientes OTHER ativos + orçamentos aceitos/enviados limpos para roteiro",
+        keep: "Usar filtros/navegação direta nos registros [APRES]; narrar E2E/GATEF como técnicos",
         softArchiveResidue: "Arquivar ou soft-delete seletivo dos [E2E]/[GATEF] após autorização",
-        never: ["TRUNCATE", "migrate reset", "apagar AuditLog", "Production"],
+        never: ["TRUNCATE", "migrate reset", "apagar AuditLog", "Production", "seed sem aprovação"],
       },
     },
     null,

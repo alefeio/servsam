@@ -1,55 +1,53 @@
-# PREP-01 — Inventário HOMOL (somente leitura)
+# PREP-01 / APRES-01 — Inventário HOMOL (somente leitura)
 
-**Data:** 2026-11-20  
+**Atualizado em:** 2026-11-23 (APRES-01)  
 **Host fingerprint:** `22e5c2dd2d93`  
 **Org:** `servsam`  
+**`DATABASE_ENV`:** `preview`  
 **Script:** `scripts/homol-presentation-inventory.mjs`  
-**Sem exclusão, TRUNCATE, migration ou Production.**
+**Sem exclusão, TRUNCATE, migration, Production ou provisionamento nesta leitura.**
 
 ## Contagens
 
 | Métrica | Valor |
 | --- | --- |
-| Usuários | 2 (ambos ativos, perfil Diretoria) |
-| Clientes totais | 7 |
-| Clientes ativos | 2 |
-| Clientes arquivados | 5 |
-| Contatos ativos | 7 |
-| Unidades ativas | 5 |
-| Orçamentos | 7 (5 `accepted`, 2 `draft`) |
-| Audit logs | 209 |
+| Usuários | 2 (ativos, Diretoria) |
+| Clientes totais | 12 |
+| Clientes ativos | 4 |
+| Clientes arquivados | 8 |
+| Contatos ativos | 12 |
+| Unidades ativas | 10 |
+| Orçamentos | 12 (`accepted` 8, `draft` 4) |
+| Audit logs | 263 |
 
-## Resíduos de teste
+## Classificação por kind (ativos / arquivados)
 
-### Ativos (aparecem na UI padrão)
+| Kind | Ativos | Arquivados |
+| --- | --- | --- |
+| APRES | 0 | 0 |
+| E2E | 2 | 8 |
+| GATEF | 2 | 0 |
+| OTHER | 0 | 0 |
 
-| idHash | Hint | Kind | Orç. | Contatos | Unidades |
-| --- | --- | --- | --- | --- | --- |
-| `0b07d1597331` | `[GATEF] Cliente Homol 398561` | GATEF | 1 draft | 1 | 1 |
-| `3011a3744f54` | `[GATEF] Cliente Homol 795902` | GATEF | 1 draft | 1 | 1 |
+## Resíduos ativos (aparecem na UI padrão)
 
-### Arquivados (só com filtro)
+| idHash | Hint | Kind | Orç. |
+| --- | --- | --- | --- |
+| `96c605c9dfe8` | `[E2E] Condomínio 699154` | E2E | 1 draft |
+| `2693f237ebb1` | `[E2E] Condomínio 515706` | E2E | 1 draft |
+| `0b07d1597331` | `[GATEF] Cliente Homol 398561` | GATEF | 1 draft |
+| `3011a3744f54` | `[GATEF] Cliente Homol 795902` | GATEF | 1 draft |
 
-5 clientes `[E2E]` com orçamentos `accepted` (`ORC-2026-0001`…`0002`, `0004`, `0006`, `0007`).
+## Observações para apresentação
 
-**Candidatos “OTHER” para apresentação:** nenhum.
+- Painel “Clientes ativos” = 4, todos resíduos técnicos até o provisionamento `[APRES]` autorizado.
+- O Painel contabiliza o ambiente inteiro; não se altera a fórmula para omitir E2E/GATEF.
+- Plano `[APRES]`: `docs/presentation/apres-01-dataset-plan.md`.
+- Runbook: `docs/presentation/apres-01-runbook.md`.
 
-## Inconsistências / observações
+## Proposta segura (não executada nesta etapa)
 
-- Painel “Clientes ativos” = 2, mas ambos são resíduos Gate F — narrativa de demo fica técnica.  
-- Orçamentos aceitos de E2E arquivados ainda existem (cliente arquivado; proposta não necessariamente arquivada).  
-- Não há bloqueio inventariado de arquivamento nesta leitura; a regra de negócio “cliente com orçamento em andamento” permanece no código.
-
-## Proposta segura (não executada)
-
-1. Autorizar soft-delete/arquivamento seletivo dos 7 clientes `[E2E]`/`[GATEF]` + dependências (ver `sprint-11a-homol-cleanup-plan.md`, atualizar idHashes).  
-2. **Não** apagar `AuditLog`.  
-3. Após limpeza, cadastrar **2–3 clientes fictícios** de apresentação (sem PII real) + orçamentos rascunho/enviado/aceito.  
-4. Manter usuários Diretoria intactos.  
-5. Reexecutar inventário antes/depois.
-
-## Decisão solicitada
-
-- [ ] Aprovar limpeza seletiva dos resíduos  
-- [ ] Manter resíduos e aceitar Painel “sujo” na apresentação  
-- [ ] Outra: _____________
+1. Autorizar `CONFIRM=YES APRES_DATA_AUTHORIZE=YES` no script `homol-provision-apres01.mjs`.  
+2. Opcional depois: soft-archive seletivo de resíduos (plano separado).  
+3. **Não** apagar `AuditLog`.  
+4. Manter usuários Diretoria intactos.
