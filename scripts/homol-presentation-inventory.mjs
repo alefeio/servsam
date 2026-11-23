@@ -1,9 +1,14 @@
 /**
- * Inventário somente leitura do HOMOL para PREP-01 (apresentação).
+ * Inventário somente leitura do HOMOL para PREP-01 / APRES-01 (apresentação).
  * Não imprime PII completa nem URLs. Não altera dados.
+ * Valida identidade real da instância (não só hostname).
  */
 import { createHash } from "node:crypto";
-import { buildHomolEnv } from "./lib/homol-env.mjs";
+import { buildHomolEnv, HOMOL_ENV_FILE } from "./lib/homol-env.mjs";
+import {
+  assertHomolInstanceIdentity,
+  EXPECTED_HOMOL_HOST_HASH,
+} from "./lib/homol-identity.mjs";
 
 const { env, targetHostHash } = buildHomolEnv();
 Object.assign(process.env, env);
@@ -11,6 +16,16 @@ if (process.env.DATABASE_ENV !== "preview") {
   console.error(JSON.stringify({ ok: false, reason: "DATABASE_ENV must be preview" }));
   process.exit(1);
 }
+
+const connectionUrl =
+  process.env.HOMOL_POSTGRES_URL ||
+  process.env.HOMOL_DATABASE_URL ||
+  process.env.HOMOL_DATABASE_URL_POOLED;
+const identity = await assertHomolInstanceIdentity({
+  connectionUrl,
+  hostHash: targetHostHash,
+  expectedHostHash: EXPECTED_HOMOL_HOST_HASH,
+});
 
 function sha(value) {
   return createHash("sha256").update(String(value)).digest("hex").slice(0, 12);
@@ -143,6 +158,8 @@ console.log(
     {
       ok: true,
       targetHostHash,
+      instanceId: identity.instanceId,
+      identitySource: HOMOL_ENV_FILE,
       organizationSlug: org.slug,
       users: users.map((user) => ({
         emailHash: sha(user.email.toLowerCase()),

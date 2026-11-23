@@ -2,19 +2,18 @@
 
 **Branch:** `prep/apres-01-homol-presentation-data`  
 **Base:** `fix/sec-p0-last-admin-concurrency` @ `c40ae97`  
-**SHA:** `d2cc2e828d34e127744e47b0ea42aa87d14981b5`  
-**Preview protegido:** https://servsam-4eluosq00-alefeios-projects.vercel.app  
 **Estratégia:** B (`docs/sprints/prep-01-1-presentation-data-strategy.md`) — manter HOMOL + cenários `[APRES]`  
-**Estado:** preparado (dry-run). **Sem escrita no HOMOL nesta entrega.**
+**Estado APRES-01.1:** hardening concluído (dry-run). **Sem escrita no HOMOL nesta entrega.**
 
 ## 1. Inventário (somente leitura)
 
-Script: `scripts/homol-presentation-inventory.mjs`
+Script: `scripts/homol-presentation-inventory.mjs` (com Gate A de identidade)
 
 | Checagem | Resultado |
 | --- | --- |
 | `DATABASE_ENV` | `preview` |
 | Host fingerprint | `22e5c2dd2d93` |
+| Instance ID (aprovado via env) | obrigatório — ver `HOMOL_APPROVED_INSTANCE_ID` |
 | Organização | `servsam` |
 | `[APRES]` existentes | 0 |
 | Resíduos ativos | 2 `[E2E]` + 2 `[GATEF]` |
@@ -22,7 +21,7 @@ Script: `scripts/homol-presentation-inventory.mjs`
 | Clientes ativos totais | 4 (todos resíduos técnicos) |
 | Orçamentos | 12 (`accepted` 8, `draft` 4) |
 
-Detalhe atualizado: `docs/sprints/prep-01-homol-inventory.md`.
+Detalhe: `docs/sprints/prep-01-homol-inventory.md`.
 
 ## 2. Três cenários fictícios
 
@@ -93,35 +92,49 @@ O Painel (`/sistema`) usa `countActiveCustomers` e `getProposalSummary` sobre **
 
 **Não** se altera a fórmula dos indicadores nem se excluem resíduos para “melhorar” o número.
 
-## 5. Mecanismo
+## 5. Mecanismo (APRES-01.1)
 
-- Plano puro: `src/lib/platform/apres-01-plan.ts` (+ testes isolados).
+- Identidade: `scripts/lib/homol-identity.mjs` + `scripts/homol-print-instance-id.mjs`
+- Guardas: `src/lib/platform/apres-01-guards.ts`
+- Plano: `src/lib/platform/apres-01-plan.ts`
 - Script: `scripts/homol-provision-apres01.mjs`
-  - Padrão: `--dry-run` / sem `CONFIRM` → nenhuma escrita.
-  - Escrita: `CONFIRM=YES` **e** `APRES_DATA_AUTHORIZE=YES`.
-  - Usa `createCustomer`, `addCustomerContact`, `addCustomerUnit`, `createProposal`, `transitionProposal`.
-  - Não faz `UPDATE` direto de status aceito; não cria usuários; não roda migration/seed.
+  - Dry-run por padrão.
+  - Escrita: `CONFIRM=YES` + `APRES_DATA_AUTHORIZE=YES` + `APRES_ACTOR_EMAIL`.
+  - Ator pretendido (mediante autorização): `alexandrefpenha@gmail.com` — sem auto-seleção, sem seed.
+  - Advisory lock PostgreSQL; revalidação do plano; progresso por cenário; retomada idempotente.
+  - Serviços de negócio apenas; sem `UPDATE` artificial de aceito; numeração oficial preservada.
+
+### Verificações que impedem banco incorreto
+
+1. `approved_instance_id_missing` — falta `HOMOL_APPROVED_INSTANCE_ID` no env.
+2. `instance_id_mismatch` — `sha256(system_identifier:current_database)` live ≠ aprovado.
+3. `unexpected_homol_host_hash` — host ≠ `22e5c2dd2d93`.
+4. `target_matches_legacy_runtime_url` — fingerprint da URL completa igual ao `RUNTIME_DATABASE_URL` legado.
+5. `refusing_production` / `DATABASE_ENV must be preview`.
+
+Observação: em Prisma Postgres o pathname da URL é genérico; a separação legado×HOMOL usa o hash da URL completa + `instanceId` (`system_identifier` + `current_database()`).
+
+Hostname sozinho **não** libera escrita.
 
 ## 6. Autorização necessária para provisionar
 
-Autorização humana explícita posterior, com ambos:
-
 ```bash
-CONFIRM=YES APRES_DATA_AUTHORIZE=YES npx tsx scripts/homol-provision-apres01.mjs
+CONFIRM=YES APRES_DATA_AUTHORIZE=YES APRES_ACTOR_EMAIL=alexandrefpenha@gmail.com npx tsx scripts/homol-provision-apres01.mjs
 ```
 
-Até lá: apenas inventário e dry-run.
+Até autorização humana: apenas inventário e dry-run.
 
 ## 7. Qualidade (sem escrita HOMOL)
 
 | Comando | Resultado |
 | --- | --- |
-| Inventário read-only | PASS (`22e5c2dd2d93`, org `servsam`) |
-| Dry-run provision | `awaiting_authorization` (0 writes) |
+| Inventário + identidade | PASS (`instanceId` alinhado ao env) |
+| Dry-run | `awaiting_authorization` (0 writes) |
+| Identidade incorreta | BLOQUEADO `instance_id_mismatch` |
+| Escrita sem `APRES_ACTOR_EMAIL` | BLOQUEADO `apres_actor_email_required` |
 | `npm run lint` | PASS |
 | `npm run typecheck` | PASS |
-| `npm test` | 136 PASS (incl. idempotência APRES-01) |
+| `npm test` | 146 PASS |
 | `npm run build` | PASS |
-| E2E pertinentes (`public-routes`, `demo-system`) | 5 PASS |
 
-Gate: **APRES-01 READY FOR DATA AUTHORIZATION**
+Gate: **APRES-01.1 READY FOR WRITE AUTHORIZATION**
