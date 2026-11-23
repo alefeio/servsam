@@ -2,6 +2,8 @@
 
 **Branch:** `prep/apres-01-homol-presentation-data`  
 **Base:** `fix/sec-p0-last-admin-concurrency` @ `c40ae97`  
+**SHA:** `d2cc2e828d34e127744e47b0ea42aa87d14981b5`  
+**Preview protegido:** https://servsam-4eluosq00-alefeios-projects.vercel.app  
 **Estratégia:** B (`docs/sprints/prep-01-1-presentation-data-strategy.md`) — manter HOMOL + cenários `[APRES]`  
 **Estado:** preparado (dry-run). **Sem escrita no HOMOL nesta entrega.**
 
