@@ -142,6 +142,9 @@ export async function getProposalDetail(
         select: { id: true, code: true, status: true },
         orderBy: { createdAt: "asc" },
       },
+      engagement: {
+        select: { id: true, code: true, status: true, deletedAt: true },
+      },
     },
   });
 }

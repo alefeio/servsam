@@ -4,6 +4,7 @@ import type {
   UnitInput,
 } from "@/lib/platform/customer-schemas";
 import { parseBrlToCents } from "@/lib/platform/money";
+import type { PurchaseOrderInput } from "@/lib/platform/purchase-order-schemas";
 import type { ProposalInput } from "@/lib/platform/proposal-schemas";
 
 /** Leitura de FormData em objetos tipados. Validação de regra fica nos schemas Zod. */
@@ -107,6 +108,65 @@ export function parseProposalForm(form: FormSource): ProposalFormResult {
       commercialConditions: text(form, "commercialConditions"),
       observations: text(form, "observations"),
       discountCents,
+      items,
+    },
+  };
+}
+
+export type PurchaseOrderFormResult =
+  | { ok: true; input: PurchaseOrderInput }
+  | { ok: false; message: string };
+
+export function parsePurchaseOrderForm(
+  form: FormSource,
+): PurchaseOrderFormResult {
+  const descriptions = form.getAll("itemDescription").map(String);
+  const quantities = form.getAll("itemQuantity").map(String);
+  const prices = form.getAll("itemUnitPrice").map(String);
+
+  const items: PurchaseOrderInput["items"] = [];
+  for (let index = 0; index < descriptions.length; index += 1) {
+    const description = descriptions[index]?.trim() ?? "";
+    const quantityRaw = quantities[index]?.trim() ?? "";
+    const priceRaw = prices[index]?.trim() ?? "";
+    if (!description && !quantityRaw && !priceRaw) continue;
+
+    const quantity = parseQuantity(quantityRaw);
+    if (quantity === null) {
+      return {
+        ok: false,
+        message: `Item ${items.length + 1}: quantidade inválida.`,
+      };
+    }
+    const price = parseBrlToCents(priceRaw);
+    if (!price.ok) {
+      return {
+        ok: false,
+        message: `Item ${items.length + 1}: valor unitário inválido.`,
+      };
+    }
+    items.push({ description, quantity, unitPriceCents: price.cents });
+  }
+
+  const agreedRaw = text(form, "agreedAmount").trim();
+  let agreedAmountCents: number | undefined;
+  if (agreedRaw) {
+    const agreed = parseBrlToCents(agreedRaw);
+    if (!agreed.ok) return { ok: false, message: "Valor acordado inválido." };
+    agreedAmountCents = agreed.cents;
+  }
+
+  return {
+    ok: true,
+    input: {
+      customerId: text(form, "customerId"),
+      customerUnitId: text(form, "customerUnitId"),
+      externalNumber: text(form, "externalNumber"),
+      receivedAt: text(form, "receivedAt"),
+      description: text(form, "description"),
+      observations: text(form, "observations"),
+      documentReference: text(form, "documentReference"),
+      agreedAmountCents,
       items,
     },
   };

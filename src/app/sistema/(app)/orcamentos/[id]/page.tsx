@@ -8,6 +8,7 @@ import {
   PageHeader,
   ProposalStatusBadge,
 } from "@/features/platform/form-parts";
+import { CreateEngagementFromProposalButton } from "@/features/platform/engagement-form";
 import {
   ArchiveProposalButton,
   ReviseProposalButton,
@@ -181,6 +182,23 @@ export default async function ProposalDetailPage({
             </dd>
           </div>
         ) : null}
+        {proposal.engagement && !proposal.engagement.deletedAt ? (
+          <div>
+            <dt className="text-muted-foreground">Contratação</dt>
+            <dd>
+              {can("contract.view") ? (
+                <Link
+                  href={`/sistema/contratacoes/${proposal.engagement.id}`}
+                  className="text-navy hover:underline"
+                >
+                  {proposal.engagement.code}
+                </Link>
+              ) : (
+                proposal.engagement.code
+              )}
+            </dd>
+          </div>
+        ) : null}
       </dl>
 
       <section className="space-y-3" aria-labelledby="itens">
@@ -333,11 +351,19 @@ export default async function ProposalDetailPage({
           {proposal.status === "draft" && can("proposal.update") ? (
             <ArchiveProposalButton proposalId={proposal.id} />
           ) : null}
+          {proposal.status === "accepted" &&
+          can("contract.manage") &&
+          !(proposal.engagement && !proposal.engagement.deletedAt) ? (
+            <CreateEngagementFromProposalButton proposalId={proposal.id} />
+          ) : null}
         </div>
         {proposal.status === "accepted" ? (
           <p className="text-sm text-muted-foreground">
             Aceito não volta. Para ajustar, crie uma nova proposta a partir
             desta.
+            {proposal.engagement && !proposal.engagement.deletedAt
+              ? ` Contratação vinculada: ${proposal.engagement.code}.`
+              : ""}
           </p>
         ) : null}
       </section>

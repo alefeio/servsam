@@ -100,6 +100,8 @@ const ADMINISTRATIVO_EXPLICIT: PermissionKey[] = [
   "certificate.view",
   "certificate.create",
   "certificate.issue",
+  "contract.view",
+  "contract.manage",
 ];
 
 const ADMINISTRATIVO_INFERRED: PermissionKey[] = [
@@ -110,7 +112,6 @@ const ADMINISTRATIVO_INFERRED: PermissionKey[] = [
   "schedule.update",
   "employee.view",
   "vehicle.view",
-  "contract.view",
   "document.view",
 ];
 

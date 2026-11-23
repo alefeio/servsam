@@ -19,6 +19,22 @@ export const PROPOSAL_STATUS_HINTS = {
   expired: "A validade venceu sem aceite.",
 } as const;
 
+export const PURCHASE_ORDER_STATUS_LABELS = {
+  registered: "Registrada",
+  contracted: "Contratada",
+  cancelled: "Cancelada",
+} as const;
+
+export const ENGAGEMENT_STATUS_LABELS = {
+  active: "Ativa",
+  cancelled: "Cancelada",
+} as const;
+
+export const ENGAGEMENT_ORIGIN_LABELS = {
+  proposal: "Orçamento aceito",
+  purchase_order: "O.C. recebida",
+} as const;
+
 export const PLATFORM_NAV = [
   {
     href: "/sistema",
@@ -34,6 +50,16 @@ export const PLATFORM_NAV = [
     href: "/sistema/orcamentos",
     label: "Orçamentos",
     anyOf: ["proposal.view"],
+  },
+  {
+    href: "/sistema/ordens-compra",
+    label: "Ordens de compra",
+    anyOf: ["contract.view"],
+  },
+  {
+    href: "/sistema/contratacoes",
+    label: "Contratações",
+    anyOf: ["contract.view"],
   },
   {
     href: "/sistema/configuracoes/usuarios",
