@@ -34,13 +34,14 @@ export const demoProposals: DemoProposal[] = [
     validUntil: "2026-06-25",
     paymentTerms: "Sinal recomendado (valor demonstrativo, não percentual fixo)",
     downPayment: "Solicitação financeira pendente",
+    demoSignalExampleAmount: 5040,
     paymentSignal: {
       status: "pending",
       amount: 5040,
       registeredAt: "2026-05-26",
       requestedByRole: "comercial",
       note:
-        "Comercial solicitou providência ao Financeiro (simulado). A OS pode ser emitida mesmo com sinal pendente.",
+        "Comercial solicitou providência ao Financeiro (simulado), com valor de exemplo da fixture. A OS pode ser emitida mesmo com sinal pendente.",
     },
     provenance,
   },
@@ -77,7 +78,8 @@ export const demoProposals: DemoProposal[] = [
     validUntil: "2026-07-05",
     discountAmount: 400,
     paymentTerms: "Sinal recomendado na aprovação; saldo conforme acordo (demo)",
-    downPayment: "Valor sugerido na demo — não é regra fixa de 50%",
+    downPayment: "Valor de exemplo da fixture — não é percentual padrão",
+    demoSignalExampleAmount: 4900,
     executionDeadline: "Até 15 dias após o aceite",
     commercialConditions: "Serviço em horário comercial, com acesso liberado pela manutenção do hotel.",
     cancellationFee: "30% se o cancelamento ocorrer com menos de 48 horas.",
@@ -101,6 +103,9 @@ export const demoProposals: DemoProposal[] = [
     clientId: "client-supermercado-rio",
     status: "draft",
     value: 7600,
+    demoSignalExampleAmount: 2500,
+    observations:
+      "Valor de exemplo de sinal na fixture (R$ 2.500) — exemplo demonstrativo, não percentual do orçamento.",
     provenance,
   },
   {

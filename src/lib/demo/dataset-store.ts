@@ -130,6 +130,8 @@ export function hydrateDemoDataset(dataset: DemoDataset): DemoDataset {
         paymentSignal: proposal.paymentSignal ?? fromSeed?.paymentSignal,
         formalization: proposal.formalization ?? fromSeed?.formalization,
         narrative: proposal.narrative ?? fromSeed?.narrative,
+        demoSignalExampleAmount:
+          proposal.demoSignalExampleAmount ?? fromSeed?.demoSignalExampleAmount,
         receivedPurchaseOrder:
           proposal.receivedPurchaseOrder ?? fromSeed?.receivedPurchaseOrder,
       };

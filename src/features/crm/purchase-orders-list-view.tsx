@@ -8,6 +8,7 @@ import { useDemoDatasetStore } from "@/features/crm/use-demo-dataset-store";
 import {
   canIssueWorkOrderFromPurchaseOrder,
   createWorkOrderFromPurchaseOrder,
+  findWorkOrderForPurchaseOrder,
 } from "@/lib/demo/operations-actions";
 import { formatCurrencyBrl } from "@/lib/utils/format";
 
@@ -39,10 +40,9 @@ export function PurchaseOrdersListView() {
           const client = dataset.clients.find(
             (item) => item.id === purchaseOrder.clientId,
           );
-          const linkedWorkOrder = dataset.workOrders.find(
-            (item) =>
-              item.id === purchaseOrder.workOrderId ||
-              item.purchaseOrderId === purchaseOrder.id,
+          const linkedWorkOrder = findWorkOrderForPurchaseOrder(
+            dataset,
+            purchaseOrder.id,
           );
           const issueCheck = canIssueWorkOrderFromPurchaseOrder(
             dataset,

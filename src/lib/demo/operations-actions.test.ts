@@ -143,6 +143,34 @@ describe("operations demo actions", () => {
     ).toHaveLength(1);
   });
 
+  it("reuses the Hotel Amazonas OS instead of duplicating via the avulsa O.C.", () => {
+    const hotelOc = seedDemoDataset.receivedPurchaseOrders.find(
+      (item) => item.code === "OC-DEMO-AVL-014",
+    );
+    expect(hotelOc?.proposalId).toBe("prop-005");
+    expect(hotelOc?.workOrderId).toBe("os-demo-04");
+    expect(canIssueWorkOrderFromProposal(seedDemoDataset, "prop-005").ok).toBe(false);
+    expect(canIssueWorkOrderFromPurchaseOrder(seedDemoDataset, hotelOc!.id).ok).toBe(
+      false,
+    );
+
+    const fromOc = createWorkOrderFromPurchaseOrder(seedDemoDataset, hotelOc!.id);
+    expect(
+      fromOc.workOrders.filter((item) => item.proposalId === "prop-005"),
+    ).toHaveLength(1);
+    expect(
+      fromOc.workOrders.filter((item) => item.purchaseOrderId === hotelOc!.id),
+    ).toHaveLength(1);
+    expect(fromOc.workOrders.find((item) => item.id === "os-demo-04")?.purchaseOrderId).toBe(
+      hotelOc!.id,
+    );
+
+    const fromProposal = createWorkOrderFromProposal(seedDemoDataset, "prop-005");
+    expect(
+      fromProposal.workOrders.filter((item) => item.proposalId === "prop-005"),
+    ).toHaveLength(1);
+  });
+
   it("schedules and reschedules with history", () => {
     const proposal = seedDemoDataset.proposals.find(
       (item) =>

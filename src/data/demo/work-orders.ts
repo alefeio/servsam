@@ -99,6 +99,7 @@ export const demoWorkOrders: DemoWorkOrder[] = [
     clientUnitId: "unit-hotel-amazonas-torre",
     proposalId: "prop-005",
     contractId: "contract-004",
+    purchaseOrderId: "oc-demo-avulso-001",
     serviceName: "Higienização de reservatórios",
     serviceTypeLabel: "RSV – Reservatórios",
     vehicleLabel: "F2",

@@ -145,6 +145,11 @@ export type DemoProposal = Provenanced<{
   narrative?: DemoProposalNarrative;
   /** Sinal opcional/recomendado; não é pré-requisito universal da OS. */
   paymentSignal?: DemoPaymentSignal;
+  /**
+   * Valor de exemplo da fixture para solicitação financeira (não é percentual padrão).
+   * Só usado se o Comercial informar explicitamente ou aceitar o exemplo da massa.
+   */
+  demoSignalExampleAmount?: number;
   /** O.C. recebida do cliente neste orçamento avulso (≠ OS). */
   receivedPurchaseOrder?: DemoReceivedPurchaseOrderRef;
 }>;

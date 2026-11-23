@@ -19,8 +19,9 @@ export const demoReceivedPurchaseOrders: DemoReceivedPurchaseOrder[] = [
     amount: 9800,
     engagementKind: "avulso",
     proposalId: "prop-005",
+    workOrderId: "os-demo-04",
     note:
-      "O.C. recebida no serviço avulso do Hotel Amazonas Plaza. Formaliza a contratação junto ao orçamento DEMO-005. Não é a OS.",
+      "O.C. recebida no serviço avulso do Hotel Amazonas Plaza. Formaliza a contratação junto ao orçamento DEMO-005 e à OS os-demo-04 (mesmo serviço). Não é a OS.",
     provenance,
   },
   {

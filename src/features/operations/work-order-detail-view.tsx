@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -25,12 +25,29 @@ type WorkOrderDetailViewProps = {
   workOrderId: string;
 };
 
+function useIsClient() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
+
 export function WorkOrderDetailView({ workOrderId }: WorkOrderDetailViewProps) {
   const { dataset, mutate } = useDemoDatasetStore();
   const [scheduleDraft, setScheduleDraft] = useState("2026-09-10T09:00");
+  // OS emitidas na sessão só existem no localStorage; adiar 404 até o snapshot do cliente.
+  const isClient = useIsClient();
   const workOrder = dataset.workOrders.find((item) => item.id === workOrderId);
 
   if (!workOrder) {
+    if (!isClient) {
+      return (
+        <div className="space-y-6">
+          <p className="text-sm text-muted-foreground">Carregando ordem de serviço…</p>
+        </div>
+      );
+    }
     notFound();
   }
 

@@ -30,14 +30,23 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
   const { dataset, mutate } = useDemoDatasetStore();
   const [previewNote, setPreviewNote] = useState<string | null>(null);
   const proposal = dataset.proposals.find((item) => item.id === proposalId);
+  const [signalAmountDraft, setSignalAmountDraft] = useState(() => {
+    const seed = dataset.proposals.find((item) => item.id === proposalId);
+    return seed?.demoSignalExampleAmount
+      ? String(seed.demoSignalExampleAmount)
+      : "";
+  });
 
   if (!proposal) {
     notFound();
   }
 
-  const client = dataset.clients.find((item) => item.id === proposal.clientId);
+  // notFound() encerra a renderização; estreita o tipo para o restante do componente.
+  const resolvedProposal = proposal!;
+  const fixtureSignalExample = resolvedProposal.demoSignalExampleAmount;
+  const client = dataset.clients.find((item) => item.id === resolvedProposal.clientId);
   const opportunity = dataset.opportunities.find(
-    (item) => item.id === proposal.opportunityId,
+    (item) => item.id === resolvedProposal.opportunityId,
   );
   const items = dataset.proposalItems.filter((item) => item.proposalId === proposalId);
   const itemsTotal = getProposalItemsTotal(dataset, proposalId);
@@ -48,7 +57,18 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
   }
 
   function registerSignal() {
-    mutate((current) => registerPaymentSignal(current, proposalId));
+    const parsedAmount = Number.parseFloat(
+      signalAmountDraft.replace(",", ".").trim(),
+    );
+    mutate((current) =>
+      registerPaymentSignal(
+        current,
+        proposalId,
+        Number.isFinite(parsedAmount) && parsedAmount > 0
+          ? parsedAmount
+          : fixtureSignalExample,
+      ),
+    );
   }
 
   function confirmSignal() {
@@ -318,11 +338,39 @@ export function ProposalDetailView({ proposalId }: ProposalDetailViewProps) {
             {!linkedWorkOrder && !issueCheck.ok && issueCheck.reason ? (
               <p className="text-muted-foreground">{issueCheck.reason}</p>
             ) : null}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-end gap-2">
               {proposal.status === "accepted" && !paymentSignal ? (
-                <Button type="button" variant="outline" onClick={registerSignal}>
-                  Comercial: solicitar ao Financeiro
-                </Button>
+                <>
+                  <label className="text-xs text-muted-foreground">
+                    Valor a solicitar (R$)
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={signalAmountDraft}
+                      onChange={(event) => setSignalAmountDraft(event.target.value)}
+                      placeholder={
+                        proposal.demoSignalExampleAmount
+                          ? `Exemplo da fixture: ${proposal.demoSignalExampleAmount}`
+                          : "Informe o valor"
+                      }
+                      className="mt-1 block h-9 w-40 rounded-md border border-border bg-background px-2 text-sm text-foreground"
+                    />
+                  </label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={
+                      !(
+                        Number.parseFloat(signalAmountDraft.replace(",", ".")) > 0 ||
+                        (proposal.demoSignalExampleAmount ?? 0) > 0
+                      )
+                    }
+                    onClick={registerSignal}
+                  >
+                    Comercial: solicitar ao Financeiro
+                  </Button>
+                </>
               ) : null}
               {proposal.status === "accepted" && paymentSignal?.status === "pending" ? (
                 <Button type="button" variant="outline" onClick={confirmSignal}>

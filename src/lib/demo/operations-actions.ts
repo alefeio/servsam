@@ -174,10 +174,60 @@ function nextWorkOrderCode(dataset: DemoDataset): string {
   return `OS-DEMO-${String(next).padStart(3, "0")}`;
 }
 
+/** Localiza OS já existente para o mesmo serviço da O.C. (sem regra global 1 OS/contrato). */
+export function findWorkOrderForPurchaseOrder(
+  dataset: DemoDataset,
+  purchaseOrderId: string,
+) {
+  const purchaseOrder = dataset.receivedPurchaseOrders.find(
+    (item) => item.id === purchaseOrderId,
+  );
+  if (!purchaseOrder) return undefined;
+
+  if (purchaseOrder.workOrderId) {
+    const byId = dataset.workOrders.find(
+      (item) => item.id === purchaseOrder.workOrderId,
+    );
+    if (byId) return byId;
+  }
+
+  const byPurchaseOrder = dataset.workOrders.find(
+    (item) => item.purchaseOrderId === purchaseOrderId,
+  );
+  if (byPurchaseOrder) return byPurchaseOrder;
+
+  if (purchaseOrder.proposalId) {
+    return dataset.workOrders.find(
+      (item) => item.proposalId === purchaseOrder.proposalId,
+    );
+  }
+
+  return undefined;
+}
+
+function linkPurchaseOrderToWorkOrder(
+  dataset: DemoDataset,
+  purchaseOrderId: string,
+  workOrderId: string,
+): DemoDataset {
+  return {
+    ...dataset,
+    workOrders: dataset.workOrders.map((item) =>
+      item.id === workOrderId
+        ? { ...item, purchaseOrderId: item.purchaseOrderId ?? purchaseOrderId }
+        : item,
+    ),
+    receivedPurchaseOrders: dataset.receivedPurchaseOrders.map((item) =>
+      item.id === purchaseOrderId ? { ...item, workOrderId } : item,
+    ),
+  };
+}
+
 /**
  * Emite OS a partir do orçamento aceito.
  * Sinal é opcional/recomendado — não bloqueia a emissão.
  * Não agenda: scheduledAt fica ausente até scheduleWorkOrder.
+ * Reutiliza OS existente do mesmo orçamento ou da O.C. do mesmo serviço.
  */
 export function createWorkOrderFromProposal(
   dataset: DemoDataset,
@@ -188,8 +238,37 @@ export function createWorkOrderFromProposal(
     return dataset;
   }
 
-  if (dataset.workOrders.some((item) => item.proposalId === proposalId)) {
+  const existingByProposal = dataset.workOrders.find(
+    (item) => item.proposalId === proposalId,
+  );
+  if (existingByProposal) {
+    const relatedPurchaseOrder = dataset.receivedPurchaseOrders.find(
+      (item) => item.proposalId === proposalId && !item.workOrderId,
+    );
+    if (relatedPurchaseOrder) {
+      return linkPurchaseOrderToWorkOrder(
+        dataset,
+        relatedPurchaseOrder.id,
+        existingByProposal.id,
+      );
+    }
     return dataset;
+  }
+
+  const relatedPurchaseOrder = dataset.receivedPurchaseOrders.find(
+    (item) => item.proposalId === proposalId,
+  );
+  if (relatedPurchaseOrder?.workOrderId) {
+    const existing = dataset.workOrders.find(
+      (item) => item.id === relatedPurchaseOrder.workOrderId,
+    );
+    if (existing) {
+      return linkPurchaseOrderToWorkOrder(
+        dataset,
+        relatedPurchaseOrder.id,
+        existing.id,
+      );
+    }
   }
 
   const opportunity = dataset.opportunities.find(
@@ -213,12 +292,16 @@ export function createWorkOrderFromProposal(
         ? " Sinal solicitado ao Financeiro (ainda pendente; não bloqueia a OS)."
         : " Sem sinal registrado (permitido nesta demonstração).";
 
+  const workOrderId = nextWorkOrderId(dataset);
+  const purchaseOrderId = relatedPurchaseOrder?.id;
+
   const newWorkOrder = {
-    id: nextWorkOrderId(dataset),
+    id: workOrderId,
     code: nextWorkOrderCode(dataset),
     clientId: proposal.clientId,
     clientUnitId: clientUnit?.id,
     proposalId: proposal.id,
+    purchaseOrderId,
     serviceName,
     categoryId,
     status: "issued" as const,
@@ -233,15 +316,20 @@ export function createWorkOrderFromProposal(
     provenance: proposal.provenance,
   };
 
-  return {
+  let next: DemoDataset = {
     ...dataset,
     workOrders: [...dataset.workOrders, newWorkOrder],
   };
+  if (purchaseOrderId) {
+    next = linkPurchaseOrderToWorkOrder(next, purchaseOrderId, workOrderId);
+  }
+  return next;
 }
 
 /**
  * Emite OS a partir de O.C. recebida (pode ser sem orçamento interno).
- * Uma OS por serviço demonstrativo; não duplica se já houver vínculo.
+ * Se a O.C. e um orçamento/OS já representam o mesmo serviço, reutiliza a OS.
+ * Serviços distintos continuam podendo ter OS distintas.
  */
 export function createWorkOrderFromPurchaseOrder(
   dataset: DemoDataset,
@@ -251,11 +339,10 @@ export function createWorkOrderFromPurchaseOrder(
     (item) => item.id === purchaseOrderId,
   );
   if (!purchaseOrder) return dataset;
-  if (purchaseOrder.workOrderId) return dataset;
-  if (
-    dataset.workOrders.some((item) => item.purchaseOrderId === purchaseOrderId)
-  ) {
-    return dataset;
+
+  const existing = findWorkOrderForPurchaseOrder(dataset, purchaseOrderId);
+  if (existing) {
+    return linkPurchaseOrderToWorkOrder(dataset, purchaseOrderId, existing.id);
   }
 
   const clientUnit = dataset.clientUnits.find(
@@ -306,11 +393,12 @@ export function canIssueWorkOrderFromPurchaseOrder(
   if (!purchaseOrder) {
     return { ok: false, reason: "O.C. não encontrada." };
   }
-  if (
-    purchaseOrder.workOrderId ||
-    dataset.workOrders.some((item) => item.purchaseOrderId === purchaseOrderId)
-  ) {
-    return { ok: false, reason: "Já existe OS vinculada a esta O.C." };
+  if (findWorkOrderForPurchaseOrder(dataset, purchaseOrderId)) {
+    return {
+      ok: false,
+      reason:
+        "Já existe OS para este mesmo serviço (vinculada à O.C. ou ao orçamento correspondente).",
+    };
   }
   return { ok: true };
 }
@@ -377,6 +465,19 @@ export function canIssueWorkOrderFromProposal(
   }
   if (dataset.workOrders.some((item) => item.proposalId === proposalId)) {
     return { ok: false, reason: "Já existe OS vinculada a este orçamento." };
+  }
+  const relatedPurchaseOrder = dataset.receivedPurchaseOrders.find(
+    (item) => item.proposalId === proposalId,
+  );
+  if (
+    relatedPurchaseOrder &&
+    findWorkOrderForPurchaseOrder(dataset, relatedPurchaseOrder.id)
+  ) {
+    return {
+      ok: false,
+      reason:
+        "Já existe OS para este mesmo serviço (vinculada à O.C. correspondente).",
+    };
   }
   return { ok: true };
 }

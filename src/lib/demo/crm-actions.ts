@@ -150,8 +150,38 @@ function nextFinancialId(dataset: DemoDataset): string {
 }
 
 /**
+ * Resolve o valor do sinal sem percentual implícito.
+ * Ordem: valor informado → valor já pendente → exemplo da fixture.
+ */
+export function resolvePaymentSignalAmount(
+  proposal: {
+    paymentSignal?: { amount: number };
+    demoSignalExampleAmount?: number;
+  },
+  amount?: number,
+): number | null {
+  if (typeof amount === "number" && Number.isFinite(amount) && amount > 0) {
+    return Math.round(amount);
+  }
+  if (
+    typeof proposal.paymentSignal?.amount === "number" &&
+    proposal.paymentSignal.amount > 0
+  ) {
+    return proposal.paymentSignal.amount;
+  }
+  if (
+    typeof proposal.demoSignalExampleAmount === "number" &&
+    proposal.demoSignalExampleAmount > 0
+  ) {
+    return proposal.demoSignalExampleAmount;
+  }
+  return null;
+}
+
+/**
  * Comercial solicita providência financeira (sinal recomendado quando aplicável).
  * Evento simulado — não é confirmação de pagamento nem cobrança real.
+ * Exige valor explícito ou `demoSignalExampleAmount` da fixture (nunca % implícito).
  */
 export function registerPaymentSignal(
   dataset: DemoDataset,
@@ -166,10 +196,15 @@ export function registerPaymentSignal(
     return dataset;
   }
 
-  const signalAmount =
-    amount ??
-    proposal.paymentSignal?.amount ??
-    Math.round(proposal.value * 0.5);
+  const signalAmount = resolvePaymentSignalAmount(proposal, amount);
+  if (signalAmount === null) {
+    return dataset;
+  }
+
+  const usedFixtureExample =
+    amount === undefined &&
+    proposal.paymentSignal?.amount === undefined &&
+    proposal.demoSignalExampleAmount === signalAmount;
 
   return {
     ...dataset,
@@ -182,8 +217,9 @@ export function registerPaymentSignal(
               amount: signalAmount,
               registeredAt: DEMO_TODAY,
               requestedByRole: "comercial",
-              note:
-                "Solicitação financeira do Comercial (simulada). Valor sugerido só para a demo — não é percentual obrigatório. A OS não depende desta etapa.",
+              note: usedFixtureExample
+                ? "Solicitação financeira do Comercial (simulada), usando valor de exemplo da fixture — não é percentual padrão. A OS não depende desta etapa."
+                : "Solicitação financeira do Comercial (simulada), com valor informado explicitamente. Sem cobrança real. A OS não depende desta etapa.",
             },
           }
         : item,
