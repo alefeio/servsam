@@ -2,6 +2,8 @@
 
 **Branch DEMO-HF.1:** `fix/demo-hf-1-financial-oc-consistency`  
 **Base:** `hotfix/demo-10-2-signal-oc` @ `294bf1f`  
+**SHA:** `629374b2cd5d01eef52592c482824ce54dd2c4d1`  
+**Preview (protegido):** https://servsam-av9gxf1tl-alefeios-projects.vercel.app  
 **Gate:** DEMO-HF.1 READY FOR FINAL REVIEW
 
 ## DEMO-HF (entregue)
@@ -53,7 +55,9 @@
 | `npx playwright test e2e/demo-hf-1-scenarios.spec.ts --workers=1` | 4 PASS |
 | E2E demo (`demo-*.spec.ts` + HF.1) | 13 PASS |
 
-SHA e URL Preview: após push desta branch (Vercel Preview protegido).
+- SHA: `629374b2cd5d01eef52592c482824ce54dd2c4d1`
+- Preview protegido (`vercel_authentication`): https://servsam-av9gxf1tl-alefeios-projects.vercel.app
+- Inspect: https://vercel.com/alefeios-projects/servsam/GYSMrLYS9yTD4PxnWuWhskHLY2Jo
 
 ## Restrições respeitadas
 
