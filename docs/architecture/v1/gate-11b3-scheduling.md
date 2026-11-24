@@ -2,9 +2,8 @@
 
 **Status:** READY FOR REVIEW  
 **Branch:** `feature/11b-3-real-scheduling`  
-**Base:** `a61630a2ecadce543b0b4a9bec9ab5a63a8acbdb`
-
-> SHA remoto e URL do Preview são preenchidos após o push (ver seção Publicação).
+**Base:** `a61630a2ecadce543b0b4a9bec9ab5a63a8acbdb`  
+**SHA remoto:** `00416555dd6c9e715b227b40157830b0930cba6d`
 
 ## Modelos e migration
 
@@ -79,7 +78,10 @@ Resultado: `docs/architecture/v1/gate-11b3-homol-preflight-result.json`
 - Sem merge em `main`
 - Sem migration/seed HOMOL
 - Sem arquivos APRES no commit
-- Preview protegido: preencher após deploy READY
+- Branch publicada: `origin/feature/11b-3-real-scheduling`
+- Preview Vercel: **READY** (`Deployment has completed`, status GitHub `success`)
+- Painel do deployment: https://vercel.com/alefeios-projects/servsam/BfK8nBuGkopRix3YP2XcKNVLkZsw
+- Alias da branch (protegido): https://servsam-git-feature-11b-3-real-scheduling-alefeios-projects.vercel.app
 
 ## Riscos / pendências de implantação
 
