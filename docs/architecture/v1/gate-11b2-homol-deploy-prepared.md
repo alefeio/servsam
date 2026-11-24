@@ -2,6 +2,7 @@
 
 **Status:** `11B.2 HOMOL DEPLOY PREPARED`  
 **Branch:** `fix/11b-2-qa-readiness`  
+**SHA do executor:** `e9bac05b24dac40198f99c34442d864368ae00c5`  
 **Executor:** `scripts/homol-migrate-11b2.mjs`  
 **Migration exata:** `20261124010000_service_orders`  
 **Pendentes no HOMOL (preflight):** **1** (`20261124010000_service_orders`)  
