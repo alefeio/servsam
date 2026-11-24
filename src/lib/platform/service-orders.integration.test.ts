@@ -2,8 +2,8 @@
  * @vitest-environment node
  *
  * Integração 11B.2 — OS persistentes. Orgs descartáveis.
- * Requer migration `20261124010000_service_orders` já aplicada no alvo.
- * Não aplica migration automaticamente (Gate 11B.2G).
+ * Exige migration `service_order` no banco alvo.
+ * Com guard permitido, ausência de tabela = FALHA (não skip silencioso).
  */
 import { config as loadEnv } from "dotenv";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -57,15 +57,15 @@ async function createTenant(
   };
 }
 
-async function serviceOrderTableReady(): Promise<boolean> {
+async function assertServiceOrderTableReady(): Promise<void> {
+  const { getPrisma } = await import("@/lib/db/prisma");
   try {
-    const { getPrisma } = await import("@/lib/db/prisma");
-    await getPrisma().$queryRawUnsafe(
-      `SELECT 1 FROM "service_order" LIMIT 1`,
+    await getPrisma().$queryRawUnsafe(`SELECT 1 FROM "service_order" LIMIT 1`);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Migration 11B.2 ausente no banco de teste (tabela service_order). ${detail}`,
     );
-    return true;
-  } catch {
-    return false;
   }
 }
 
@@ -94,11 +94,11 @@ describe.skipIf(!guard.allowed)("ordens de serviço persistentes (11B.2)", () =>
   let owner: Actor;
   let outsider: Actor;
   let viewer: Actor;
-  let tableReady = false;
 
   beforeAll(async () => {
     if (!guard.allowed) throw new Error(guard.reason);
-    tableReady = await serviceOrderTableReady();
+    // Fail-closed: suíte de OS com banco permitido exige tabela real.
+    await assertServiceOrderTableReady();
     const { PERMISSIONS } = await import("@/lib/platform/permissions");
     const keys = PERMISSIONS.map((permission) => permission.key);
     owner = await createTenant("principal", keys);
@@ -109,7 +109,7 @@ describe.skipIf(!guard.allowed)("ordens de serviço persistentes (11B.2)", () =>
       "customer.view",
       "proposal.view",
     ]);
-  });
+  }, 120_000);
 
   afterAll(async () => {
     if (orgIds.length === 0) return;
@@ -117,9 +117,7 @@ describe.skipIf(!guard.allowed)("ordens de serviço persistentes (11B.2)", () =>
     const prisma = getPrisma();
     for (const organizationId of orgIds) {
       await prisma.auditLog.deleteMany({ where: { organizationId } });
-      if (tableReady) {
-        await prisma.serviceOrder.deleteMany({ where: { organizationId } });
-      }
+      await prisma.serviceOrder.deleteMany({ where: { organizationId } });
       await prisma.engagementItem.deleteMany({ where: { organizationId } });
       await prisma.engagement.deleteMany({ where: { organizationId } });
       await prisma.receivedPurchaseOrderItem.deleteMany({
@@ -139,23 +137,19 @@ describe.skipIf(!guard.allowed)("ordens de serviço persistentes (11B.2)", () =>
     }
   });
 
-  it("recusa execução se a migration 11B.2 ainda não foi aplicada", async () => {
-    if (tableReady) return;
-    expect(tableReady).toBe(false);
-  });
-
-  it.skipIf(!tableReady)(
-    "emite OS a partir de orçamento e O.C., duas OS distintas, sem duplicar",
+  it(
+    "emite OS por orçamento e O.C., duas OS, isolamento, duplicação, cancelamento e reemissão",
     async () => {
       const { createCustomer } = await import("@/lib/platform/customers");
       const { createProposal, transitionProposal } =
         await import("@/lib/platform/proposals");
-      const { createEngagementFromProposal } =
-        await import("@/lib/platform/engagements");
+      const {
+        createEngagementFromProposal,
+        createEngagementFromPurchaseOrder,
+        getEngagementDetail,
+      } = await import("@/lib/platform/engagements");
       const { createPurchaseOrder } =
         await import("@/lib/platform/purchase-orders");
-      const { createEngagementFromPurchaseOrder } =
-        await import("@/lib/platform/engagements");
       const {
         createServiceOrder,
         cancelServiceOrder,
@@ -188,9 +182,7 @@ describe.skipIf(!guard.allowed)("ordens de serviço persistentes (11B.2)", () =>
       expect(engagement.ok).toBe(true);
       if (!engagement.ok) return;
 
-      const detail = await (
-        await import("@/lib/platform/engagements")
-      ).getEngagementDetail(owner, engagement.data.id);
+      const detail = await getEngagementDetail(owner, engagement.data.id);
       expect(detail?.items).toHaveLength(2);
       const itemA = detail!.items[0]!;
       const itemB = detail!.items[1]!;
@@ -233,6 +225,7 @@ describe.skipIf(!guard.allowed)("ordens de serviço persistentes (11B.2)", () =>
       expect(second.ok).toBe(true);
       if (!second.ok) return;
       expect(second.data.id).not.toBe(first.data.id);
+      expect(second.data.code).not.toBe(first.data.code);
 
       const byEngagement = await getServiceOrdersByEngagement(
         owner,
@@ -256,18 +249,6 @@ describe.skipIf(!guard.allowed)("ordens de serviço persistentes (11B.2)", () =>
         ).ok,
       ).toBe(false);
 
-      const cancelledEngagement = await getPrisma().engagement.update({
-        where: { id: engagement.data.id },
-        data: { status: "cancelled" },
-      });
-      expect(cancelledEngagement.status).toBe("cancelled");
-      // Restaura para não quebrar outros asserts de detalhe; teste de cancelamento de CTR via update direto.
-      await getPrisma().engagement.update({
-        where: { id: engagement.data.id },
-        data: { status: "active" },
-      });
-
-      // Contratação cancelada
       const otherCustomer = await createCustomer(owner, {
         legalName: "Cliente CTR cancelada",
       });
@@ -287,23 +268,22 @@ describe.skipIf(!guard.allowed)("ordens de serviço persistentes (11B.2)", () =>
         where: { id: otherEngagement.data.id },
         data: { status: "cancelled" },
       });
-      const otherDetail = await (
-        await import("@/lib/platform/engagements")
-      ).getEngagementDetail(owner, otherEngagement.data.id);
+      const otherDetail = await getEngagementDetail(
+        owner,
+        otherEngagement.data.id,
+      );
       const blocked = await createServiceOrder(owner, {
         engagementId: otherEngagement.data.id,
         engagementItemId: otherDetail!.items[0]!.id,
       });
       expect(blocked.ok).toBe(false);
 
-      // Item de outra contratação
       const cross = await createServiceOrder(owner, {
         engagementId: engagement.data.id,
         engagementItemId: otherDetail!.items[0]!.id,
       });
       expect(cross.ok).toBe(false);
 
-      // O.C. → OS
       const ocCustomer = await createCustomer(owner, {
         legalName: "Cliente OS OC",
       });
@@ -326,9 +306,7 @@ describe.skipIf(!guard.allowed)("ordens de serviço persistentes (11B.2)", () =>
         purchaseOrderId: oc.data.id,
       });
       if (!ocEngagement.ok) throw new Error("oc engagement");
-      const ocDetail = await (
-        await import("@/lib/platform/engagements")
-      ).getEngagementDetail(owner, ocEngagement.data.id);
+      const ocDetail = await getEngagementDetail(owner, ocEngagement.data.id);
       const ocOs = await createServiceOrder(owner, {
         engagementId: ocEngagement.data.id,
         engagementItemId: ocDetail!.items[0]!.id,
@@ -337,17 +315,30 @@ describe.skipIf(!guard.allowed)("ordens de serviço persistentes (11B.2)", () =>
 
       const cancel = await cancelServiceOrder(owner, {
         serviceOrderId: first.data.id,
-        reason: "Teste",
+        reason: "Teste cancelamento",
       });
       expect(cancel.ok).toBe(true);
       const cancelledDetail = await getServiceOrderDetail(owner, first.data.id);
       expect(cancelledDetail?.status).toBe("cancelled");
+      expect(cancelledDetail?.cancellationReason).toBe("Teste cancelamento");
 
       const reissue = await createServiceOrder(owner, {
         engagementId: engagement.data.id,
         engagementItemId: itemA.id,
       });
       expect(reissue.ok).toBe(true);
+      if (!reissue.ok) return;
+      expect(reissue.data.code).not.toBe(first.data.code);
+      expect(reissue.data.id).not.toBe(first.data.id);
+
+      const afterReissue = await getServiceOrdersByEngagement(
+        owner,
+        engagement.data.id,
+      );
+      expect(afterReissue).toHaveLength(3);
+      expect(
+        afterReissue.filter((order) => order.status === "cancelled"),
+      ).toHaveLength(1);
 
       const audits = await getPrisma().auditLog.findMany({
         where: {
@@ -362,5 +353,6 @@ describe.skipIf(!guard.allowed)("ordens de serviço persistentes (11B.2)", () =>
         "SERVICE_ORDER_CANCELLED",
       ]);
     },
+    180_000,
   );
 });

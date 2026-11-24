@@ -41,5 +41,15 @@ export function integrationDatabaseGuard(
     }
   }
 
+  if (label === "test") {
+    const isolated = env.E2E_ISOLATED_DATABASE_URL?.trim();
+    if (!isolated || isolated.includes("[SENSITIVE]")) {
+      return {
+        allowed: false,
+        reason: "test sem E2E_ISOLATED_DATABASE_URL (banco descartável)",
+      };
+    }
+  }
+
   return { allowed: true };
 }

@@ -2,8 +2,9 @@
  * E2E de /sistema.
  *
  * - Specs de autenticação/leitura podem usar Preview/HOMOL.
- * - Specs de escrita 11B (`sistema-11b1`, `sistema-11b2`) exigem banco isolado
- *   (DATABASE_ENV=test + E2E_ISOLATED_*). Sem isso, o Playwright faz skip.
+ * - Specs de escrita (`sistema-core`, `sistema-11b1`, `sistema-11b2`)
+ *   exigem banco isolado via `scripts/run-isolated-qa.mjs`.
+ *   Aqui eles são omitidos por padrão para não escrever no HOMOL.
  *
  * Uso: node scripts/preview-e2e.mjs [arquivos...]
  */
@@ -17,7 +18,7 @@ console.log(
     phase: "preflight",
     databaseEnv: "preview",
     targetHostHash,
-    note: "specs de escrita 11B exigem banco isolado; caso contrário skip",
+    note: "specs de escrita 11B omitidos — use run-isolated-qa.mjs",
   }),
 );
 
@@ -25,15 +26,7 @@ const targets = process.argv.slice(2);
 const files =
   targets.length > 0
     ? targets
-    : [
-        "e2e/production-auth.spec.ts",
-        "e2e/password-recovery.spec.ts",
-        // sistema-core e 11b* escrevem dados: só seguros com banco isolado.
-        // Mantidos na lista para evidenciar skip consciente no Gate 0.
-        "e2e/sistema-core.spec.ts",
-        "e2e/sistema-11b1.spec.ts",
-        "e2e/sistema-11b2.spec.ts",
-      ];
+    : ["e2e/production-auth.spec.ts", "e2e/password-recovery.spec.ts"];
 
 const result = spawnSync(
   "npx",

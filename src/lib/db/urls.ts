@@ -32,8 +32,22 @@ function getHomolDatabaseUrl(
 }
 
 /**
+ * Banco descartável de testes/E2E. Fail-closed: em DATABASE_ENV=test exige
+ * E2E_ISOLATED_DATABASE_URL e não aceita HOMOL_* ou legado implícito.
+ */
+function getIsolatedTestDatabaseUrl(
+  env: Record<string, string | undefined>,
+): string | undefined {
+  if (readDatabaseEnvLabel(env) !== "test") return undefined;
+  const url = env.E2E_ISOLATED_DATABASE_URL?.trim();
+  return url || undefined;
+}
+
+/**
  * Runtime do Next.js.
- * Em DATABASE_ENV=preview exige HOMOL_*. Caso contrário RUNTIME_DATABASE_URL.
+ * Em DATABASE_ENV=preview exige HOMOL_*.
+ * Em DATABASE_ENV=test exige E2E_ISOLATED_DATABASE_URL (banco descartável).
+ * Caso contrário RUNTIME_DATABASE_URL.
  * DATABASE_URL e PRISMA_DATABASE_URL ficam no ambiente e este módulo não as lê.
  */
 export function getRuntimeDatabaseUrl(
@@ -49,6 +63,16 @@ export function getRuntimeDatabaseUrl(
     return homol;
   }
 
+  if (readDatabaseEnvLabel(env) === "test") {
+    const isolated = getIsolatedTestDatabaseUrl(env);
+    if (!isolated) {
+      throw new Error(
+        "DATABASE_ENV=test requires E2E_ISOLATED_DATABASE_URL (banco descartável isolado)",
+      );
+    }
+    return isolated;
+  }
+
   const url = env.RUNTIME_DATABASE_URL?.trim();
   if (url) return url;
 
@@ -61,7 +85,9 @@ export function getRuntimeDatabaseUrl(
 
 /**
  * Prisma CLI e seed: migrations, generate e carga inicial.
- * Em DATABASE_ENV=preview exige HOMOL_*. Caso contrário POSTGRES_URL.
+ * Em DATABASE_ENV=preview exige HOMOL_*.
+ * Em DATABASE_ENV=test exige E2E_ISOLATED_DATABASE_URL.
+ * Caso contrário POSTGRES_URL.
  * PRISMA_DATABASE_URL não entra neste caminho.
  */
 export function getMigrationDatabaseUrl(
@@ -75,6 +101,16 @@ export function getMigrationDatabaseUrl(
       );
     }
     return homol;
+  }
+
+  if (readDatabaseEnvLabel(env) === "test") {
+    const isolated = getIsolatedTestDatabaseUrl(env);
+    if (!isolated) {
+      throw new Error(
+        "DATABASE_ENV=test requires E2E_ISOLATED_DATABASE_URL (banco descartável isolado)",
+      );
+    }
+    return isolated;
   }
 
   const url = env.POSTGRES_URL?.trim();

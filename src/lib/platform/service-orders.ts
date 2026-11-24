@@ -362,7 +362,7 @@ export async function createServiceOrder(
     if (error instanceof Error) {
       if (
         error.message === NOT_FOUND_MESSAGE ||
-        error.message.includes("contratação") ||
+        error.message.includes("contrataç") ||
         error.message.includes("Serviço") ||
         error.message.includes("Cliente") ||
         error.message.includes("Unidade") ||

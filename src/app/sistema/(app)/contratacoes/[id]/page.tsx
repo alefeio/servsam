@@ -22,6 +22,11 @@ import {
   getEngagementHistory,
 } from "@/lib/platform/engagements";
 import { formatCents } from "@/lib/platform/money";
+import {
+  classifyServiceOrderQueryError,
+  logServiceOrderQueryFailure,
+  type ServiceOrderModuleState,
+} from "@/lib/platform/service-order-availability";
 import { getServiceOrdersByEngagement } from "@/lib/platform/service-orders";
 import { pageTitle } from "@/lib/seo";
 
@@ -51,21 +56,37 @@ export default async function EngagementDetailPage({
   const history = can("audit.view")
     ? await getEngagementHistory(actor, engagement.id)
     : [];
+
   let serviceOrders: Awaited<
     ReturnType<typeof getServiceOrdersByEngagement>
   > = [];
+  let serviceOrderModule: ServiceOrderModuleState = { status: "ready" };
+
   if (can("service_order.view")) {
     try {
       serviceOrders = await getServiceOrdersByEngagement(actor, engagement.id);
-    } catch {
-      // Migration 11B.2 ainda não aplicada no ambiente — UI comercial permanece utilizável.
+    } catch (error) {
+      logServiceOrderQueryFailure("engagement-detail", error);
+      serviceOrderModule = classifyServiceOrderQueryError(error);
       serviceOrders = [];
     }
   }
+
+  const moduleReady = serviceOrderModule.status === "ready";
   const activeOrderByItem = new Map(
     serviceOrders
       .filter((order) => order.status !== "cancelled")
       .map((order) => [order.engagementItemId, order] as const),
+  );
+  const cancelledOrdersByItem = new Map<string, typeof serviceOrders>();
+  for (const order of serviceOrders) {
+    if (order.status !== "cancelled") continue;
+    const list = cancelledOrdersByItem.get(order.engagementItemId) ?? [];
+    list.push(order);
+    cancelledOrdersByItem.set(order.engagementItemId, list);
+  }
+  const cancelledOrders = serviceOrders.filter(
+    (order) => order.status === "cancelled",
   );
 
   return (
@@ -79,6 +100,25 @@ export default async function EngagementDetailPage({
           </LinkButton>
         }
       />
+
+      {serviceOrderModule.status === "unavailable" ? (
+        <p
+          role="status"
+          className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+        >
+          {serviceOrderModule.message} Clientes, orçamentos e contratações
+          permanecem acessíveis. A emissão de OS fica desabilitada até o módulo
+          estar disponível.
+        </p>
+      ) : null}
+      {serviceOrderModule.status === "forbidden" ? (
+        <p
+          role="status"
+          className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground"
+        >
+          Sem permissão para consultar ordens de serviço nesta contratação.
+        </p>
+      ) : null}
 
       <dl className="grid gap-3 rounded-xl border border-border bg-background p-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
         <div>
@@ -170,6 +210,7 @@ export default async function EngagementDetailPage({
             <tbody>
               {engagement.items.map((item) => {
                 const activeOrder = activeOrderByItem.get(item.id);
+                const priorCancelled = cancelledOrdersByItem.get(item.id) ?? [];
                 return (
                   <tr
                     key={item.id}
@@ -201,12 +242,23 @@ export default async function EngagementDetailPage({
                             {SERVICE_ORDER_STATUS_LABELS[activeOrder.status]}
                           </span>
                         </div>
+                      ) : !moduleReady ? (
+                        <span className="text-xs text-muted-foreground">
+                          Indisponível
+                        </span>
                       ) : engagement.status === "active" &&
                         can("service_order.create") ? (
                         <EmitServiceOrderButton
                           engagementId={engagement.id}
                           engagementItemId={item.id}
+                          priorCancelledCodes={priorCancelled.map(
+                            (order) => order.code,
+                          )}
                         />
+                      ) : priorCancelled.length > 0 ? (
+                        <span className="text-xs text-muted-foreground">
+                          Sem OS ativa
+                        </span>
                       ) : (
                         "—"
                       )}
@@ -222,6 +274,44 @@ export default async function EngagementDetailPage({
           quantidade contratada não vira número de visitas.
         </p>
       </section>
+
+      {moduleReady && cancelledOrders.length > 0 ? (
+        <section className="space-y-3" aria-labelledby="os-canceladas">
+          <h2 id="os-canceladas" className="text-lg font-semibold text-navy">
+            Ordens de serviço canceladas
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Histórico preservado. Números cancelados não são reutilizados na
+            reemissão.
+          </p>
+          <ul className="divide-y divide-border rounded-xl border border-border bg-background text-sm">
+            {cancelledOrders.map((order) => (
+              <li
+                key={order.id}
+                className="flex flex-wrap items-start justify-between gap-2 px-4 py-3"
+              >
+                <div>
+                  <Link
+                    href={`/sistema/ordens-servico/${order.id}`}
+                    className="font-medium text-navy hover:underline"
+                  >
+                    {order.code}
+                  </Link>
+                  <p className="text-muted-foreground">
+                    {order.engagementItem.description}
+                    {order.cancellationReason
+                      ? ` · Motivo: ${order.cancellationReason}`
+                      : ""}
+                  </p>
+                </div>
+                <span className="text-muted-foreground">
+                  {SERVICE_ORDER_STATUS_LABELS[order.status]}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {engagement.notes ? (
         <section className="rounded-xl border border-border bg-background p-4 text-sm">

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { e2eWriteDatabaseGuard } from "@/lib/db/e2e-write-guard";
+import {
+  e2eHostHash,
+  e2eWriteDatabaseGuard,
+} from "@/lib/db/e2e-write-guard";
+
 import { seedGrantsFor } from "@/lib/platform/permissions";
 import { createServiceOrderSchema } from "@/lib/platform/service-order-schemas";
 import {
@@ -60,4 +64,32 @@ describe("permissões e isolamento E2E", () => {
       }).allowed,
     ).toBe(false);
   });
+
+  it("aceita env de teste apenas com fingerprint isolado explícito", () => {
+    const isolated = "postgresql://u:p@127.0.0.1:55432/servsam_e2e";
+    expect(
+      e2eWriteDatabaseGuard({
+        DATABASE_ENV: "test",
+        E2E_ISOLATED_DATABASE_URL: isolated,
+        E2E_ISOLATED_INSTANCE_ID: "abc123def456",
+        E2E_APPROVED_INSTANCE_ID: "abc123def456",
+        RUNTIME_DATABASE_URL: isolated,
+        POSTGRES_URL: isolated,
+        HOMOL_SHARED_HOST_HASH: "22e5c2dd2d93",
+      }).allowed,
+    ).toBe(true);
+    const sharedLookalike = "postgresql://u:p@shared-homol.example:5432/postgres";
+    const sharedHash = e2eHostHash(sharedLookalike);
+    expect(
+      e2eWriteDatabaseGuard({
+        DATABASE_ENV: "test",
+        E2E_ISOLATED_DATABASE_URL: sharedLookalike,
+        E2E_ISOLATED_INSTANCE_ID: "abc123def456",
+        E2E_APPROVED_INSTANCE_ID: "abc123def456",
+        HOMOL_SHARED_HOST_HASH: sharedHash,
+      }).allowed,
+    ).toBe(false);
+  });
 });
+
+
