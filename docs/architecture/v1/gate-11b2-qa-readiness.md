@@ -2,6 +2,7 @@
 
 **Status:** READY FOR HOMOL AUTHORIZATION  
 **Branch:** `fix/11b-2-qa-readiness`  
+**Remote SHA:** `123c66e0fda31fca66feba31cc7ade2373e5eb6d`  
 **Base:** `feature/11b-2-service-orders` @ `288c49f`
 
 ## Banco descartável (anonimizado)
