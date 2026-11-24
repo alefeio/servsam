@@ -12,12 +12,15 @@ import {
 } from "@/lib/platform/service-order-state";
 import { formatServiceOrderCode } from "@/lib/platform/service-orders";
 
-describe("máquina de estados da OS (11B.2)", () => {
-  it("permite apenas cancelar a partir de emitida nesta sprint", () => {
+describe("máquina de estados da OS (11B.3)", () => {
+  it("permite agendar e cancelar a partir de emitida, e remarcar via scheduled", () => {
     expect(canTransitionServiceOrder("issued", "cancelled")).toBe(true);
+    expect(canTransitionServiceOrder("issued", "scheduled")).toBe(true);
     expect(canCancelServiceOrder("issued")).toBe(true);
+    expect(canCancelServiceOrder("scheduled")).toBe(true);
+    expect(canTransitionServiceOrder("scheduled", "issued")).toBe(true);
     expect(canTransitionServiceOrder("issued", "completed")).toBe(false);
-    expect(canTransitionServiceOrder("issued", "scheduled")).toBe(false);
+    expect(canTransitionServiceOrder("scheduled", "in_progress")).toBe(false);
     expect(canTransitionServiceOrder("cancelled", "issued")).toBe(false);
   });
 });

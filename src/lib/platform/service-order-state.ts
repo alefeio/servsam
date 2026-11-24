@@ -14,13 +14,16 @@ export function isServiceOrderStatus(
   return (SERVICE_ORDER_STATUSES as readonly string[]).includes(value);
 }
 
-/** Transições suportadas nesta sprint. Agenda/execução ficam para gates posteriores. */
+/**
+ * Transições suportadas até 11B.3 (agendamento).
+ * in_progress/completed ficam para fluxos próprios posteriores.
+ */
 const SUPPORTED: Record<
   ServiceOrderStatusValue,
   readonly ServiceOrderStatusValue[]
 > = {
-  issued: ["cancelled"],
-  scheduled: [],
+  issued: ["scheduled", "cancelled"],
+  scheduled: ["issued", "cancelled"],
   in_progress: [],
   completed: [],
   cancelled: [],
@@ -35,6 +38,12 @@ export function canTransitionServiceOrder(
 
 export function canCancelServiceOrder(status: ServiceOrderStatusValue): boolean {
   return canTransitionServiceOrder(status, "cancelled");
+}
+
+export function canScheduleServiceOrder(
+  status: ServiceOrderStatusValue,
+): boolean {
+  return status === "issued" || status === "scheduled";
 }
 
 export function isActiveServiceOrder(

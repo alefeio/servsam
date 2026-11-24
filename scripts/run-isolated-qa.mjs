@@ -81,25 +81,18 @@ console.log(
 run("npx", ["tsx", "scripts/run-prisma.ts", "migrate", "deploy"], env);
 run("npx", ["tsx", "prisma/seed.ts"], env);
 
-const table = spawnSync(
-  "node",
-  [
-    "-e",
-    `import pg from "pg"; const c=new pg.Client({connectionString:process.env.E2E_ISOLATED_DATABASE_URL}); await c.connect(); const r=await c.query("select to_regclass('public.service_order') as reg"); console.log(JSON.stringify({serviceOrder:Boolean(r.rows[0].reg)})); await c.end();`,
-  ],
-  { encoding: "utf8", shell: true, env, cwd: resolve(".") },
-);
-if (table.status !== 0) {
-  console.error(table.stderr || table.stdout);
-  process.exit(table.status ?? 1);
-}
-console.log(table.stdout.trim());
+run("node", ["scripts/check-isolated-schema.mjs"], env);
 
 const mode = process.argv[2] ?? "all";
 if (mode === "integration" || mode === "all") {
   run(
     "npx",
-    ["vitest", "run", "src/lib/platform/service-orders.integration.test.ts"],
+    [
+      "vitest",
+      "run",
+      "src/lib/platform/service-orders.integration.test.ts",
+      "src/lib/platform/appointments.integration.test.ts",
+    ],
     env,
   );
 }
@@ -107,7 +100,13 @@ if (mode === "e2e" || mode === "all") {
   run("npm", ["run", "build"], env);
   run(
     "npx",
-    ["playwright", "test", "e2e/sistema-11b2.spec.ts", "--project=chromium"],
+    [
+      "playwright",
+      "test",
+      "e2e/sistema-11b2.spec.ts",
+      "e2e/sistema-11b3.spec.ts",
+      "--project=chromium",
+    ],
     env,
   );
 }
@@ -118,6 +117,6 @@ console.log(
     database: identity.database,
     hostHash: identity.hostHash,
     instanceId: identity.instanceId,
-    migration11b2AppliedOnDisposable: true,
+    migration11b3AppliedOnDisposable: true,
   }),
 );

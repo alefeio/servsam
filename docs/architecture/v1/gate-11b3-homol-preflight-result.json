@@ -1,0 +1,44 @@
+{
+  "phase": "preflight-11b3-homol",
+  "readOnly": true,
+  "databaseEnv": "preview",
+  "targetHostHash": "22e5c2dd2d93",
+  "identity": {
+    "database": "postgres",
+    "hostHash": "22e5c2dd2d93",
+    "hostHashMatches": true,
+    "instanceId": "0786bd682d75",
+    "instanceIdMatches": true,
+    "organization": {
+      "slug": "servsam",
+      "name": "SERVSAM"
+    }
+  },
+  "migrations": {
+    "migration11b2Recorded": true,
+    "migration11b3Recorded": false,
+    "migration11b3Pending": true
+  },
+  "tables": {
+    "service_order": true,
+    "employee": false,
+    "service_appointment": false
+  },
+  "commercialCounts": {
+    "customers": 20,
+    "proposals": 21,
+    "engagements": 7,
+    "serviceOrders": 0,
+    "users": 2,
+    "auditLogs": 342
+  },
+  "grants": {
+    "missingByRole": {
+      "ADMINISTRATIVO": ["employee.manage"],
+      "GERENCIA": [],
+      "DIRETORIA": [],
+      "FINANCEIRO": ["employee.manage"]
+    }
+  },
+  "deployAuthorized": false
+}

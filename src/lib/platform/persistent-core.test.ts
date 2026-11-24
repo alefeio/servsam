@@ -610,7 +610,7 @@ describe("guarda dos testes de integração", () => {
     ).toBe(false);
   });
 
-  it("aceita preview com HOMOL e test", () => {
+  it("aceita preview com HOMOL e test com banco isolado", () => {
     expect(
       integrationDatabaseGuard({
         DATABASE_ENV: "preview",
@@ -618,7 +618,14 @@ describe("guarda dos testes de integração", () => {
       }).allowed,
     ).toBe(true);
     expect(integrationDatabaseGuard({ DATABASE_ENV: "test" }).allowed).toBe(
-      true,
+      false,
     );
+    expect(
+      integrationDatabaseGuard({
+        DATABASE_ENV: "test",
+        E2E_ISOLATED_DATABASE_URL:
+          "postgresql://servsam:servsam_e2e_local@127.0.0.1:55432/servsam_e2e",
+      }).allowed,
+    ).toBe(true);
   });
 });

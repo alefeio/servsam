@@ -28,6 +28,8 @@ model Organization {
   engagements              Engagement[]
   engagementItems          EngagementItem[]
   serviceOrders            ServiceOrder[]
+  employees                Employee[]
+  serviceAppointments      ServiceAppointment[]
 
   @@map("organization")
 }
@@ -492,6 +494,7 @@ model ServiceOrder {
   deletedAt        DateTime?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
+  appointments     ServiceAppointment[]
 
   @@unique([organizationId, code])
   @@index([organizationId, status, deletedAt])
@@ -499,4 +502,71 @@ model ServiceOrder {
   @@index([organizationId, customerId])
   @@index([engagementItemId])
   @@map("service_order")
+}
+
+/// Sprint 11B.3 — Colaborador operacional (entidade de negócio; não é conta de login).
+model Employee {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  fullName       String
+  jobTitle       String
+  isActive       Boolean      @default(true)
+  phone          String?
+  email          String?
+  /// Vínculo opcional futuro com conta de acesso — não exige login no MVP.
+  userId         String?
+  notes          String?
+  createdById    String?
+  updatedById    String?
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  appointments   ServiceAppointment[]
+
+  @@index([organizationId, isActive, deletedAt])
+  @@index([organizationId, fullName])
+  @@map("employee")
+}
+
+/// Situação do compromisso operacional (não é execução técnica de campo).
+enum ServiceAppointmentStatus {
+  scheduled
+  completed
+  cancelled
+}
+
+/// Sprint 11B.3 — Agendamento vinculado a uma OS. Um vigente por OS nesta sprint.
+model ServiceAppointment {
+  id               String                   @id
+  organizationId   String
+  organization     Organization             @relation(fields: [organizationId], references: [id])
+  serviceOrderId   String
+  serviceOrder     ServiceOrder             @relation(fields: [serviceOrderId], references: [id])
+  customerId       String
+  customerUnitId   String?
+  employeeId       String?
+  employee         Employee?                @relation(fields: [employeeId], references: [id])
+  startsAt         DateTime
+  endsAt           DateTime
+  status           ServiceAppointmentStatus @default(scheduled)
+  notes            String?
+  /// Motivo de remarcação ou cancelamento.
+  changeReason     String?
+  /// Se true, o usuário confirmou apesar de conflito de horário do colaborador.
+  conflictAccepted Boolean                  @default(false)
+  createdById      String?
+  updatedById      String?
+  cancelledAt      DateTime?
+  cancelledById    String?
+  deletedAt        DateTime?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  @@index([organizationId, startsAt, endsAt])
+  @@index([organizationId, status, deletedAt])
+  @@index([organizationId, employeeId, startsAt])
+  @@index([serviceOrderId, status])
+  @@index([organizationId, customerId])
+  @@map("service_appointment")
 }

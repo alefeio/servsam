@@ -111,6 +111,7 @@ const ADMINISTRATIVO_INFERRED: PermissionKey[] = [
   "schedule.create",
   "schedule.update",
   "employee.view",
+  "employee.manage",
   "vehicle.view",
   "document.view",
 ];

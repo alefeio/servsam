@@ -401,6 +401,19 @@ export async function cancelServiceOrder(
         );
       }
 
+      const { cancelActiveAppointmentsForServiceOrder } =
+        await import("@/lib/platform/appointments");
+      const cancelledAppointmentIds =
+        await cancelActiveAppointmentsForServiceOrder(tx, {
+          organizationId: actor.organizationId,
+          serviceOrderId: order.id,
+          actorUserId: actor.id,
+          reason:
+            parsed.data.reason?.trim() ||
+            "Cancelamento da ordem de serviço.",
+          now,
+        });
+
       await tx.serviceOrder.update({
         where: { id: order.id },
         data: {
@@ -423,6 +436,7 @@ export async function cancelServiceOrder(
             code: order.code,
             from: order.status,
             reason: parsed.data.reason ?? null,
+            cancelledAppointmentIds,
           },
         },
         tx,

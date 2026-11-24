@@ -43,6 +43,12 @@ export const SERVICE_ORDER_STATUS_LABELS = {
   cancelled: "Cancelada",
 } as const;
 
+export const APPOINTMENT_STATUS_LABELS = {
+  scheduled: "Agendado",
+  completed: "Realizado",
+  cancelled: "Cancelado",
+} as const;
+
 export const PLATFORM_NAV = [
   {
     href: "/sistema",
@@ -73,6 +79,16 @@ export const PLATFORM_NAV = [
     href: "/sistema/ordens-servico",
     label: "Ordens de serviço",
     anyOf: ["service_order.view"],
+  },
+  {
+    href: "/sistema/agenda",
+    label: "Agenda",
+    anyOf: ["schedule.view"],
+  },
+  {
+    href: "/sistema/colaboradores",
+    label: "Colaboradores",
+    anyOf: ["employee.view"],
   },
   {
     href: "/sistema/configuracoes/usuarios",

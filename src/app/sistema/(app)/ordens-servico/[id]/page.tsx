@@ -2,9 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  APPOINTMENT_STATUS_LABELS,
   ENGAGEMENT_ORIGIN_LABELS,
   SERVICE_ORDER_STATUS_LABELS,
 } from "@/data/platform/labels";
+import {
+  CancelAppointmentForm,
+  CreateAppointmentForm,
+  RescheduleAppointmentForm,
+} from "@/features/platform/appointment-forms";
 import {
   LinkButton,
   NoAccess,
@@ -15,8 +21,20 @@ import {
   requireAuthenticatedUser,
   userHasPermission,
 } from "@/lib/platform/access";
-import { formatDateBr, formatDateTimeBr } from "@/lib/platform/dates";
-import { canCancelServiceOrder } from "@/lib/platform/service-order-state";
+import {
+  listAppointmentsForServiceOrder,
+} from "@/lib/platform/appointments";
+import {
+  formatDateBr,
+  formatDateTimeBr,
+  formatScheduleDateTime,
+  toScheduleDateTimeLocalValue,
+} from "@/lib/platform/dates";
+import { listActiveEmployeeOptions } from "@/lib/platform/employees";
+import {
+  canCancelServiceOrder,
+  canScheduleServiceOrder,
+} from "@/lib/platform/service-order-state";
 import {
   getServiceOrderDetail,
   getServiceOrderHistory,
@@ -31,6 +49,10 @@ export const metadata: Metadata = {
 const HISTORY_LABELS: Record<string, string> = {
   SERVICE_ORDER_CREATED: "Emitida",
   SERVICE_ORDER_CANCELLED: "Cancelada",
+  SERVICE_ORDER_STATUS_CHANGED: "Situação alterada",
+  APPOINTMENT_CREATED: "Agendamento criado",
+  APPOINTMENT_RESCHEDULED: "Agendamento remarcado",
+  APPOINTMENT_CANCELLED: "Agendamento cancelado",
 };
 
 export default async function ServiceOrderDetailPage({
@@ -51,22 +73,34 @@ export default async function ServiceOrderDetailPage({
     ? await getServiceOrderHistory(actor, order.id)
     : [];
 
+  const canViewSchedule = can("schedule.view");
+  const appointments = canViewSchedule
+    ? await listAppointmentsForServiceOrder(actor, order.id)
+    : [];
+  const active = appointments.find((row) => row.status === "scheduled");
+  const employees =
+    can("employee.view") && (can("schedule.create") || can("schedule.update"))
+      ? await listActiveEmployeeOptions(actor)
+      : [];
+
   return (
     <section className="mx-auto max-w-4xl space-y-8">
       <PageHeader
         title={`${order.code} · ${order.description}`}
-        description="Documento operacional persistente. O agendamento será integrado no Gate 11B.3."
+        description="Documento operacional persistente com agendamento no PostgreSQL."
         actions={
-          <LinkButton href="/sistema/ordens-servico" variant="outline">
-            Voltar
-          </LinkButton>
+          <div className="flex flex-wrap gap-2">
+            {canViewSchedule ? (
+              <LinkButton href="/sistema/agenda" variant="outline">
+                Agenda
+              </LinkButton>
+            ) : null}
+            <LinkButton href="/sistema/ordens-servico" variant="outline">
+              Voltar
+            </LinkButton>
+          </div>
         }
       />
-
-      <p className="rounded-xl border border-dashed border-border bg-background px-4 py-3 text-sm text-muted-foreground">
-        Agenda e execução técnica ainda não estão disponíveis nesta sprint. Não
-        há ação de agendar ou concluir nesta tela.
-      </p>
 
       <dl className="grid gap-3 rounded-xl border border-border bg-background p-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
         <div>
@@ -187,6 +221,93 @@ export default async function ServiceOrderDetailPage({
         <p className="text-sm text-muted-foreground">
           Motivo do cancelamento: {order.cancellationReason}
         </p>
+      ) : null}
+
+      {canViewSchedule ? (
+        <section className="space-y-4" aria-labelledby="agendamento">
+          <h2 id="agendamento" className="text-lg font-semibold text-navy">
+            Agendamento
+          </h2>
+
+          {active ? (
+            <div className="space-y-4 rounded-xl border border-border bg-background p-4 text-sm">
+              <p>
+                <Link
+                  href={`/sistema/agenda/${active.id}`}
+                  className="font-medium text-navy hover:underline"
+                >
+                  {formatScheduleDateTime(active.startsAt)} —{" "}
+                  {formatScheduleDateTime(active.endsAt)}
+                </Link>
+              </p>
+              <p className="text-muted-foreground">
+                Responsável: {active.employee?.fullName ?? "Sem atribuição"} ·{" "}
+                {APPOINTMENT_STATUS_LABELS[active.status]}
+              </p>
+              {can("schedule.update") ? (
+                <>
+                  <RescheduleAppointmentForm
+                    appointmentId={active.id}
+                    serviceOrderId={order.id}
+                    employees={employees}
+                    defaultStartsAtLocal={toScheduleDateTimeLocalValue(
+                      active.startsAt,
+                    )}
+                    defaultEndsAtLocal={toScheduleDateTimeLocalValue(
+                      active.endsAt,
+                    )}
+                    defaultEmployeeId={active.employeeId}
+                    defaultNotes={active.notes}
+                    redirectTo={`/sistema/ordens-servico/${order.id}`}
+                  />
+                  <CancelAppointmentForm
+                    appointmentId={active.id}
+                    serviceOrderId={order.id}
+                    redirectTo={`/sistema/ordens-servico/${order.id}`}
+                  />
+                </>
+              ) : null}
+            </div>
+          ) : can("schedule.create") &&
+            canScheduleServiceOrder(order.status) ? (
+            <CreateAppointmentForm
+              serviceOrderId={order.id}
+              employees={employees}
+              redirectTo={`/sistema/ordens-servico/${order.id}`}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Não há agendamento vigente para esta OS.
+            </p>
+          )}
+
+          {appointments.length > 1 ||
+          (appointments.length === 1 && !active) ? (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Histórico de compromissos</h3>
+              <ul className="divide-y divide-border rounded-xl border border-border bg-background text-sm">
+                {appointments.map((row) => (
+                  <li
+                    key={row.id}
+                    className="flex flex-wrap justify-between gap-2 px-4 py-3"
+                  >
+                    <Link
+                      href={`/sistema/agenda/${row.id}`}
+                      className="text-navy hover:underline"
+                    >
+                      {formatScheduleDateTime(row.startsAt)} ·{" "}
+                      {APPOINTMENT_STATUS_LABELS[row.status]}
+                    </Link>
+                    <span className="text-muted-foreground">
+                      {row.employee?.fullName ?? "Sem atribuição"}
+                      {row.changeReason ? ` · ${row.changeReason}` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
       ) : null}
 
       {can("service_order.update") && canCancelServiceOrder(order.status) ? (

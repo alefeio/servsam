@@ -13,14 +13,19 @@ try {
     WHERE rolled_back_at IS NULL
     ORDER BY finished_at
   `);
-  const table = await client.query(
-    `SELECT to_regclass('public.service_order') AS reg`,
-  );
+  const tables = await client.query(`
+    SELECT
+      to_regclass('public.service_order') AS service_order,
+      to_regclass('public.employee') AS employee,
+      to_regclass('public.service_appointment') AS service_appointment
+  `);
   console.log(
     JSON.stringify(
       {
         migrations: migrations.rows.map((row) => row.migration_name),
-        serviceOrderPresent: Boolean(table.rows[0]?.reg),
+        serviceOrderPresent: Boolean(tables.rows[0]?.service_order),
+        employeePresent: Boolean(tables.rows[0]?.employee),
+        appointmentPresent: Boolean(tables.rows[0]?.service_appointment),
       },
       null,
       2,
