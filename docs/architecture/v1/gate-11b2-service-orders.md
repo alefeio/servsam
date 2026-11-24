@@ -8,7 +8,18 @@ Status: **11B.2 READY FOR REVIEW**
 |---|---|
 | Branch | `feature/11b-2-service-orders` |
 | Base | `137e11c` (`feature/11b-real-commercial-operations`) |
+| SHA | `b51a8a4df8fb61ac0c3756424af1e8ae54c7d203` |
 | Merge em `main` | não |
+
+## Quality Gate
+
+| Check | Resultado |
+|---|---|
+| lint / typecheck / unit / build | OK |
+| integration | 27 passed; suíte OS completa **skipped** até migration HOMOL |
+| E2E escrita | skip consciente (sem banco isolado) |
+| Grants `service_order.*` | 12/12 já concedidos |
+| Migration HOMOL | **não aplicada** — aguarda autorização |
 
 ## Gate 0 — Isolamento E2E
 
