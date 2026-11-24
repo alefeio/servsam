@@ -3,7 +3,8 @@
 **Status:** READY FOR REVIEW  
 **Branch:** `feature/11b-3-real-scheduling`  
 **Base:** `a61630a2ecadce543b0b4a9bec9ab5a63a8acbdb`  
-**SHA remoto:** `00416555dd6c9e715b227b40157830b0930cba6d`
+**SHA funcional (código + testes):** `00416555dd6c9e715b227b40157830b0930cba6d`  
+**HEAD remoto (docs Preview):** `60ad4d1d27b288696206a03769dbb5525c2d6b8d`
 
 ## Modelos e migration
 
