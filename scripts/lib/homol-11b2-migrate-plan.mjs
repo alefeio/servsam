@@ -193,16 +193,20 @@ export function evaluateHomol11b2DeployPlan(input) {
   };
 }
 
-export function assertDeployAuthorization(env = process.env) {
+/**
+ * @param {Record<string, string | undefined>} [env]
+ */
+export function assertDeployAuthorization(env) {
+  const source = env ?? process.env;
   const blockers = [];
-  if (env.CONFIRM !== "YES") blockers.push("CONFIRM=YES obrigatório");
-  if (env.MIGRATION_11B2_AUTHORIZE !== "YES") {
+  if (source.CONFIRM !== "YES") blockers.push("CONFIRM=YES obrigatório");
+  if (source.MIGRATION_11B2_AUTHORIZE !== "YES") {
     blockers.push("MIGRATION_11B2_AUTHORIZE=YES obrigatório");
   }
-  if (env.DATABASE_ENV?.trim().toLowerCase() !== "preview") {
+  if (source.DATABASE_ENV?.trim().toLowerCase() !== "preview") {
     blockers.push("DATABASE_ENV=preview obrigatório");
   }
-  if (env.VERCEL_ENV === "production") {
+  if (source.VERCEL_ENV === "production") {
     blockers.push("VERCEL_ENV=production");
   }
   return { ok: blockers.length === 0, blockers };
