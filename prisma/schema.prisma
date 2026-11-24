@@ -27,6 +27,7 @@ model Organization {
   receivedPurchaseOrderItems ReceivedPurchaseOrderItem[]
   engagements              Engagement[]
   engagementItems          EngagementItem[]
+  serviceOrders            ServiceOrder[]
 
   @@map("organization")
 }
@@ -199,6 +200,7 @@ model Customer {
   proposals              Proposal[]
   receivedPurchaseOrders ReceivedPurchaseOrder[]
   engagements            Engagement[]
+  serviceOrders          ServiceOrder[]
 
   @@index([organizationId, deletedAt])
   @@index([organizationId, document])
@@ -243,6 +245,7 @@ model CustomerUnit {
   proposals              Proposal[]
   receivedPurchaseOrders ReceivedPurchaseOrder[]
   engagements            Engagement[]
+  serviceOrders          ServiceOrder[]
 
   @@index([organizationId, customerId])
   @@map("customer_unit")
@@ -423,6 +426,7 @@ model Engagement {
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
   items           EngagementItem[]
+  serviceOrders   ServiceOrder[]
 
   @@unique([organizationId, code])
   @@index([organizationId, status, deletedAt])
@@ -431,19 +435,68 @@ model Engagement {
 }
 
 model EngagementItem {
-  id             String       @id
+  id             String         @id
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization   @relation(fields: [organizationId], references: [id])
   engagementId   String
-  engagement     Engagement   @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  engagement     Engagement     @relation(fields: [engagementId], references: [id], onDelete: Cascade)
   position       Int
   description    String
-  quantity       Decimal      @db.Decimal(12, 3)
+  quantity       Decimal        @db.Decimal(12, 3)
   unitPriceCents Int
   totalCents     Int
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  serviceOrders  ServiceOrder[]
 
   @@index([organizationId, engagementId])
   @@map("engagement_item")
+}
+
+/// Sprint 11B.2 — Ordem de Serviço persistente (execução vem em sprints posteriores).
+enum ServiceOrderStatus {
+  issued
+  scheduled
+  in_progress
+  completed
+  cancelled
+}
+
+model ServiceOrder {
+  id               String             @id
+  organizationId   String
+  organization     Organization       @relation(fields: [organizationId], references: [id])
+  /// Número interno (OS-2026-0001).
+  code             String
+  engagementId     String
+  engagement       Engagement         @relation(fields: [engagementId], references: [id])
+  engagementItemId String
+  engagementItem   EngagementItem     @relation(fields: [engagementItemId], references: [id])
+  customerId       String
+  customer         Customer           @relation(fields: [customerId], references: [id])
+  customerUnitId   String?
+  customerUnit     CustomerUnit?      @relation(fields: [customerUnitId], references: [id])
+  description      String
+  scopeNotes       String?
+  observations     String?
+  /// Referência à quantidade contratada (não vira número de visitas).
+  quantity         Decimal            @db.Decimal(12, 3)
+  status           ServiceOrderStatus @default(issued)
+  issuedAt         DateTime
+  issuedById       String?
+  cancelledAt      DateTime?
+  cancelledById    String?
+  cancellationReason String?
+  createdById      String?
+  updatedById      String?
+  deletedAt        DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@unique([organizationId, code])
+  @@index([organizationId, status, deletedAt])
+  @@index([organizationId, engagementId])
+  @@index([organizationId, customerId])
+  @@index([engagementItemId])
+  @@map("service_order")
 }

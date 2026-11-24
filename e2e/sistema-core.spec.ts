@@ -4,16 +4,20 @@ import { expect, test } from "@playwright/test";
 loadEnv({ path: ".env.local" });
 
 /**
- * Sprint 11A. Roda só contra o HOMOL de Preview (`npm run test:e2e:preview`).
- * Cria dados com prefixo "[E2E]" e arquiva o que a interface permite ao final.
+ * Sprint 11A. Escrita somente em banco isolado (Gate 0 / 11B.2).
+ * Cria dados com prefixo "[E2E]" quando o guard permitir.
  */
 test("clientes e orçamentos reais: do cadastro ao aceite", async ({ page }) => {
   test.setTimeout(240_000);
   const email = process.env.SEED_ADMIN_EMAIL;
   const password = process.env.SEED_ADMIN_PASSWORD;
   test.skip(
-    process.env.DATABASE_ENV !== "preview" || !email || !password,
-    "Use `npm run test:e2e:preview` (DATABASE_ENV=preview + HOMOL)",
+    process.env.DATABASE_ENV !== "test" ||
+      !process.env.E2E_ISOLATED_DATABASE_URL?.trim() ||
+      !process.env.E2E_ISOLATED_INSTANCE_ID?.trim() ||
+      !email ||
+      !password,
+    "E2E de escrita exige DATABASE_ENV=test + E2E_ISOLATED_* (não HOMOL compartilhado)",
   );
 
   const suffix = Date.now().toString().slice(-6);

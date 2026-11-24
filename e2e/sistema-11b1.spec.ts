@@ -3,20 +3,27 @@ import { expect, test } from "@playwright/test";
 
 loadEnv({ path: ".env.local" });
 
+function e2eWriteAllowed(): boolean {
+  return (
+    process.env.DATABASE_ENV === "test" &&
+    Boolean(process.env.E2E_ISOLATED_DATABASE_URL?.trim()) &&
+    Boolean(process.env.E2E_ISOLATED_INSTANCE_ID?.trim()) &&
+    Boolean(process.env.SEED_ADMIN_EMAIL) &&
+    Boolean(process.env.SEED_ADMIN_PASSWORD)
+  );
+}
+
 /**
- * Gate 11B.1 — fluxos A (orçamento aceito → contratação) e B (O.C. → contratação).
- * Roda no Preview/HOMOL via `npm run test:e2e:preview -- e2e/sistema-11b1.spec.ts`.
- * Dados com prefixo [E2E]; não usa /demonstracao nem localStorage.
+ * Gate 11B.1 — fluxos A/B. Escrita somente em banco isolado (Gate 0 / 11B.2).
+ * Não usa HOMOL compartilhado, /demonstracao nem localStorage.
  */
 test.describe("11B.1 contratação e O.C. reais", () => {
   test.describe.configure({ mode: "serial" });
 
   test.beforeEach(() => {
     test.skip(
-      process.env.DATABASE_ENV !== "preview" ||
-        !process.env.SEED_ADMIN_EMAIL ||
-        !process.env.SEED_ADMIN_PASSWORD,
-      "Use `npm run test:e2e:preview` (DATABASE_ENV=preview + HOMOL)",
+      !e2eWriteAllowed(),
+      "E2E de escrita exige DATABASE_ENV=test + E2E_ISOLATED_* (não HOMOL compartilhado)",
     );
   });
 

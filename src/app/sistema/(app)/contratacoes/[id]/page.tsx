@@ -4,12 +4,14 @@ import { notFound } from "next/navigation";
 import {
   ENGAGEMENT_ORIGIN_LABELS,
   ENGAGEMENT_STATUS_LABELS,
+  SERVICE_ORDER_STATUS_LABELS,
 } from "@/data/platform/labels";
 import {
   LinkButton,
   NoAccess,
   PageHeader,
 } from "@/features/platform/form-parts";
+import { EmitServiceOrderButton } from "@/features/platform/service-order-form";
 import {
   requireAuthenticatedUser,
   userHasPermission,
@@ -20,6 +22,7 @@ import {
   getEngagementHistory,
 } from "@/lib/platform/engagements";
 import { formatCents } from "@/lib/platform/money";
+import { getServiceOrdersByEngagement } from "@/lib/platform/service-orders";
 import { pageTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -48,12 +51,28 @@ export default async function EngagementDetailPage({
   const history = can("audit.view")
     ? await getEngagementHistory(actor, engagement.id)
     : [];
+  let serviceOrders: Awaited<
+    ReturnType<typeof getServiceOrdersByEngagement>
+  > = [];
+  if (can("service_order.view")) {
+    try {
+      serviceOrders = await getServiceOrdersByEngagement(actor, engagement.id);
+    } catch {
+      // Migration 11B.2 ainda não aplicada no ambiente — UI comercial permanece utilizável.
+      serviceOrders = [];
+    }
+  }
+  const activeOrderByItem = new Map(
+    serviceOrders
+      .filter((order) => order.status !== "cancelled")
+      .map((order) => [order.engagementItemId, order] as const),
+  );
 
   return (
     <section className="mx-auto max-w-4xl space-y-8">
       <PageHeader
         title={`${engagement.code} · ${engagement.title}`}
-        description="Formalização comercial persistente. Ordem de serviço virá no Gate 11B.2."
+        description="Formalização comercial persistente. Emita OS por serviço contratado."
         actions={
           <LinkButton href="/sistema/contratacoes" variant="outline">
             Voltar
@@ -145,32 +164,63 @@ export default async function EngagementDetailPage({
                 <th className="px-4 py-3 text-right font-medium">Qtd.</th>
                 <th className="px-4 py-3 text-right font-medium">Unitário</th>
                 <th className="px-4 py-3 text-right font-medium">Total</th>
+                <th className="px-4 py-3 font-medium">OS</th>
               </tr>
             </thead>
             <tbody>
-              {engagement.items.map((item) => (
-                <tr
-                  key={item.id}
-                  className="border-b border-border last:border-0"
-                >
-                  <td className="px-4 py-3">{item.position}</td>
-                  <td className="px-4 py-3">{item.description}</td>
-                  <td className="px-4 py-3 text-right">
-                    {new Intl.NumberFormat("pt-BR", {
-                      maximumFractionDigits: 3,
-                    }).format(Number(item.quantity))}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {formatCents(item.unitPriceCents)}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {formatCents(item.totalCents)}
-                  </td>
-                </tr>
-              ))}
+              {engagement.items.map((item) => {
+                const activeOrder = activeOrderByItem.get(item.id);
+                return (
+                  <tr
+                    key={item.id}
+                    className="border-b border-border last:border-0"
+                  >
+                    <td className="px-4 py-3">{item.position}</td>
+                    <td className="px-4 py-3">{item.description}</td>
+                    <td className="px-4 py-3 text-right">
+                      {new Intl.NumberFormat("pt-BR", {
+                        maximumFractionDigits: 3,
+                      }).format(Number(item.quantity))}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {formatCents(item.unitPriceCents)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {formatCents(item.totalCents)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {activeOrder ? (
+                        <div className="space-y-1">
+                          <Link
+                            href={`/sistema/ordens-servico/${activeOrder.id}`}
+                            className="font-medium text-navy hover:underline"
+                          >
+                            {activeOrder.code}
+                          </Link>
+                          <span className="block text-xs text-muted-foreground">
+                            {SERVICE_ORDER_STATUS_LABELS[activeOrder.status]}
+                          </span>
+                        </div>
+                      ) : engagement.status === "active" &&
+                        can("service_order.create") ? (
+                        <EmitServiceOrderButton
+                          engagementId={engagement.id}
+                          engagementItemId={item.id}
+                        />
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
+        <p className="text-xs text-muted-foreground">
+          Cada linha de serviço pode originar no máximo uma OS ativa. A
+          quantidade contratada não vira número de visitas.
+        </p>
       </section>
 
       {engagement.notes ? (

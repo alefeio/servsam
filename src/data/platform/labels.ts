@@ -35,6 +35,14 @@ export const ENGAGEMENT_ORIGIN_LABELS = {
   purchase_order: "O.C. recebida",
 } as const;
 
+export const SERVICE_ORDER_STATUS_LABELS = {
+  issued: "Emitida",
+  scheduled: "Agendada",
+  in_progress: "Em execução",
+  completed: "Concluída",
+  cancelled: "Cancelada",
+} as const;
+
 export const PLATFORM_NAV = [
   {
     href: "/sistema",
@@ -60,6 +68,11 @@ export const PLATFORM_NAV = [
     href: "/sistema/contratacoes",
     label: "Contratações",
     anyOf: ["contract.view"],
+  },
+  {
+    href: "/sistema/ordens-servico",
+    label: "Ordens de serviço",
+    anyOf: ["service_order.view"],
   },
   {
     href: "/sistema/configuracoes/usuarios",
