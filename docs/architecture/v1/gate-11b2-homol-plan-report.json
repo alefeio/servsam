@@ -1,0 +1,49 @@
+{
+  "phase": "homol-11b2-plan",
+  "mode": "plan",
+  "readOnly": true,
+  "capturedAt": "2026-11-24T16:20:00.000Z",
+  "branch": "fix/11b-2-qa-readiness",
+  "migration": "20261124010000_service_orders",
+  "identity": {
+    "database": "postgres",
+    "hostHash": "22e5c2dd2d93",
+    "instanceId": "0786bd682d75",
+    "approvedInstanceId": "0786bd682d75",
+    "cliMatchesPreflight": true
+  },
+  "organization": {
+    "slug": "servsam",
+    "found": true
+  },
+  "tables": {
+    "customer": true,
+    "proposal": true,
+    "proposal_item": true,
+    "engagement": true,
+    "engagement_item": true,
+    "received_purchase_order": true,
+    "service_order": false
+  },
+  "rowCountsBefore": {
+    "customer": 28,
+    "proposal": 21,
+    "engagement": 7,
+    "received_purchase_order": 4
+  },
+  "evaluation": {
+    "ok": true,
+    "blockers": [],
+    "plan": {
+      "migration": "20261124010000_service_orders",
+      "pendingCount": 1,
+      "pending": ["20261124010000_service_orders"],
+      "appliedCount": 4,
+      "willSeed": false,
+      "willReset": false,
+      "willRollback": false
+    }
+  },
+  "deployExecuted": false,
+  "status": "11B.2 HOMOL DEPLOY PREPARED"
+}

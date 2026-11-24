@@ -110,8 +110,8 @@ try {
     },
     deployAuthorized: false,
     deployCommandDocumented:
-      "CONFIRM=YES DATABASE_ENV=preview node scripts/preview-migrate.mjs",
-    note: "NÃO executar migrate no HOMOL nesta entrega QA.",
+      "CONFIRM=YES MIGRATION_11B2_AUTHORIZE=YES DATABASE_ENV=preview HOMOL_APPROVED_INSTANCE_ID=0786bd682d75 node scripts/homol-migrate-11b2.mjs deploy",
+    note: "Usar scripts/homol-migrate-11b2.mjs (nunca preview-migrate sem subcomando / sem seed).",
   };
 
   console.log(JSON.stringify(report, null, 2));
