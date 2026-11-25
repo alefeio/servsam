@@ -1,9 +1,10 @@
 # 11B.3 FINAL QA PASS — READY FOR HOMOL AUTHORIZATION
 
 **Branch:** `fix/11b-3-acceptance`  
-**SHA:** `7f33b25f55f644842c3ccd8e1feaa7d6afe6ab01`  
+**SHA funcional:** `7f33b25f55f644842c3ccd8e1feaa7d6afe6ab01`  
+**SHA remoto (HEAD docs):** `bd780aa1082fd5f909c360f702758ba4df398940`  
 **Migration aditiva:** `prisma/migrations/20261124180000_employees_appointments`  
-**Preview:** https://servsam-git-fix-11b-3-acceptance-alefeios-projects.vercel.app
+**Preview:** https://servsam-git-fix-11b-3-acceptance-alefeios-projects.vercel.app — **READY**
 
 ## Correções finais (antes da autorização HOMOL)
 
@@ -20,8 +21,8 @@
 | typecheck | PASS |
 | unitários | PASS (200) |
 | integração isolada Docker (OS + agenda + concorrência) | PASS (3) |
-| build | (ver pipeline desta entrega) |
-| E2E isolado | (ver pipeline desta entrega) |
+| build | PASS |
+| E2E isolado (11B.2 + 11B.3) | PASS (3) |
 | preflight HOMOL somente leitura | PASS |
 | migrate plan HOMOL | `evaluation.ok=true`, deploy **não** executado |
 
