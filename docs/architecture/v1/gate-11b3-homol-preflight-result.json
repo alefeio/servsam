@@ -1,4 +1,4 @@
-{
+﻿{
   "phase": "preflight-11b3-homol",
   "readOnly": true,
   "databaseEnv": "preview",
@@ -16,25 +16,26 @@
     }
   },
   "migrations": {
-    "totalApplied": 5,
+    "totalApplied": 6,
     "sampleRecent": [
       "20261022140103_platform_foundation",
       "20261118160000_customers_proposals",
       "20261118193000_customer_document_active_unique",
       "20261123140000_engagements_purchase_orders",
-      "20261124010000_service_orders"
+      "20261124010000_service_orders",
+      "20261124180000_employees_appointments"
     ],
     "migration11b2Recorded": true,
-    "migration11b3Recorded": false,
-    "migration11b3Pending": true
+    "migration11b3Recorded": true,
+    "migration11b3Pending": false
   },
   "tables": {
     "customer": true,
     "proposal": true,
     "engagement": true,
     "service_order": true,
-    "employee": false,
-    "service_appointment": false
+    "employee": true,
+    "service_appointment": true
   },
   "commercialCounts": {
     "customers": 20,
@@ -93,7 +94,7 @@
     "note": "Não executar seed para corrigir grants. Preparar procedimento idempotente separado se faltar chave."
   },
   "additiveCompatibility": {
-    "ok": true,
+    "ok": false,
     "note": "11B.3 é aditiva: cria employee + service_appointment sem alterar 11B.2."
   },
   "deployAuthorized": false,
