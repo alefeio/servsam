@@ -71,10 +71,14 @@ const approvedInstanceId =
 const url = env.POSTGRES_URL || env.RUNTIME_DATABASE_URL;
 if (!url) blocked("URL HOMOL ausente");
 
-function assertPrismaCliTargetsApprovedBank(processEnv, approvedUrl) {
+function assertPrismaCliTargetsApprovedBank(
+  processEnv,
+  approvedUrl,
+  liveIdentity,
+) {
   const probe = spawnSync(
     "npx",
-    ["tsx", "scripts/print-migration-url-host-hash.ts"],
+    ["tsx", "scripts/print-migration-url-identity.ts"],
     {
       cwd: resolve("."),
       env: processEnv,
@@ -83,26 +87,53 @@ function assertPrismaCliTargetsApprovedBank(processEnv, approvedUrl) {
     },
   );
   if (probe.status !== 0) {
-    blocked("CLI Prisma sem URL de migration resolvível", {
+    blocked("CLI Prisma sem identidade de migration resolvível", {
       status: probe.status,
       stderr: (probe.stderr || "").slice(0, 500),
     });
   }
-  const resolvedHash = String(probe.stdout || "").trim();
-  if (!/^[a-f0-9]{12}$/.test(resolvedHash)) {
-    blocked("probe da CLI Prisma não retornou hostHash", {
-      preview: resolvedHash.slice(0, 32),
+  let parsed;
+  try {
+    parsed = JSON.parse(String(probe.stdout || "").trim());
+  } catch {
+    blocked("probe da CLI Prisma não retornou JSON de identidade", {
+      preview: String(probe.stdout || "").slice(0, 80),
     });
   }
+  const resolvedHash = String(parsed.hostHash || "");
+  const resolvedDb = String(parsed.database || "");
+  const resolvedInstance = String(parsed.instanceId || "");
   const approvedHash = hostHashFromUrl(approvedUrl);
   if (resolvedHash !== approvedHash || resolvedHash !== EXPECTED_HOST_HASH) {
-    blocked("CLI Prisma não aponta ao banco HOMOL aprovado no preflight", {
+    blocked("CLI Prisma não aponta ao host HOMOL aprovado", {
       resolvedHostHash: resolvedHash,
       approvedHostHash: approvedHash,
       expectedHostHash: EXPECTED_HOST_HASH,
     });
   }
-  return { resolvedHostHash: resolvedHash };
+  if (resolvedInstance !== EXPECTED_INSTANCE_ID) {
+    blocked("CLI Prisma instanceId ≠ identidade física aprovada", {
+      resolvedInstanceId: resolvedInstance,
+      expectedInstanceId: EXPECTED_INSTANCE_ID,
+    });
+  }
+  if (resolvedInstance !== liveIdentity.instanceId) {
+    blocked("CLI Prisma instanceId ≠ banco do preflight gatherState", {
+      resolvedInstanceId: resolvedInstance,
+      liveInstanceId: liveIdentity.instanceId,
+    });
+  }
+  if (resolvedDb !== liveIdentity.database) {
+    blocked("CLI Prisma database ≠ current_database do preflight", {
+      resolvedDatabase: resolvedDb,
+      liveDatabase: liveIdentity.database,
+    });
+  }
+  return {
+    resolvedHostHash: resolvedHash,
+    resolvedDatabase: resolvedDb,
+    resolvedInstanceId: resolvedInstance,
+  };
 }
 
 async function gatherState(connectionString) {
@@ -169,13 +200,18 @@ async function gatherState(connectionString) {
       ORDER BY indexname
     `);
     const requestedAmountCol = await client.query(`
-      SELECT EXISTS (
-        SELECT 1
-        FROM information_schema.columns
-        WHERE table_schema = 'public'
-          AND table_name = 'receipt_entry'
-          AND column_name = 'requestedAmountCents'
-      ) AS present
+      SELECT data_type, is_nullable
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'receipt_entry'
+        AND column_name = 'requestedAmountCents'
+      LIMIT 1
+    `);
+    const confirmedAtIndex = await client.query(`
+      SELECT indexname, indexdef
+      FROM pg_indexes
+      WHERE schemaname = 'public'
+        AND indexname = 'receipt_entry_organizationId_confirmedAt_idx'
     `);
     const counts = await client.query(`
       SELECT
@@ -211,9 +247,20 @@ async function gatherState(connectionString) {
         name: row.indexname,
         definition: row.indexdef,
       })),
-      requestedAmountColumnPresent: Boolean(
-        requestedAmountCol.rows[0]?.present,
-      ),
+      database,
+      requestedAmountColumn: requestedAmountCol.rows[0]
+        ? {
+            present: true,
+            dataType: requestedAmountCol.rows[0].data_type,
+            isNullable: requestedAmountCol.rows[0].is_nullable,
+          }
+        : { present: false, dataType: null, isNullable: null },
+      confirmedAtIndex: confirmedAtIndex.rows[0]
+        ? {
+            name: confirmedAtIndex.rows[0].indexname,
+            definition: confirmedAtIndex.rows[0].indexdef,
+          }
+        : null,
       migration11b4: migration11b4
         ? {
             name: migration11b4.migration_name,
@@ -243,21 +290,80 @@ function assertPostMigrateAudit(before, after, localMigrations, appliedPending) 
   if (after.hostHash !== EXPECTED_HOST_HASH) {
     issues.push(`hostHash pós ≠ ${EXPECTED_HOST_HASH}`);
   }
+  if (after.instanceId !== EXPECTED_INSTANCE_ID) {
+    issues.push(`instanceId pós ≠ ${EXPECTED_INSTANCE_ID}`);
+  }
   if (!after.billingTablePresent) issues.push("tabela billing_request ausente");
   if (!after.receiptTablePresent) issues.push("tabela receipt_entry ausente");
-  if (!after.requestedAmountColumnPresent) {
+  if (!after.requestedAmountColumn?.present) {
     issues.push("coluna requestedAmountCents ausente");
+  } else {
+    if (
+      !["integer", "bigint"].includes(
+        String(after.requestedAmountColumn.dataType).toLowerCase(),
+      )
+    ) {
+      issues.push(
+        `requestedAmountCents tipo inesperado: ${after.requestedAmountColumn.dataType}`,
+      );
+    }
+    if (after.requestedAmountColumn.isNullable !== "NO") {
+      issues.push("requestedAmountCents deve ser NOT NULL");
+    }
   }
-  for (const name of [
+  if (!after.confirmedAtIndex?.name) {
+    issues.push("índice receipt_entry_organizationId_confirmedAt_idx ausente");
+  }
+
+  const requiredEnums = [
     "BillingRequestStatus",
+    "BillingRequestType",
     "ReceiptKind",
     "ReceiptStatus",
-  ]) {
+    "ReceiptPaymentMethod",
+  ];
+  for (const name of requiredEnums) {
     if (!after.financeEnums.includes(name)) {
       issues.push(`enum ausente: ${name}`);
     }
   }
-  for (const name of appliedPending) {
+
+  const requiredFks = [
+    "billing_request_organizationId_fkey",
+    "billing_request_engagementId_fkey",
+    "billing_request_customerId_fkey",
+    "receipt_entry_organizationId_fkey",
+    "receipt_entry_engagementId_fkey",
+    "receipt_entry_customerId_fkey",
+  ];
+  for (const name of requiredFks) {
+    if (!after.foreignKeys.includes(name)) {
+      issues.push(`FK ausente: ${name}`);
+    }
+  }
+
+  const idempotencyByName = new Map(
+    after.idempotencyIndexes.map((row) => [row.name, row.definition]),
+  );
+  for (const name of [
+    "billing_request_org_idempotency_unique",
+    "receipt_entry_org_idempotency_unique",
+  ]) {
+    const definition = idempotencyByName.get(name);
+    if (!definition) {
+      issues.push(`índice único parcial ausente: ${name}`);
+      continue;
+    }
+    if (
+      !String(definition).includes("idempotencyKey") ||
+      !String(definition).toLowerCase().includes("unique") ||
+      !String(definition).includes("deletedAt")
+    ) {
+      issues.push(`definição inesperada do índice ${name}`);
+    }
+  }
+
+  for (const name of [MIGRATION_11B4, MIGRATION_11B4_QA]) {
     const row =
       name === MIGRATION_11B4 ? after.migration11b4 : after.migration11b4Qa;
     if (!row?.finishedAt) {
@@ -267,11 +373,10 @@ function assertPostMigrateAudit(before, after, localMigrations, appliedPending) 
       issues.push(`${name} marcada como rolled_back`);
     }
   }
-  if (after.foreignKeys.length < 4) {
-    issues.push("FKs financeiras insuficientes");
-  }
-  if (after.idempotencyIndexes.length < 1) {
-    issues.push("índices de idempotência ausentes");
+  for (const name of appliedPending) {
+    if (name !== MIGRATION_11B4 && name !== MIGRATION_11B4_QA) {
+      issues.push(`migration aplicada fora do pacote 11B.4: ${name}`);
+    }
   }
 
   const history = classifyMigrationHistory(after.migrationRows, localMigrations);
@@ -310,12 +415,18 @@ function assertPostMigrateAudit(before, after, localMigrations, appliedPending) 
     grantsExecuted: false,
     foreignKeys: after.foreignKeys,
     idempotencyIndexes: after.idempotencyIndexes,
+    requestedAmountColumn: after.requestedAmountColumn,
+    confirmedAtIndex: after.confirmedAtIndex,
     appliedPending,
+    requiredMigrations: [MIGRATION_11B4, MIGRATION_11B4_QA],
   };
 }
 
-const cliTarget = assertPrismaCliTargetsApprovedBank(env, url);
 const state = await gatherState(url);
+const cliTarget = assertPrismaCliTargetsApprovedBank(env, url, {
+  instanceId: state.instanceId,
+  database: state.database,
+});
 const localMigrations = listLocalMigrationNames(defaultMigrationsDir());
 const evaluation = evaluateHomol11b4DeployPlan({
   vercelEnv: process.env.VERCEL_ENV,
@@ -347,20 +458,25 @@ const report = {
   identity: {
     hostHash: targetHostHash,
     instanceId: state.instanceId,
+    database: state.database,
     expectedInstanceId: EXPECTED_INSTANCE_ID,
     organizationSlug: state.organizationSlug,
     prismaCliHostHash: cliTarget.resolvedHostHash,
+    prismaCliDatabase: cliTarget.resolvedDatabase,
+    prismaCliInstanceId: cliTarget.resolvedInstanceId,
   },
   commercialCounts: state.commercialCounts,
   schemaProbe: {
     billingTablePresent: state.billingTablePresent,
     receiptTablePresent: state.receiptTablePresent,
-    requestedAmountColumnPresent: state.requestedAmountColumnPresent,
+    requestedAmountColumn: state.requestedAmountColumn,
+    confirmedAtIndex: state.confirmedAtIndex,
     financeEnums: state.financeEnums,
     foreignKeys: state.foreignKeys,
     idempotencyIndexes: state.idempotencyIndexes,
     migration11b4: state.migration11b4,
     migration11b4Qa: state.migration11b4Qa,
+    authorizedMigrationsInOrder: [MIGRATION_11B4, MIGRATION_11B4_QA],
   },
   evaluation,
   deployAuthorized: false,

@@ -288,6 +288,7 @@ describe.skipIf(!guard.allowed)("financeiro FIN-F0 persistente (11B.4)", () => {
       const dupBilling = await createBillingRequest(commercial, {
         engagementId: fromProposal.engagementId,
         description: "Providências NF teste",
+        referenceAmountCents: 100_000,
         idempotencyKey: `bill-${fromProposal.engagementId}`,
       });
       expect(dupBilling.ok).toBe(true);
@@ -303,6 +304,17 @@ describe.skipIf(!guard.allowed)("financeiro FIN-F0 persistente (11B.4)", () => {
       expect(secondBilling.ok).toBe(true);
       if (billing.ok && secondBilling.ok) {
         expect(secondBilling.data.id).not.toBe(billing.data.id);
+      }
+
+      const conflictBilling = await createBillingRequest(commercial, {
+        engagementId: fromProposal.engagementId,
+        description: "Conteúdo diferente na mesma chave",
+        referenceAmountCents: 50_000,
+        idempotencyKey: `bill-${fromProposal.engagementId}`,
+      });
+      expect(conflictBilling.ok).toBe(false);
+      if (!conflictBilling.ok) {
+        expect(conflictBilling.message).toMatch(/conteúdo diferente/i);
       }
 
       await expect(
@@ -332,6 +344,19 @@ describe.skipIf(!guard.allowed)("financeiro FIN-F0 persistente (11B.4)", () => {
         idempotencyKey: `rcpt-${fromProposal.engagementId}-1`,
       });
       expect(receipt.ok).toBe(true);
+
+      const receiptConflict = await createReceiptEntry(commercial, {
+        engagementId: fromProposal.engagementId,
+        kind: "signal",
+        amountCents: 40_000,
+        referenceDate: "2026-11-25",
+        paymentMethod: "pix",
+        idempotencyKey: `rcpt-${fromProposal.engagementId}-1`,
+      });
+      expect(receiptConflict.ok).toBe(false);
+      if (!receiptConflict.ok) {
+        expect(receiptConflict.message).toMatch(/conteúdo diferente/i);
+      }
 
       const over = await createReceiptEntry(commercial, {
         engagementId: fromProposal.engagementId,
@@ -585,6 +610,44 @@ describe.skipIf(!guard.allowed)("financeiro FIN-F0 persistente (11B.4)", () => {
       });
       expect(dashByConfirm.indicators.confirmedCents).toBeGreaterThanOrEqual(
         21_000,
+      );
+      expect(
+        dashByConfirm.receipts.some((row) => row.status === "confirmed"),
+      ).toBe(true);
+
+      const datedEng = await createEngagementFromProposal(
+        commercial,
+        "Pacote datas painel",
+      );
+      const datedReceipt = await createReceipt(commercial, {
+        engagementId: datedEng.engagementId,
+        kind: "other",
+        amountCents: 5_000,
+        referenceDate: "2026-11-20",
+        idempotencyKey: `dated-${datedEng.engagementId}`,
+      });
+      expect(datedReceipt.ok).toBe(true);
+      await getPrisma().receiptEntry.update({
+        where: { id: datedReceipt.ok ? datedReceipt.data.id : "" },
+        data: {
+          status: "confirmed",
+          amountCents: 5_000,
+          confirmedManually: true,
+          confirmedAt: new Date("2026-11-30T15:00:00.000Z"),
+          confirmedById: finance.id,
+        },
+      });
+      const dashConfirmDay = await dashFn(finance, {
+        from: new Date("2026-11-30T03:00:00.000Z"),
+        to: new Date("2026-12-01T03:00:00.000Z"),
+      });
+      expect(
+        dashConfirmDay.receipts.some(
+          (row) => row.id === (datedReceipt.ok ? datedReceipt.data.id : ""),
+        ),
+      ).toBe(true);
+      expect(dashConfirmDay.indicators.confirmedCents).toBeGreaterThanOrEqual(
+        5_000,
       );
     },
     300_000,

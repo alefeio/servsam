@@ -18,7 +18,11 @@ import {
   reverseReceiptAction,
   type FinanceActionState,
 } from "@/lib/platform/finance-actions";
-import { centsToInputValue, formatCents } from "@/lib/platform/money";
+import {
+  centsToInputValue,
+  formatCents,
+  parseBrlToCents,
+} from "@/lib/platform/money";
 
 const initial: FinanceActionState = { ok: false };
 
@@ -272,18 +276,26 @@ export function ConfirmReceiptForm({
   const [confirmReais, setConfirmReais] = useState(
     centsToInputValue(requestedAmountCents),
   );
-  const parsedPreview = (() => {
-    const cleaned = confirmReais.replace(/\./g, "").replace(",", ".");
-    const asNumber = Number(cleaned);
-    if (!Number.isFinite(asNumber) || asNumber <= 0) return null;
-    return Math.round(asNumber * 100);
-  })();
+  const parsed = parseBrlToCents(confirmReais);
   const confirmedCents =
-    parsedPreview != null && parsedPreview <= requestedAmountCents
-      ? parsedPreview
+    parsed.ok &&
+    parsed.cents > 0 &&
+    parsed.cents <= requestedAmountCents
+      ? parsed.cents
       : null;
   const diff =
     confirmedCents != null ? requestedAmountCents - confirmedCents : null;
+  const previewError = (() => {
+    if (!confirmReais.trim()) return "Informe o valor efetivamente recebido.";
+    if (!parsed.ok) {
+      return "Valor inválido. Use o formato 1.234,56 (no máximo duas casas).";
+    }
+    if (parsed.cents <= 0) return "Valor deve ser maior que zero.";
+    if (parsed.cents > requestedAmountCents) {
+      return `Valor não pode superar ${formatCents(requestedAmountCents)}.`;
+    }
+    return null;
+  })();
 
   return (
     <form action={action} className="mt-2 space-y-2 rounded-lg border border-border/80 p-3 text-sm">
@@ -317,9 +329,7 @@ export function ConfirmReceiptForm({
             : ""}
         </p>
       ) : (
-        <p className="text-xs text-rose-700">
-          Informe um valor válido até {formatCents(requestedAmountCents)}.
-        </p>
+        <p className="text-xs text-rose-700">{previewError}</p>
       )}
       <button
         type="submit"

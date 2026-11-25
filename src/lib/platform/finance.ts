@@ -40,12 +40,77 @@ function assertCan(
     throw new PermissionError(DENIED_MESSAGE);
 }
 
+const IDEMPOTENCY_CONFLICT_MESSAGE =
+  "Chave de idempotência reutilizada com conteúdo diferente.";
+
 function isUniqueViolation(error: unknown): boolean {
   return (
     typeof error === "object" &&
     error !== null &&
     "code" in error &&
     (error as { code?: string }).code === "P2002"
+  );
+}
+
+function normalizeOptionalText(value: string | null | undefined): string | null {
+  const trimmed = value?.trim() ?? "";
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function billingIntentMatches(
+  existing: {
+    engagementId: string;
+    description: string;
+    notes: string | null;
+    referenceAmountCents: number | null;
+  },
+  input: {
+    engagementId: string;
+    description: string;
+    notes?: string;
+    referenceAmountCents?: number | null;
+  },
+): boolean {
+  return (
+    existing.engagementId === input.engagementId &&
+    existing.description === input.description &&
+    normalizeOptionalText(existing.notes) ===
+      normalizeOptionalText(input.notes) &&
+    (existing.referenceAmountCents ?? null) ===
+      (input.referenceAmountCents ?? null)
+  );
+}
+
+function receiptIntentMatches(
+  existing: {
+    engagementId: string;
+    kind: string;
+    requestedAmountCents: number;
+    referenceDate: Date;
+    paymentMethod: string | null;
+    proofReference: string | null;
+    notes: string | null;
+  },
+  input: {
+    engagementId: string;
+    kind: string;
+    amountCents: number;
+    paymentMethod?: string | null;
+    proofReference?: string;
+    notes?: string;
+  },
+  referenceDate: Date,
+): boolean {
+  return (
+    existing.engagementId === input.engagementId &&
+    existing.kind === input.kind &&
+    existing.requestedAmountCents === input.amountCents &&
+    existing.referenceDate.getTime() === referenceDate.getTime() &&
+    (existing.paymentMethod ?? null) === (input.paymentMethod ?? null) &&
+    normalizeOptionalText(existing.proofReference) ===
+      normalizeOptionalText(input.proofReference) &&
+    normalizeOptionalText(existing.notes) ===
+      normalizeOptionalText(input.notes)
   );
 }
 
@@ -253,9 +318,20 @@ export async function createBillingRequest(
             idempotencyKey: parsed.data.idempotencyKey,
             deletedAt: null,
           },
-          select: { id: true },
+          select: {
+            id: true,
+            engagementId: true,
+            description: true,
+            notes: true,
+            referenceAmountCents: true,
+          },
         });
-        if (existing) return { id: existing.id, replay: true as const };
+        if (existing) {
+          if (!billingIntentMatches(existing, parsed.data)) {
+            throw new Error(IDEMPOTENCY_CONFLICT_MESSAGE);
+          }
+          return { id: existing.id, replay: true as const };
+        }
       }
 
       const id = crypto.randomUUID();
@@ -305,15 +381,27 @@ export async function createBillingRequest(
             idempotencyKey: parsed.data.idempotencyKey,
             deletedAt: null,
           },
-          select: { id: true },
+          select: {
+            id: true,
+            engagementId: true,
+            description: true,
+            notes: true,
+            referenceAmountCents: true,
+          },
         });
-        if (existing) return { ok: true, data: existing };
+        if (existing) {
+          if (!billingIntentMatches(existing, parsed.data)) {
+            return fail(IDEMPOTENCY_CONFLICT_MESSAGE);
+          }
+          return { ok: true, data: { id: existing.id } };
+        }
       }
       return fail("Esta solicitação já foi registrada (reenvio bloqueado).");
     }
     if (error instanceof Error) {
       if (
         error.message === NOT_FOUND_MESSAGE ||
+        error.message === IDEMPOTENCY_CONFLICT_MESSAGE ||
         error.message.includes("Contratação")
       ) {
         return fail(error.message);
@@ -590,6 +678,8 @@ export async function createReceiptEntry(
         engagement.id,
       );
 
+      const referenceDate = parseReferenceDate(parsed.data.referenceDate);
+
       if (parsed.data.idempotencyKey) {
         const existing = await tx.receiptEntry.findFirst({
           where: {
@@ -597,9 +687,23 @@ export async function createReceiptEntry(
             idempotencyKey: parsed.data.idempotencyKey,
             deletedAt: null,
           },
-          select: { id: true },
+          select: {
+            id: true,
+            engagementId: true,
+            kind: true,
+            requestedAmountCents: true,
+            referenceDate: true,
+            paymentMethod: true,
+            proofReference: true,
+            notes: true,
+          },
         });
-        if (existing) return { id: existing.id, replay: true as const };
+        if (existing) {
+          if (!receiptIntentMatches(existing, parsed.data, referenceDate)) {
+            throw new Error(IDEMPOTENCY_CONFLICT_MESSAGE);
+          }
+          return { id: existing.id, replay: true as const };
+        }
       }
 
       const allocated = await sumAllocatedCents(
@@ -625,7 +729,7 @@ export async function createReceiptEntry(
           kind: parsed.data.kind,
           amountCents: parsed.data.amountCents,
           requestedAmountCents: parsed.data.amountCents,
-          referenceDate: parseReferenceDate(parsed.data.referenceDate),
+          referenceDate,
           status: "pending",
           paymentMethod: parsed.data.paymentMethod ?? null,
           proofReference: parsed.data.proofReference || null,
@@ -660,21 +764,37 @@ export async function createReceiptEntry(
   } catch (error) {
     if (isUniqueViolation(error)) {
       if (parsed.data.idempotencyKey) {
+        const referenceDate = parseReferenceDate(parsed.data.referenceDate);
         const existing = await prisma.receiptEntry.findFirst({
           where: {
             organizationId: actor.organizationId,
             idempotencyKey: parsed.data.idempotencyKey,
             deletedAt: null,
           },
-          select: { id: true },
+          select: {
+            id: true,
+            engagementId: true,
+            kind: true,
+            requestedAmountCents: true,
+            referenceDate: true,
+            paymentMethod: true,
+            proofReference: true,
+            notes: true,
+          },
         });
-        if (existing) return { ok: true, data: existing };
+        if (existing) {
+          if (!receiptIntentMatches(existing, parsed.data, referenceDate)) {
+            return fail(IDEMPOTENCY_CONFLICT_MESSAGE);
+          }
+          return { ok: true, data: { id: existing.id } };
+        }
       }
       return fail("Este recebimento já foi registrado (reenvio bloqueado).");
     }
     if (error instanceof Error) {
       if (
         error.message === NOT_FOUND_MESSAGE ||
+        error.message === IDEMPOTENCY_CONFLICT_MESSAGE ||
         error.message.includes("saldo") ||
         error.message.includes("Data")
       ) {
@@ -1162,34 +1282,46 @@ export async function getFinanceDashboard(
       : {}),
   };
 
-  const receiptListWhere: Prisma.ReceiptEntryWhereInput = {
-    ...receiptScope,
-    ...(filter.receiptStatus
+  const periodRange =
+    filter.from || filter.to
       ? {
-          status: filter.receiptStatus as
-            | "pending"
-            | "confirmed"
-            | "rejected"
-            | "cancelled"
-            | "reversed",
+          ...(filter.from ? { gte: filter.from } : {}),
+          ...(filter.to ? { lt: filter.to } : {}),
         }
-      : {}),
-    ...(filter.from || filter.to
-      ? filter.receiptStatus === "confirmed"
-        ? {
-            confirmedAt: {
-              ...(filter.from ? { gte: filter.from } : {}),
-              ...(filter.to ? { lt: filter.to } : {}),
-            },
-          }
-        : {
-            referenceDate: {
-              ...(filter.from ? { gte: filter.from } : {}),
-              ...(filter.to ? { lt: filter.to } : {}),
-            },
-          }
-      : {}),
-  };
+      : null;
+
+  const receiptListWhere: Prisma.ReceiptEntryWhereInput = (() => {
+    if (!filter.receiptStatus) {
+      if (!periodRange) return receiptScope;
+      // Mistura de estados: cada status usa sua data semântica (não ocultar
+      // confirmações do indicador que usam confirmedAt).
+      return {
+        ...receiptScope,
+        OR: [
+          { status: "pending", referenceDate: periodRange },
+          { status: "confirmed", confirmedAt: periodRange },
+          {
+            status: { in: ["rejected", "cancelled"] },
+            referenceDate: periodRange,
+          },
+          { status: "reversed", confirmedAt: periodRange },
+        ],
+      };
+    }
+    const status = filter.receiptStatus as
+      | "pending"
+      | "confirmed"
+      | "rejected"
+      | "cancelled"
+      | "reversed";
+    if (!periodRange) {
+      return { ...receiptScope, status };
+    }
+    if (status === "confirmed" || status === "reversed") {
+      return { ...receiptScope, status, confirmedAt: periodRange };
+    }
+    return { ...receiptScope, status, referenceDate: periodRange };
+  })();
 
   const [
     pendingBilling,

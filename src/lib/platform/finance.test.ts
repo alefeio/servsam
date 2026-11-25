@@ -108,4 +108,14 @@ describe("FIN-F0 parsers monetários", () => {
     expect(end?.toISOString()).toBe("2026-11-26T03:00:00.000Z");
     expect(parseBelemDayBound("2026-02-31", false)).toBeUndefined();
   });
+
+  it("prévia ConfirmReceiptForm alinha com parseBrlToCents", () => {
+    expect(parseBrlToCents("10,50")).toEqual({ ok: true, cents: 1050 });
+    expect(parseBrlToCents("10.50")).toEqual({ ok: true, cents: 1050 });
+    expect(parseBrlToCents("1.234,56")).toEqual({ ok: true, cents: 123456 });
+    expect(parseBrlToCents("10,555").ok).toBe(false);
+    const requested = 1050;
+    const tooHigh = parseBrlToCents("20,00");
+    expect(tooHigh.ok && tooHigh.cents > requested).toBe(true);
+  });
 });

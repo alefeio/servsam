@@ -240,10 +240,10 @@ export default async function FinanceiroPage({
             </div>
           </dl>
           <p className="text-xs text-muted-foreground">
-            Indicadores agregam todos os registros do filtro. Pendentes usam a
-            data de referência; confirmados usam a data da confirmação manual.
-            Listas abaixo limitadas a {dashboard.indicators.listsLimitedTo}{" "}
-            itens.
+            Período: notas por data da solicitação; pendências/rejeições por
+            data de referência declarada; confirmados (e revertidos) por data
+            da confirmação manual. Indicadores agregam o universo filtrado;
+            listas limitadas a {dashboard.indicators.listsLimitedTo} itens.
           </p>
 
           <section className="space-y-3">
