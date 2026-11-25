@@ -1,7 +1,9 @@
 # 11B.3 READY FOR HOMOL AUTHORIZATION
 
 **Branch:** `fix/11b-3-acceptance`  
-**Base auditada:** `7d9cac57f9ef80b7002ff103fc00f008a9b97d6a`
+**Base auditada:** `7d9cac57f9ef80b7002ff103fc00f008a9b97d6a`  
+**SHA remoto:** `a7bfa47937af89917b7d232238866e9231d21cff`  
+**Preview:** https://servsam-git-fix-11b-3-acceptance-alefeios-projects.vercel.app
 
 ## Correções desta etapa
 
