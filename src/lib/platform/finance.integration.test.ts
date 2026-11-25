@@ -290,10 +290,26 @@ describe.skipIf(!guard.allowed)("financeiro FIN-F0 persistente (11B.4)", () => {
         description: "Providências NF teste",
         idempotencyKey: `bill-${fromProposal.engagementId}`,
       });
-      expect(dupBilling.ok).toBe(false);
+      expect(dupBilling.ok).toBe(true);
+      if (billing.ok && dupBilling.ok) {
+        expect(dupBilling.data.id).toBe(billing.data.id);
+      }
+
+      const secondBilling = await createBillingRequest(commercial, {
+        engagementId: fromProposal.engagementId,
+        description: "Segunda providência legítima",
+        idempotencyKey: `bill-${fromProposal.engagementId}-2`,
+      });
+      expect(secondBilling.ok).toBe(true);
+      if (billing.ok && secondBilling.ok) {
+        expect(secondBilling.data.id).not.toBe(billing.data.id);
+      }
 
       await expect(
-        confirmReceipt(commercial, { receiptEntryId: "x" }),
+        confirmReceipt(commercial, {
+          receiptEntryId: "x",
+          confirmedAmountCents: 1,
+        }),
       ).rejects.toBeInstanceOf(PermissionError);
 
       await expect(
@@ -327,40 +343,61 @@ describe.skipIf(!guard.allowed)("financeiro FIN-F0 persistente (11B.4)", () => {
 
       const confirmed = await confirmReceipt(finance, {
         receiptEntryId: receipt.ok ? receipt.data.id : "",
+        confirmedAmountCents: 30_000,
       });
       expect(confirmed.ok).toBe(true);
 
       const confirmedAgain = await confirmReceipt(finance, {
         receiptEntryId: receipt.ok ? receipt.data.id : "",
+        confirmedAmountCents: 30_000,
       });
       expect(confirmedAgain.ok).toBe(true);
 
-      const [raceA, raceB] = await Promise.all([
-        (async () => {
-          const pending = await createReceiptEntry(commercial, {
-            engagementId: fromProposal.engagementId,
-            kind: "installment",
-            amountCents: 20_000,
-            referenceDate: "2026-11-27",
-            idempotencyKey: `race-a-${fromProposal.engagementId}`,
-          });
-          if (!pending.ok) return pending;
-          return confirmReceipt(finance, { receiptEntryId: pending.data.id });
-        })(),
-        (async () => {
-          const pending = await createReceiptEntry(commercial, {
-            engagementId: fromProposal.engagementId,
-            kind: "installment",
-            amountCents: 20_000,
-            referenceDate: "2026-11-27",
-            idempotencyKey: `race-b-${fromProposal.engagementId}`,
-          });
-          if (!pending.ok) return pending;
-          return confirmReceipt(finance, { receiptEntryId: pending.data.id });
-        })(),
+      const [createRaceA, createRaceB] = await Promise.all([
+        createReceiptEntry(commercial, {
+          engagementId: fromProposal.engagementId,
+          kind: "installment",
+          amountCents: 60_000,
+          referenceDate: "2026-11-27",
+          idempotencyKey: `race-create-a-${fromProposal.engagementId}`,
+        }),
+        createReceiptEntry(commercial, {
+          engagementId: fromProposal.engagementId,
+          kind: "installment",
+          amountCents: 60_000,
+          referenceDate: "2026-11-27",
+          idempotencyKey: `race-create-b-${fromProposal.engagementId}`,
+        }),
       ]);
-      const raceOk = [raceA, raceB].filter((row) => row.ok);
-      expect(raceOk.length).toBeGreaterThanOrEqual(1);
+      const createOk = [createRaceA, createRaceB].filter((row) => row.ok);
+      const createFail = [createRaceA, createRaceB].filter((row) => !row.ok);
+      expect(createOk.length).toBe(1);
+      expect(createFail.length).toBe(1);
+      expect(createFail[0] && !createFail[0].ok ? createFail[0].message : "").toMatch(
+        /saldo/i,
+      );
+
+      const remainingReceipt = await createReceiptEntry(commercial, {
+        engagementId: fromProposal.engagementId,
+        kind: "installment",
+        amountCents: 10_000,
+        referenceDate: "2026-11-28",
+        idempotencyKey: `race-confirm-${fromProposal.engagementId}`,
+      });
+      expect(remainingReceipt.ok).toBe(true);
+
+      const [raceA, raceB] = await Promise.all([
+        confirmReceipt(finance, {
+          receiptEntryId: remainingReceipt.ok ? remainingReceipt.data.id : "",
+          confirmedAmountCents: 10_000,
+        }),
+        confirmReceipt(finance, {
+          receiptEntryId: remainingReceipt.ok ? remainingReceipt.data.id : "",
+          confirmedAmountCents: 10_000,
+        }),
+      ]);
+      // Uma confirma e a outra é idempotente (already confirmed).
+      expect([raceA, raceB].every((row) => row.ok)).toBe(true);
 
       const summary = await getEngagementFinanceSummary(
         commercial,
@@ -440,7 +477,116 @@ describe.skipIf(!guard.allowed)("financeiro FIN-F0 persistente (11B.4)", () => {
         },
       });
       expect(audits.length).toBeGreaterThanOrEqual(5);
+
+      const {
+        cancelBillingRequest,
+        createReceiptEntry: createReceipt,
+        confirmReceipt: confirmPartial,
+        getFinanceDashboard: dashFn,
+      } = await import("@/lib/platform/finance");
+
+      const otherCommercialId = crypto.randomUUID();
+      const now = new Date();
+      await getPrisma().user.create({
+        data: {
+          id: otherCommercialId,
+          name: "Outro comercial",
+          email: `${otherCommercialId}@teste.servsam.local`,
+          emailVerified: true,
+          organizationId: commercial.organizationId,
+          isActive: true,
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+      const otherCommercial: Actor = {
+        id: otherCommercialId,
+        name: "Outro comercial",
+        email: `${otherCommercialId}@teste.servsam.local`,
+        organizationId: commercial.organizationId,
+        isActive: true,
+        permissions: new Set(seedGrantsFor("ADMINISTRATIVO").map((g) => g.key)),
+        roleCodes: ["ADMINISTRATIVO"],
+        roleNames: ["ADMINISTRATIVO"],
+      };
+
+      const ownBilling = await createBillingRequest(otherCommercial, {
+        engagementId: fromPo.engagementId,
+        description: "NF do outro comercial",
+        idempotencyKey: `bill-other-${fromPo.engagementId}`,
+      });
+      expect(ownBilling.ok).toBe(true);
+      const cancelByPeer = await cancelBillingRequest(commercial, {
+        billingRequestId: ownBilling.ok ? ownBilling.data.id : "",
+        reason: "tentativa indevida",
+      });
+      expect(cancelByPeer.ok).toBe(false);
+      const cancelByOwner = await cancelBillingRequest(otherCommercial, {
+        billingRequestId: ownBilling.ok ? ownBilling.data.id : "",
+        reason: "desistiu da solicitação",
+      });
+      expect(cancelByOwner.ok).toBe(true);
+
+      const partialEng = await createEngagementFromProposal(
+        commercial,
+        "Pacote parcial",
+      );
+      const pendingPartial = await createReceipt(commercial, {
+        engagementId: partialEng.engagementId,
+        kind: "signal",
+        amountCents: 40_000,
+        referenceDate: "2026-11-20",
+        idempotencyKey: `partial-${partialEng.engagementId}`,
+      });
+      expect(pendingPartial.ok).toBe(true);
+      const partialConfirm = await confirmPartial(finance, {
+        receiptEntryId: pendingPartial.ok ? pendingPartial.data.id : "",
+        confirmedAmountCents: 25_000,
+      });
+      expect(partialConfirm.ok).toBe(true);
+      const partialRow = await getPrisma().receiptEntry.findUnique({
+        where: { id: pendingPartial.ok ? pendingPartial.data.id : "" },
+      });
+      expect(partialRow?.requestedAmountCents).toBe(40_000);
+      expect(partialRow?.amountCents).toBe(25_000);
+
+      const bulkEng = await createEngagementFromProposal(
+        commercial,
+        "Pacote indicadores",
+      );
+      for (let i = 0; i < 210; i += 1) {
+        await getPrisma().receiptEntry.create({
+          data: {
+            id: crypto.randomUUID(),
+            organizationId: commercial.organizationId,
+            engagementId: bulkEng.engagementId,
+            customerId: bulkEng.customerId,
+            kind: "other",
+            amountCents: 100,
+            requestedAmountCents: 100,
+            referenceDate: new Date("2026-11-01T12:00:00.000Z"),
+            status: "confirmed",
+            confirmedManually: true,
+            confirmedAt: new Date("2026-11-30T15:00:00.000Z"),
+            requestedById: commercial.id,
+            requestedAt: new Date("2026-11-01T12:00:00.000Z"),
+            confirmedById: finance.id,
+            createdById: commercial.id,
+            updatedById: finance.id,
+          },
+        });
+      }
+      const dashFull = await dashFn(finance, {});
+      expect(dashFull.indicators.confirmedCents).toBeGreaterThanOrEqual(21_000);
+      expect(dashFull.receipts.length).toBeLessThanOrEqual(200);
+      const dashByConfirm = await dashFn(finance, {
+        from: new Date("2026-11-30T03:00:00.000Z"),
+        to: new Date("2026-12-01T03:00:00.000Z"),
+      });
+      expect(dashByConfirm.indicators.confirmedCents).toBeGreaterThanOrEqual(
+        21_000,
+      );
     },
-    240_000,
+    300_000,
   );
 });

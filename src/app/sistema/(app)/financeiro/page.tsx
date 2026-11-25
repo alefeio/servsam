@@ -28,7 +28,10 @@ import {
   classifyFinanceQueryError,
   logFinanceQueryFailure,
 } from "@/lib/platform/finance-availability";
-import { getFinanceDashboard } from "@/lib/platform/finance";
+import {
+  getFinanceDashboard,
+  parseBelemDayBound,
+} from "@/lib/platform/finance";
 import { formatCents } from "@/lib/platform/money";
 import { pageTitle } from "@/lib/seo";
 
@@ -48,13 +51,6 @@ type SearchParams = Promise<{
 
 function first(value: string | string[] | undefined): string {
   return (Array.isArray(value) ? value[0] : value) ?? "";
-}
-
-function parseDayBound(dateOnly: string, end: boolean): Date | undefined {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) return undefined;
-  const [y, m, d] = dateOnly.split("-").map(Number);
-  if (!y || !m || !d) return undefined;
-  return new Date(Date.UTC(y, m - 1, d + (end ? 1 : 0), 12, 0, 0));
 }
 
 export default async function FinanceiroPage({
@@ -80,8 +76,8 @@ export default async function FinanceiroPage({
   let moduleMessage: string | null = null;
   try {
     dashboard = await getFinanceDashboard(actor, {
-      from: parseDayBound(fromRaw, false),
-      to: parseDayBound(toRaw, true),
+      from: parseBelemDayBound(fromRaw, false),
+      to: parseBelemDayBound(toRaw, true),
       customerId: customerId || undefined,
       billingStatus: billingStatus || undefined,
       receiptStatus: receiptStatus || undefined,
@@ -236,13 +232,19 @@ export default async function FinanceiroPage({
             </div>
             <div className="rounded-xl border border-border bg-background p-4">
               <dt className="text-xs text-muted-foreground">
-                Confirmado no filtro
+                Confirmado no período (por data da confirmação)
               </dt>
               <dd className="mt-1 text-2xl font-semibold text-navy">
                 {formatCents(dashboard.indicators.confirmedCents)}
               </dd>
             </div>
           </dl>
+          <p className="text-xs text-muted-foreground">
+            Indicadores agregam todos os registros do filtro. Pendentes usam a
+            data de referência; confirmados usam a data da confirmação manual.
+            Listas abaixo limitadas a {dashboard.indicators.listsLimitedTo}{" "}
+            itens.
+          </p>
 
           <section className="space-y-3">
             <h2 className="text-lg font-semibold text-navy">
@@ -317,6 +319,9 @@ export default async function FinanceiroPage({
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Ref. {formatDateTimeBr(row.referenceDate)}
+                          {row.requestedAmountCents !== row.amountCents
+                            ? ` · solicitado ${formatCents(row.requestedAmountCents)}`
+                            : ""}
                           {row.confirmedManually
                             ? " · registrado pelo Financeiro"
                             : ""}
@@ -329,7 +334,7 @@ export default async function FinanceiroPage({
                         <ConfirmReceiptForm
                           receiptEntryId={row.id}
                           engagementId={row.engagementId}
-                          amountCents={row.amountCents}
+                          requestedAmountCents={row.requestedAmountCents}
                         />
                         <RejectReceiptForm
                           receiptEntryId={row.id}

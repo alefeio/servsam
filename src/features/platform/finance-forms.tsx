@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId } from "react";
+import { useActionState, useState } from "react";
 import {
   BILLING_REQUEST_STATUS_LABELS,
   RECEIPT_KIND_LABELS,
@@ -18,9 +18,16 @@ import {
   reverseReceiptAction,
   type FinanceActionState,
 } from "@/lib/platform/finance-actions";
-import { formatCents } from "@/lib/platform/money";
+import { centsToInputValue, formatCents } from "@/lib/platform/money";
 
 const initial: FinanceActionState = { ok: false };
+
+function newIntentKey(prefix: string): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 function Feedback({ state }: { state: FinanceActionState }) {
   if (!state.message) return null;
@@ -45,11 +52,17 @@ export function RequestBillingForm({
   engagementId: string;
   defaultReferenceReais?: string;
 }) {
+  const [idempotencyKey, setIdempotencyKey] = useState(() =>
+    newIntentKey("bill"),
+  );
   const [state, action, pending] = useActionState(
-    createBillingRequestAction,
+    async (prev: FinanceActionState, form: FormData) => {
+      const result = await createBillingRequestAction(prev, form);
+      if (result.ok) setIdempotencyKey(newIntentKey("bill"));
+      return result;
+    },
     initial,
   );
-  const idem = useId().replace(/:/g, "");
   return (
     <form action={action} className="space-y-3 rounded-xl border border-border bg-background p-4">
       <h3 className="text-sm font-semibold text-navy">
@@ -60,7 +73,7 @@ export function RequestBillingForm({
         Financeiro registra o processamento.
       </p>
       <input type="hidden" name="engagementId" value={engagementId} />
-      <input type="hidden" name="idempotencyKey" value={`bill-${idem}-${engagementId.slice(0, 8)}`} />
+      <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
       <label className="block space-y-1 text-sm">
         <span>Descrição</span>
         <input
@@ -100,11 +113,17 @@ export function RequestBillingForm({
 }
 
 export function InformReceiptForm({ engagementId }: { engagementId: string }) {
+  const [idempotencyKey, setIdempotencyKey] = useState(() =>
+    newIntentKey("rcpt"),
+  );
   const [state, action, pending] = useActionState(
-    createReceiptEntryAction,
+    async (prev: FinanceActionState, form: FormData) => {
+      const result = await createReceiptEntryAction(prev, form);
+      if (result.ok) setIdempotencyKey(newIntentKey("rcpt"));
+      return result;
+    },
     initial,
   );
-  const idem = useId().replace(/:/g, "");
   const today = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Belem",
   }).format(new Date());
@@ -118,7 +137,7 @@ export function InformReceiptForm({ engagementId }: { engagementId: string }) {
         recebido.
       </p>
       <input type="hidden" name="engagementId" value={engagementId} />
-      <input type="hidden" name="idempotencyKey" value={`rcpt-${idem}-${engagementId.slice(0, 8)}`} />
+      <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
       <label className="block space-y-1 text-sm">
         <span>Tipo</span>
         <select
@@ -243,24 +262,73 @@ export function ProcessBillingForm({
 export function ConfirmReceiptForm({
   receiptEntryId,
   engagementId,
-  amountCents,
+  requestedAmountCents,
 }: {
   receiptEntryId: string;
   engagementId: string;
-  amountCents: number;
+  requestedAmountCents: number;
 }) {
   const [state, action, pending] = useActionState(confirmReceiptAction, initial);
+  const [confirmReais, setConfirmReais] = useState(
+    centsToInputValue(requestedAmountCents),
+  );
+  const parsedPreview = (() => {
+    const cleaned = confirmReais.replace(/\./g, "").replace(",", ".");
+    const asNumber = Number(cleaned);
+    if (!Number.isFinite(asNumber) || asNumber <= 0) return null;
+    return Math.round(asNumber * 100);
+  })();
+  const confirmedCents =
+    parsedPreview != null && parsedPreview <= requestedAmountCents
+      ? parsedPreview
+      : null;
+  const diff =
+    confirmedCents != null ? requestedAmountCents - confirmedCents : null;
+
   return (
-    <form action={action} className="mt-2 flex flex-wrap items-end gap-2 text-sm">
+    <form action={action} className="mt-2 space-y-2 rounded-lg border border-border/80 p-3 text-sm">
       <input type="hidden" name="receiptEntryId" value={receiptEntryId} />
       <input type="hidden" name="engagementId" value={engagementId} />
-      <input type="hidden" name="confirmedAmountCents" value={String(amountCents)} />
+      <input
+        type="hidden"
+        name="confirmedAmountCents"
+        value={confirmedCents != null ? String(confirmedCents) : ""}
+      />
+      <p className="text-xs text-muted-foreground">
+        Informado pelo Comercial:{" "}
+        <span className="font-medium text-foreground">
+          {formatCents(requestedAmountCents)}
+        </span>
+      </p>
+      <label className="block space-y-1">
+        <span>Valor efetivamente recebido (R$)</span>
+        <input
+          value={confirmReais}
+          onChange={(event) => setConfirmReais(event.target.value)}
+          required
+          className="block w-full rounded-lg border border-input px-2 py-1.5"
+        />
+      </label>
+      {confirmedCents != null ? (
+        <p className="text-xs text-muted-foreground">
+          Será confirmado: {formatCents(confirmedCents)}
+          {diff != null && diff > 0
+            ? ` · diferença não confirmada: ${formatCents(diff)}`
+            : ""}
+        </p>
+      ) : (
+        <p className="text-xs text-rose-700">
+          Informe um valor válido até {formatCents(requestedAmountCents)}.
+        </p>
+      )}
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || confirmedCents == null}
         className="rounded-lg bg-navy px-3 py-1.5 text-white disabled:opacity-60"
       >
-        {pending ? "Confirmando…" : `Confirmar ${formatCents(amountCents)}`}
+        {pending
+          ? "Confirmando…"
+          : `Confirmar ${confirmedCents != null ? formatCents(confirmedCents) : ""}`}
       </button>
       <Feedback state={state} />
     </form>

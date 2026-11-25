@@ -49,10 +49,39 @@ function isUniqueViolation(error: unknown): boolean {
   );
 }
 
-function parseReferenceDate(dateOnly: string): Date {
+/** Valida calendário real (rejeita 2026-02-31 etc.). */
+export function isValidCalendarDate(dateOnly: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) return false;
   const [year, month, day] = dateOnly.split("-").map(Number);
-  if (!year || !month || !day) throw new Error("Data de referência inválida.");
-  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  if (!year || !month || !day) return false;
+  const dt = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  return (
+    dt.getUTCFullYear() === year &&
+    dt.getUTCMonth() === month - 1 &&
+    dt.getUTCDate() === day
+  );
+}
+
+function parseReferenceDate(dateOnly: string): Date {
+  if (!isValidCalendarDate(dateOnly)) {
+    throw new Error("Data de referência inválida.");
+  }
+  const [year, month, day] = dateOnly.split("-").map(Number);
+  return new Date(Date.UTC(year!, month! - 1, day!, 12, 0, 0));
+}
+
+/** Limites de dia civil em America/Belem (UTC−3 fixo). `end` = exclusivo (início do dia seguinte). */
+export function parseBelemDayBound(
+  dateOnly: string,
+  end: boolean,
+): Date | undefined {
+  if (!isValidCalendarDate(dateOnly)) return undefined;
+  const [y, m, d] = dateOnly.split("-").map(Number);
+  if (!y || !m || !d) return undefined;
+  // 00:00 Belem = 03:00 UTC
+  const startUtcMs = Date.UTC(y, m - 1, d, 3, 0, 0);
+  if (!end) return new Date(startUtcMs);
+  return new Date(Date.UTC(y, m - 1, d + 1, 3, 0, 0));
 }
 
 async function lockEngagementFinance(
@@ -211,6 +240,24 @@ export async function createBillingRequest(
       });
       if (!engagement) throw new Error(NOT_FOUND_MESSAGE);
 
+      await lockEngagementFinance(
+        tx,
+        actor.organizationId,
+        engagement.id,
+      );
+
+      if (parsed.data.idempotencyKey) {
+        const existing = await tx.billingRequest.findFirst({
+          where: {
+            organizationId: actor.organizationId,
+            idempotencyKey: parsed.data.idempotencyKey,
+            deletedAt: null,
+          },
+          select: { id: true },
+        });
+        if (existing) return { id: existing.id, replay: true as const };
+      }
+
       const id = crypto.randomUUID();
       const now = new Date();
       await tx.billingRequest.create({
@@ -246,11 +293,22 @@ export async function createBillingRequest(
         },
         tx,
       );
-      return { id };
+      return { id, replay: false as const };
     });
-    return { ok: true, data: created };
+    return { ok: true, data: { id: created.id } };
   } catch (error) {
     if (isUniqueViolation(error)) {
+      if (parsed.data.idempotencyKey) {
+        const existing = await prisma.billingRequest.findFirst({
+          where: {
+            organizationId: actor.organizationId,
+            idempotencyKey: parsed.data.idempotencyKey,
+            deletedAt: null,
+          },
+          select: { id: true },
+        });
+        if (existing) return { ok: true, data: existing };
+      }
       return fail("Esta solicitação já foi registrada (reenvio bloqueado).");
     }
     if (error instanceof Error) {
@@ -293,57 +351,88 @@ export async function processBillingRequest(
         },
       });
       if (!current) throw new Error(NOT_FOUND_MESSAGE);
-      if (current.status === "cancelled" || current.status === "processed") {
+
+      await lockEngagementFinance(
+        tx,
+        actor.organizationId,
+        current.engagementId,
+      );
+
+      const refreshed = await tx.billingRequest.findFirst({
+        where: {
+          id: current.id,
+          organizationId: actor.organizationId,
+          deletedAt: null,
+        },
+      });
+      if (!refreshed) throw new Error(NOT_FOUND_MESSAGE);
+      if (refreshed.status === "cancelled" || refreshed.status === "processed") {
         throw new Error("Solicitação já encerrada.");
       }
 
       const now = new Date();
-      if (parsed.data.markUnderReview && current.status === "requested") {
-        await tx.billingRequest.update({
-          where: { id: current.id },
+      if (parsed.data.markUnderReview && refreshed.status === "requested") {
+        const moved = await tx.billingRequest.updateMany({
+          where: {
+            id: refreshed.id,
+            organizationId: actor.organizationId,
+            status: "requested",
+            deletedAt: null,
+          },
           data: {
             status: "under_review",
-            notes: parsed.data.notes || current.notes,
+            notes: parsed.data.notes || refreshed.notes,
             updatedById: actor.id,
           },
         });
+        if (moved.count !== 1) {
+          throw new Error("Solicitação já encerrada.");
+        }
         await writeAudit(
           {
             organizationId: actor.organizationId,
             actorUserId: actor.id,
             action: "BILLING_REQUEST_UNDER_REVIEW",
             entityType: "BillingRequest",
-            entityId: current.id,
-            metadata: { engagementId: current.engagementId },
+            entityId: refreshed.id,
+            metadata: { engagementId: refreshed.engagementId },
           },
           tx,
         );
-        return { id: current.id };
+        return { id: refreshed.id };
       }
 
-      await tx.billingRequest.update({
-        where: { id: current.id },
+      const processed = await tx.billingRequest.updateMany({
+        where: {
+          id: refreshed.id,
+          organizationId: actor.organizationId,
+          status: { in: ["requested", "under_review"] },
+          deletedAt: null,
+        },
         data: {
           status: "processed",
           invoiceIssuedExternally: parsed.data.invoiceIssuedExternally,
           externalDocumentRef: parsed.data.invoiceIssuedExternally
             ? parsed.data.externalDocumentRef?.trim() || null
             : null,
-          notes: parsed.data.notes || current.notes,
+          notes: parsed.data.notes || refreshed.notes,
           processedById: actor.id,
           processedAt: now,
           updatedById: actor.id,
         },
       });
+      if (processed.count !== 1) {
+        throw new Error("Solicitação já encerrada.");
+      }
       await writeAudit(
         {
           organizationId: actor.organizationId,
           actorUserId: actor.id,
           action: "BILLING_REQUEST_PROCESSED",
           entityType: "BillingRequest",
-          entityId: current.id,
+          entityId: refreshed.id,
           metadata: {
-            engagementId: current.engagementId,
+            engagementId: refreshed.engagementId,
             invoiceIssuedExternally: parsed.data.invoiceIssuedExternally,
             externalDocumentRef: parsed.data.invoiceIssuedExternally
               ? parsed.data.externalDocumentRef?.trim() || null
@@ -352,7 +441,7 @@ export async function processBillingRequest(
         },
         tx,
       );
-      return { id: current.id };
+      return { id: refreshed.id };
     });
     return { ok: true, data: result };
   } catch (error) {
@@ -391,25 +480,45 @@ export async function cancelBillingRequest(
         },
       });
       if (!current) throw new Error(NOT_FOUND_MESSAGE);
-      if (current.status === "processed") {
+
+      await lockEngagementFinance(
+        tx,
+        actor.organizationId,
+        current.engagementId,
+      );
+
+      const refreshed = await tx.billingRequest.findFirst({
+        where: {
+          id: current.id,
+          organizationId: actor.organizationId,
+          deletedAt: null,
+        },
+      });
+      if (!refreshed) throw new Error(NOT_FOUND_MESSAGE);
+      if (refreshed.status === "processed") {
         throw new Error(
           "Solicitação já processada. Peça correção ao Financeiro se necessário.",
         );
       }
-      if (current.status === "cancelled") {
+      if (refreshed.status === "cancelled") {
         throw new Error("Solicitação já cancelada.");
       }
-      if (
-        !canFinance &&
-        current.requestedById !== actor.id &&
-        !canContract
-      ) {
-        throw new PermissionError(DENIED_MESSAGE);
+      // finance.manage: qualquer pendente da org.
+      // contract.manage: somente a própria solicitação.
+      if (!canFinance) {
+        if (!canContract || refreshed.requestedById !== actor.id) {
+          throw new PermissionError(DENIED_MESSAGE);
+        }
       }
 
       const now = new Date();
-      await tx.billingRequest.update({
-        where: { id: current.id },
+      const cancelled = await tx.billingRequest.updateMany({
+        where: {
+          id: refreshed.id,
+          organizationId: actor.organizationId,
+          status: { in: ["requested", "under_review"] },
+          deletedAt: null,
+        },
         data: {
           status: "cancelled",
           cancelledById: actor.id,
@@ -418,21 +527,24 @@ export async function cancelBillingRequest(
           updatedById: actor.id,
         },
       });
+      if (cancelled.count !== 1) {
+        throw new Error("Solicitação já encerrada.");
+      }
       await writeAudit(
         {
           organizationId: actor.organizationId,
           actorUserId: actor.id,
           action: "BILLING_REQUEST_CANCELLED",
           entityType: "BillingRequest",
-          entityId: current.id,
+          entityId: refreshed.id,
           metadata: {
-            engagementId: current.engagementId,
+            engagementId: refreshed.engagementId,
             reason: parsed.data.reason,
           },
         },
         tx,
       );
-      return { id: current.id };
+      return { id: refreshed.id };
     });
     return { ok: true, data: result };
   } catch (error) {
@@ -441,7 +553,8 @@ export async function cancelBillingRequest(
       if (
         error.message === NOT_FOUND_MESSAGE ||
         error.message.includes("processada") ||
-        error.message.includes("cancelada")
+        error.message.includes("cancelada") ||
+        error.message.includes("encerrada")
       ) {
         return fail(error.message);
       }
@@ -471,6 +584,24 @@ export async function createReceiptEntry(
       });
       if (!engagement) throw new Error(NOT_FOUND_MESSAGE);
 
+      await lockEngagementFinance(
+        tx,
+        actor.organizationId,
+        engagement.id,
+      );
+
+      if (parsed.data.idempotencyKey) {
+        const existing = await tx.receiptEntry.findFirst({
+          where: {
+            organizationId: actor.organizationId,
+            idempotencyKey: parsed.data.idempotencyKey,
+            deletedAt: null,
+          },
+          select: { id: true },
+        });
+        if (existing) return { id: existing.id, replay: true as const };
+      }
+
       const allocated = await sumAllocatedCents(
         tx,
         actor.organizationId,
@@ -493,6 +624,7 @@ export async function createReceiptEntry(
           customerId: engagement.customerId,
           kind: parsed.data.kind,
           amountCents: parsed.data.amountCents,
+          requestedAmountCents: parsed.data.amountCents,
           referenceDate: parseReferenceDate(parsed.data.referenceDate),
           status: "pending",
           paymentMethod: parsed.data.paymentMethod ?? null,
@@ -517,15 +649,27 @@ export async function createReceiptEntry(
             engagementCode: engagement.code,
             kind: parsed.data.kind,
             amountCents: parsed.data.amountCents,
+            requestedAmountCents: parsed.data.amountCents,
           },
         },
         tx,
       );
-      return { id };
+      return { id, replay: false as const };
     });
-    return { ok: true, data: created };
+    return { ok: true, data: { id: created.id } };
   } catch (error) {
     if (isUniqueViolation(error)) {
+      if (parsed.data.idempotencyKey) {
+        const existing = await prisma.receiptEntry.findFirst({
+          where: {
+            organizationId: actor.organizationId,
+            idempotencyKey: parsed.data.idempotencyKey,
+            deletedAt: null,
+          },
+          select: { id: true },
+        });
+        if (existing) return { ok: true, data: existing };
+      }
       return fail("Este recebimento já foi registrado (reenvio bloqueado).");
     }
     if (error instanceof Error) {
@@ -549,6 +693,10 @@ export async function confirmReceipt(
   const parsed = confirmReceiptSchema.safeParse(raw);
   if (!parsed.success) return fail(FIRST_ISSUE(parsed.error.issues));
 
+  if (parsed.data.confirmedAmountCents == null) {
+    return fail("Informe o valor efetivamente confirmado em centavos.");
+  }
+
   const prisma = getPrisma();
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -560,12 +708,6 @@ export async function confirmReceipt(
         },
       });
       if (!current) throw new Error(NOT_FOUND_MESSAGE);
-      if (current.status === "confirmed") {
-        return { id: current.id, already: true as const };
-      }
-      if (current.status !== "pending") {
-        throw new Error("Somente recebimentos pendentes podem ser confirmados.");
-      }
 
       await lockEngagementFinance(
         tx,
@@ -574,7 +716,11 @@ export async function confirmReceipt(
       );
 
       const refreshed = await tx.receiptEntry.findFirst({
-        where: { id: current.id, deletedAt: null },
+        where: {
+          id: current.id,
+          organizationId: actor.organizationId,
+          deletedAt: null,
+        },
       });
       if (!refreshed) throw new Error(NOT_FOUND_MESSAGE);
       if (refreshed.status === "confirmed") {
@@ -584,9 +730,13 @@ export async function confirmReceipt(
         throw new Error("Somente recebimentos pendentes podem ser confirmados.");
       }
 
-      const amount =
-        parsed.data.confirmedAmountCents ?? refreshed.amountCents;
+      const amount = parsed.data.confirmedAmountCents!;
       if (amount <= 0) throw new Error("Valor confirmado inválido.");
+      if (amount > refreshed.requestedAmountCents) {
+        throw new Error(
+          "Valor confirmado não pode superar o valor informado pelo Comercial.",
+        );
+      }
 
       const engagement = await tx.engagement.findFirst({
         where: {
@@ -611,8 +761,13 @@ export async function confirmReceipt(
       }
 
       const now = new Date();
-      await tx.receiptEntry.update({
-        where: { id: refreshed.id },
+      const updated = await tx.receiptEntry.updateMany({
+        where: {
+          id: refreshed.id,
+          organizationId: actor.organizationId,
+          status: "pending",
+          deletedAt: null,
+        },
         data: {
           status: "confirmed",
           amountCents: amount,
@@ -622,6 +777,9 @@ export async function confirmReceipt(
           updatedById: actor.id,
         },
       });
+      if (updated.count !== 1) {
+        throw new Error("Somente recebimentos pendentes podem ser confirmados.");
+      }
       await writeAudit(
         {
           organizationId: actor.organizationId,
@@ -631,6 +789,8 @@ export async function confirmReceipt(
           entityId: refreshed.id,
           metadata: {
             engagementId: engagement.id,
+            requestedAmountCents: refreshed.requestedAmountCents,
+            confirmedAmountCents: amount,
             amountCents: amount,
             confirmedManually: true,
             note: "Registrado pelo Financeiro — não é conciliação bancária automática.",
@@ -647,7 +807,8 @@ export async function confirmReceipt(
         error.message === NOT_FOUND_MESSAGE ||
         error.message.includes("pendentes") ||
         error.message.includes("saldo") ||
-        error.message.includes("inválido")
+        error.message.includes("inválido") ||
+        error.message.includes("superar")
       ) {
         return fail(error.message);
       }
@@ -675,12 +836,21 @@ export async function rejectReceipt(
         },
       });
       if (!current) throw new Error(NOT_FOUND_MESSAGE);
-      if (current.status !== "pending") {
-        throw new Error("Somente recebimentos pendentes podem ser rejeitados.");
-      }
+
+      await lockEngagementFinance(
+        tx,
+        actor.organizationId,
+        current.engagementId,
+      );
+
       const now = new Date();
-      await tx.receiptEntry.update({
-        where: { id: current.id },
+      const rejected = await tx.receiptEntry.updateMany({
+        where: {
+          id: current.id,
+          organizationId: actor.organizationId,
+          status: "pending",
+          deletedAt: null,
+        },
         data: {
           status: "rejected",
           rejectedById: actor.id,
@@ -689,6 +859,9 @@ export async function rejectReceipt(
           updatedById: actor.id,
         },
       });
+      if (rejected.count !== 1) {
+        throw new Error("Somente recebimentos pendentes podem ser rejeitados.");
+      }
       await writeAudit(
         {
           organizationId: actor.organizationId,
@@ -741,17 +914,37 @@ export async function cancelReceipt(
         },
       });
       if (!current) throw new Error(NOT_FOUND_MESSAGE);
-      if (current.status !== "pending") {
+
+      await lockEngagementFinance(
+        tx,
+        actor.organizationId,
+        current.engagementId,
+      );
+
+      const refreshed = await tx.receiptEntry.findFirst({
+        where: {
+          id: current.id,
+          organizationId: actor.organizationId,
+          deletedAt: null,
+        },
+      });
+      if (!refreshed) throw new Error(NOT_FOUND_MESSAGE);
+      if (refreshed.status !== "pending") {
         throw new Error(
           "Somente lançamentos pendentes podem ser cancelados. Use reversão para confirmados.",
         );
       }
-      if (!canFinance && current.requestedById !== actor.id) {
+      if (!canFinance && refreshed.requestedById !== actor.id) {
         throw new PermissionError(DENIED_MESSAGE);
       }
       const now = new Date();
-      await tx.receiptEntry.update({
-        where: { id: current.id },
+      const cancelled = await tx.receiptEntry.updateMany({
+        where: {
+          id: refreshed.id,
+          organizationId: actor.organizationId,
+          status: "pending",
+          deletedAt: null,
+        },
         data: {
           status: "cancelled",
           cancelledById: actor.id,
@@ -760,21 +953,26 @@ export async function cancelReceipt(
           updatedById: actor.id,
         },
       });
+      if (cancelled.count !== 1) {
+        throw new Error(
+          "Somente lançamentos pendentes podem ser cancelados. Use reversão para confirmados.",
+        );
+      }
       await writeAudit(
         {
           organizationId: actor.organizationId,
           actorUserId: actor.id,
           action: "RECEIPT_CANCELLED",
           entityType: "ReceiptEntry",
-          entityId: current.id,
+          entityId: refreshed.id,
           metadata: {
-            engagementId: current.engagementId,
+            engagementId: refreshed.engagementId,
             reason: parsed.data.reason,
           },
         },
         tx,
       );
-      return { id: current.id };
+      return { id: refreshed.id };
     });
     return { ok: true, data: result };
   } catch (error) {
@@ -811,23 +1009,30 @@ export async function reverseReceipt(
         },
       });
       if (!current) throw new Error(NOT_FOUND_MESSAGE);
-      if (current.status !== "confirmed") {
-        throw new Error("Somente recebimentos confirmados podem ser revertidos.");
-      }
+
       await lockEngagementFinance(
         tx,
         actor.organizationId,
         current.engagementId,
       );
       const refreshed = await tx.receiptEntry.findFirst({
-        where: { id: current.id, deletedAt: null },
+        where: {
+          id: current.id,
+          organizationId: actor.organizationId,
+          deletedAt: null,
+        },
       });
       if (!refreshed || refreshed.status !== "confirmed") {
         throw new Error("Somente recebimentos confirmados podem ser revertidos.");
       }
       const now = new Date();
-      await tx.receiptEntry.update({
-        where: { id: refreshed.id },
+      const reversed = await tx.receiptEntry.updateMany({
+        where: {
+          id: refreshed.id,
+          organizationId: actor.organizationId,
+          status: "confirmed",
+          deletedAt: null,
+        },
         data: {
           status: "reversed",
           reversedById: actor.id,
@@ -836,6 +1041,9 @@ export async function reverseReceipt(
           updatedById: actor.id,
         },
       });
+      if (reversed.count !== 1) {
+        throw new Error("Somente recebimentos confirmados podem ser revertidos.");
+      }
       await writeAudit(
         {
           organizationId: actor.organizationId,
@@ -846,6 +1054,7 @@ export async function reverseReceipt(
           metadata: {
             engagementId: refreshed.engagementId,
             amountCents: refreshed.amountCents,
+            requestedAmountCents: refreshed.requestedAmountCents,
             reason: parsed.data.reason,
           },
         },
@@ -885,20 +1094,11 @@ export async function getFinanceDashboard(
   const prisma = getPrisma();
   const org = actor.organizationId;
 
-  const billingWhere: Prisma.BillingRequestWhereInput = {
+  const billingBase: Prisma.BillingRequestWhereInput = {
     organizationId: org,
     deletedAt: null,
     ...(filter.customerId ? { customerId: filter.customerId } : {}),
     ...(filter.engagementId ? { engagementId: filter.engagementId } : {}),
-    ...(filter.billingStatus
-      ? {
-          status: filter.billingStatus as
-            | "requested"
-            | "under_review"
-            | "processed"
-            | "cancelled",
-        }
-      : {}),
     ...(filter.from || filter.to
       ? {
           requestedAt: {
@@ -909,26 +1109,35 @@ export async function getFinanceDashboard(
       : {}),
   };
 
-  const receiptWhere: Prisma.ReceiptEntryWhereInput = {
+  const billingListWhere: Prisma.BillingRequestWhereInput = {
+    ...billingBase,
+    ...(filter.billingStatus
+      ? {
+          status: filter.billingStatus as
+            | "requested"
+            | "under_review"
+            | "processed"
+            | "cancelled",
+        }
+      : {}),
+  };
+
+  const receiptScope: Prisma.ReceiptEntryWhereInput = {
     organizationId: org,
     deletedAt: null,
     ...(filter.customerId ? { customerId: filter.customerId } : {}),
     ...(filter.engagementId ? { engagementId: filter.engagementId } : {}),
-    ...(filter.receiptStatus
-      ? {
-          status: filter.receiptStatus as
-            | "pending"
-            | "confirmed"
-            | "rejected"
-            | "cancelled"
-            | "reversed",
-        }
-      : {}),
     ...(filter.receiptKind
       ? {
           kind: filter.receiptKind as "signal" | "installment" | "other",
         }
       : {}),
+  };
+
+  // Pendentes: filtro temporal por referenceDate (data declarada pelo Comercial).
+  const pendingWhere: Prisma.ReceiptEntryWhereInput = {
+    ...receiptScope,
+    status: "pending",
     ...(filter.from || filter.to
       ? {
           referenceDate: {
@@ -939,9 +1148,81 @@ export async function getFinanceDashboard(
       : {}),
   };
 
-  const [billingRequests, receipts] = await Promise.all([
+  // Confirmados: filtro temporal por confirmedAt (quando o Financeiro registrou).
+  const confirmedWhere: Prisma.ReceiptEntryWhereInput = {
+    ...receiptScope,
+    status: "confirmed",
+    ...(filter.from || filter.to
+      ? {
+          confirmedAt: {
+            ...(filter.from ? { gte: filter.from } : {}),
+            ...(filter.to ? { lt: filter.to } : {}),
+          },
+        }
+      : {}),
+  };
+
+  const receiptListWhere: Prisma.ReceiptEntryWhereInput = {
+    ...receiptScope,
+    ...(filter.receiptStatus
+      ? {
+          status: filter.receiptStatus as
+            | "pending"
+            | "confirmed"
+            | "rejected"
+            | "cancelled"
+            | "reversed",
+        }
+      : {}),
+    ...(filter.from || filter.to
+      ? filter.receiptStatus === "confirmed"
+        ? {
+            confirmedAt: {
+              ...(filter.from ? { gte: filter.from } : {}),
+              ...(filter.to ? { lt: filter.to } : {}),
+            },
+          }
+        : {
+            referenceDate: {
+              ...(filter.from ? { gte: filter.from } : {}),
+              ...(filter.to ? { lt: filter.to } : {}),
+            },
+          }
+      : {}),
+  };
+
+  const [
+    pendingBilling,
+    processedBilling,
+    pendingAgg,
+    confirmedAgg,
+    billingRequests,
+    receipts,
+  ] = await Promise.all([
+    prisma.billingRequest.count({
+      where: {
+        ...billingBase,
+        status: { in: ["requested", "under_review"] },
+      },
+    }),
+    prisma.billingRequest.count({
+      where: {
+        ...billingBase,
+        status: "processed",
+      },
+    }),
+    prisma.receiptEntry.aggregate({
+      where: pendingWhere,
+      _count: { _all: true },
+      _sum: { amountCents: true },
+    }),
+    prisma.receiptEntry.aggregate({
+      where: confirmedWhere,
+      _count: { _all: true },
+      _sum: { amountCents: true },
+    }),
     prisma.billingRequest.findMany({
-      where: billingWhere,
+      where: billingListWhere,
       include: {
         engagement: { select: { id: true, code: true, title: true } },
         customer: { select: { id: true, legalName: true } },
@@ -950,7 +1231,7 @@ export async function getFinanceDashboard(
       take: 200,
     }),
     prisma.receiptEntry.findMany({
-      where: receiptWhere,
+      where: receiptListWhere,
       include: {
         engagement: { select: { id: true, code: true, title: true } },
         customer: { select: { id: true, legalName: true } },
@@ -960,28 +1241,18 @@ export async function getFinanceDashboard(
     }),
   ]);
 
-  const pendingBilling = billingRequests.filter(
-    (row) => row.status === "requested" || row.status === "under_review",
-  ).length;
-  const processedBilling = billingRequests.filter(
-    (row) => row.status === "processed",
-  ).length;
-  const pendingReceipts = receipts.filter((row) => row.status === "pending");
-  const confirmedReceipts = receipts.filter((row) => row.status === "confirmed");
-
   return {
     indicators: {
       pendingBilling,
       processedBilling,
-      pendingReceipts: pendingReceipts.length,
-      pendingReceiptsCents: pendingReceipts.reduce(
-        (sum, row) => sum + row.amountCents,
-        0,
-      ),
-      confirmedCents: confirmedReceipts.reduce(
-        (sum, row) => sum + row.amountCents,
-        0,
-      ),
+      pendingReceipts: pendingAgg._count._all,
+      pendingReceiptsCents: pendingAgg._sum.amountCents ?? 0,
+      confirmedCents: confirmedAgg._sum.amountCents ?? 0,
+      confirmedReceipts: confirmedAgg._count._all,
+      /** Indicadores usam agregação completa; listas abaixo podem estar limitadas. */
+      listsLimitedTo: 200 as const,
+      pendingUsesReferenceDate: true as const,
+      confirmedUsesConfirmedAt: true as const,
     },
     billingRequests,
     receipts,

@@ -474,7 +474,9 @@ export default async function EngagementDetailPage({
                           engagementId={engagement.id}
                         />
                       ) : null}
-                      {canRequestFinance &&
+                      {(canManageFinance ||
+                        (canRequestFinance &&
+                          row.requestedById === actor.id)) &&
                       (row.status === "requested" ||
                         row.status === "under_review") ? (
                         <CancelBillingForm
@@ -506,6 +508,9 @@ export default async function EngagementDetailPage({
                       <p className="mt-1 text-xs text-muted-foreground">
                         Ref. {formatDateTimeBr(row.referenceDate)} ·{" "}
                         {RECEIPT_STATUS_LABELS[row.status]}
+                        {row.requestedAmountCents !== row.amountCents
+                          ? ` · solicitado ${formatCents(row.requestedAmountCents)}`
+                          : ""}
                         {row.confirmedManually
                           ? " · registrado pelo Financeiro"
                           : ""}
@@ -515,7 +520,7 @@ export default async function EngagementDetailPage({
                           <ConfirmReceiptForm
                             receiptEntryId={row.id}
                             engagementId={engagement.id}
-                            amountCents={row.amountCents}
+                            requestedAmountCents={row.requestedAmountCents}
                           />
                           <RejectReceiptForm
                             receiptEntryId={row.id}
@@ -523,7 +528,10 @@ export default async function EngagementDetailPage({
                           />
                         </>
                       ) : null}
-                      {row.status === "pending" && canRequestFinance ? (
+                      {row.status === "pending" &&
+                      (canManageFinance ||
+                        (canRequestFinance &&
+                          row.requestedById === actor.id)) ? (
                         <CancelPendingReceiptForm
                           receiptEntryId={row.id}
                           engagementId={engagement.id}

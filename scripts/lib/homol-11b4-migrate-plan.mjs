@@ -1,5 +1,5 @@
 /**
- * Plano fail-closed para aplicar somente `20261125120000_finance_f0` no HOMOL.
+ * Plano fail-closed para aplicar migrations FIN-F0 no HOMOL.
  * Sem seed, reset, rollback, limpeza ou grants.
  */
 import { createHash } from "node:crypto";
@@ -7,6 +7,8 @@ import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 export const MIGRATION_11B4 = "20261125120000_finance_f0";
+export const MIGRATION_11B4_QA = "20261125180000_finance_f0_requested_amount";
+export const AUTHORIZED_11B4_MIGRATIONS = [MIGRATION_11B4, MIGRATION_11B4_QA];
 export const MIGRATION_11B3 = "20261124180000_employees_appointments";
 export const EXPECTED_HOST_HASH = "22e5c2dd2d93";
 export const EXPECTED_INSTANCE_ID = "0786bd682d75";
@@ -65,6 +67,11 @@ export function classifyMigrationHistory(rows, localNames) {
   return { applied, pending, failed };
 }
 
+export function expectedAuthorizedPending(appliedNames) {
+  const applied = new Set(appliedNames);
+  return AUTHORIZED_11B4_MIGRATIONS.filter((name) => !applied.has(name));
+}
+
 export function evaluateHomol11b4DeployPlan(input) {
   const blockers = [];
   if (input.vercelEnv === "production") blockers.push("VERCEL_ENV=production");
@@ -107,13 +114,24 @@ export function evaluateHomol11b4DeployPlan(input) {
         .join(", ")}`,
     );
   }
-  if (history.pending.length !== 1 || history.pending[0] !== MIGRATION_11B4) {
+
+  const expectedPending = expectedAuthorizedPending(history.applied);
+  if (expectedPending.length === 0) {
+    blockers.push("nenhuma migration 11B.4 autorizada pendente");
+  }
+  if (JSON.stringify(history.pending) !== JSON.stringify(expectedPending)) {
     blockers.push(
-      `pendentes inesperadas: [${history.pending.join(", ")}] — só ${MIGRATION_11B4}`,
+      `pendentes [${history.pending.join(", ")}] ≠ autorizadas [${expectedPending.join(", ")}]`,
     );
   }
-  if (input.billingTablePresent || input.receiptTablePresent) {
-    blockers.push("tabelas 11B.4 já existem antes da migration");
+
+  const financeF0Applied = history.applied.includes(MIGRATION_11B4);
+  if (!financeF0Applied) {
+    if (input.billingTablePresent || input.receiptTablePresent) {
+      blockers.push("tabelas 11B.4 já existem antes da migration base");
+    }
+  } else if (!input.billingTablePresent || !input.receiptTablePresent) {
+    blockers.push("tabelas 11B.4 ausentes com finance_f0 aplicada");
   }
   if (!input.appointmentTablePresent) {
     blockers.push("service_appointment ausente (11B.3)");
@@ -123,7 +141,7 @@ export function evaluateHomol11b4DeployPlan(input) {
     ok: blockers.length === 0,
     blockers,
     plan: {
-      migration: MIGRATION_11B4,
+      migrations: expectedPending,
       pending: history.pending,
       hostHash,
       instanceId: input.liveInstanceId ?? null,
@@ -135,17 +153,28 @@ export function evaluateHomol11b4DeployPlan(input) {
   };
 }
 
-export function assertDeployAuthorization(env) {
+export function assertDeployAuthorization(env, pendingMigrations = []) {
   const source = env ?? process.env;
   const blockers = [];
   if (source.CONFIRM !== "YES") blockers.push("CONFIRM=YES obrigatório");
-  if (source.MIGRATION_11B4_AUTHORIZE !== "YES") {
-    blockers.push("MIGRATION_11B4_AUTHORIZE=YES obrigatório");
-  }
   if (source.DATABASE_ENV?.trim().toLowerCase() !== "preview") {
     blockers.push("DATABASE_ENV=preview obrigatório");
   }
   if (source.VERCEL_ENV === "production") blockers.push("VERCEL_ENV=production");
+
+  const pending = pendingMigrations.length
+    ? pendingMigrations
+    : AUTHORIZED_11B4_MIGRATIONS;
+  if (pending.includes(MIGRATION_11B4)) {
+    if (source.MIGRATION_11B4_AUTHORIZE !== "YES") {
+      blockers.push("MIGRATION_11B4_AUTHORIZE=YES obrigatório");
+    }
+  }
+  if (pending.includes(MIGRATION_11B4_QA)) {
+    if (source.MIGRATION_11B4_QA_AUTHORIZE !== "YES") {
+      blockers.push("MIGRATION_11B4_QA_AUTHORIZE=YES obrigatório");
+    }
+  }
   return { ok: blockers.length === 0, blockers };
 }
 

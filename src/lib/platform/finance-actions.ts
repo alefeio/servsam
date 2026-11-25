@@ -14,34 +14,15 @@ import {
 } from "@/lib/platform/finance";
 import { PermissionError } from "@/lib/platform/permission-error";
 import { DENIED_MESSAGE } from "@/lib/platform/service-result";
+import { parseBrlToCents } from "@/lib/platform/money";
+import {
+  parseConfirmedCentsField,
+  parseOptionalReferenceReais,
+} from "@/lib/platform/finance-parse";
 
 function field(form: FormData, key: string): string {
   const value = form.get(key);
   return typeof value === "string" ? value : "";
-}
-
-function parseOptionalCents(raw: string): number | undefined {
-  const trimmed = raw.trim();
-  if (!trimmed) return undefined;
-  const normalized = trimmed.replace(/\./g, "").replace(",", ".");
-  const asNumber = Number(normalized);
-  if (!Number.isFinite(asNumber)) return undefined;
-  // Aceita reais (1.500,00) convertendo para centavos se houver vírgula/ponto decimal.
-  if (trimmed.includes(",") || /^\d+\.\d{1,2}$/.test(trimmed)) {
-    return Math.round(asNumber * 100);
-  }
-  // Inteiro puro: tratado como centavos.
-  if (/^\d+$/.test(trimmed)) return Number(trimmed);
-  return Math.round(asNumber * 100);
-}
-
-function parseReaisToCents(raw: string): number | undefined {
-  const trimmed = raw.trim();
-  if (!trimmed) return undefined;
-  const normalized = trimmed.replace(/\./g, "").replace(",", ".");
-  const asNumber = Number(normalized);
-  if (!Number.isFinite(asNumber) || asNumber <= 0) return undefined;
-  return Math.round(asNumber * 100);
 }
 
 export type FinanceActionState = {
@@ -56,12 +37,20 @@ export async function createBillingRequestAction(
   try {
     const actor = await requireAuthenticatedUser();
     const engagementId = field(form, "engagementId");
+    const reference = parseOptionalReferenceReais(
+      field(form, "referenceAmountReais"),
+    );
+    if (!reference.ok) return { ok: false, message: reference.message };
+    const idempotencyKey = field(form, "idempotencyKey");
+    if (!idempotencyKey || idempotencyKey.length < 8) {
+      return { ok: false, message: "Chave de idempotência ausente ou inválida." };
+    }
     const result = await createBillingRequest(actor, {
       engagementId,
       description: field(form, "description"),
       notes: field(form, "notes"),
-      referenceAmountCents: parseReaisToCents(field(form, "referenceAmountReais")),
-      idempotencyKey: field(form, "idempotencyKey") || undefined,
+      referenceAmountCents: reference.cents,
+      idempotencyKey,
     });
     if (!result.ok) return { ok: false, message: result.message };
     revalidatePath(`/sistema/contratacoes/${engagementId}`);
@@ -132,15 +121,22 @@ export async function createReceiptEntryAction(
   try {
     const actor = await requireAuthenticatedUser();
     const engagementId = field(form, "engagementId");
-    const amountCents = parseReaisToCents(field(form, "amountReais"));
-    if (!amountCents) {
-      return { ok: false, message: "Informe um valor válido em reais." };
+    const amountParsed = parseBrlToCents(field(form, "amountReais"));
+    if (!amountParsed.ok || amountParsed.cents <= 0) {
+      return {
+        ok: false,
+        message: "Informe um valor válido em reais (ex.: 1.234,56).",
+      };
+    }
+    const idempotencyKey = field(form, "idempotencyKey");
+    if (!idempotencyKey || idempotencyKey.length < 8) {
+      return { ok: false, message: "Chave de idempotência ausente ou inválida." };
     }
     const paymentMethodRaw = field(form, "paymentMethod");
     const result = await createReceiptEntry(actor, {
       engagementId,
       kind: field(form, "kind") as "signal" | "installment" | "other",
-      amountCents,
+      amountCents: amountParsed.cents,
       referenceDate: field(form, "referenceDate"),
       paymentMethod: paymentMethodRaw
         ? (paymentMethodRaw as
@@ -153,7 +149,7 @@ export async function createReceiptEntryAction(
         : null,
       proofReference: field(form, "proofReference"),
       notes: field(form, "notes"),
-      idempotencyKey: field(form, "idempotencyKey") || undefined,
+      idempotencyKey,
     });
     if (!result.ok) return { ok: false, message: result.message };
     revalidatePath(`/sistema/contratacoes/${engagementId}`);
@@ -177,10 +173,13 @@ export async function confirmReceiptAction(
   try {
     const actor = await requireAuthenticatedUser();
     const engagementId = field(form, "engagementId");
-    const confirmed = parseOptionalCents(field(form, "confirmedAmountCents"));
+    const confirmed = parseConfirmedCentsField(
+      field(form, "confirmedAmountCents"),
+    );
+    if (!confirmed.ok) return { ok: false, message: confirmed.message };
     const result = await confirmReceipt(actor, {
       receiptEntryId: field(form, "receiptEntryId"),
-      confirmedAmountCents: confirmed,
+      confirmedAmountCents: confirmed.cents,
     });
     if (!result.ok) return { ok: false, message: result.message };
     if (engagementId) revalidatePath(`/sistema/contratacoes/${engagementId}`);

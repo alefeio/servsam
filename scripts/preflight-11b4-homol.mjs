@@ -10,9 +10,11 @@ import {
   EXPECTED_ORG_SLUG,
   MIGRATION_11B3,
   MIGRATION_11B4,
+  MIGRATION_11B4_QA,
   REQUIRED_APPLIED,
   computeInstanceId,
   defaultMigrationsDir,
+  expectedAuthorizedPending,
   hostHashFromUrl,
   listLocalMigrationNames,
   classifyMigrationHistory,
@@ -114,7 +116,10 @@ try {
       requiredPresent: REQUIRED_APPLIED.every((name) => appliedSet.has(name)),
       migration11b3Recorded: appliedSet.has(MIGRATION_11B3),
       migration11b4Recorded: appliedSet.has(MIGRATION_11B4),
+      migration11b4QaRecorded: appliedSet.has(MIGRATION_11B4_QA),
       migration11b4Pending: history.pending.includes(MIGRATION_11B4),
+      migration11b4QaPending: history.pending.includes(MIGRATION_11B4_QA),
+      expectedAuthorizedPending: expectedAuthorizedPending(history.applied),
       pending: history.pending,
     },
     tables: {
@@ -141,11 +146,16 @@ try {
   };
 
   console.log(JSON.stringify(report, null, 2));
+  const expectedPending = report.migrations.expectedAuthorizedPending;
+  const pendingMatch =
+    JSON.stringify(report.migrations.pending) ===
+    JSON.stringify(expectedPending);
   const ok =
     report.identity.hostHashMatches &&
     report.identity.instanceIdMatches &&
     report.migrations.requiredPresent &&
-    report.migrations.migration11b4Pending &&
+    pendingMatch &&
+    expectedPending.length > 0 &&
     !report.tables.billing_request &&
     !report.tables.receipt_entry;
   process.exit(ok ? 0 : 2);

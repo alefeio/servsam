@@ -660,7 +660,10 @@ model ReceiptEntry {
   customerId         String
   customer           Customer             @relation(fields: [customerId], references: [id])
   kind               ReceiptKind
+  /// Valor efetivo alocado (pendente = solicitado; confirmado = valor conferido).
   amountCents        Int
+  /// Valor original informado pelo Comercial — imutável após a criação.
+  requestedAmountCents Int
   referenceDate      DateTime
   status             ReceiptStatus        @default(pending)
   paymentMethod      ReceiptPaymentMethod?
@@ -693,5 +696,6 @@ model ReceiptEntry {
   @@index([organizationId, engagementId, status])
   @@index([organizationId, customerId])
   @@index([organizationId, referenceDate])
+  @@index([organizationId, confirmedAt])
   @@map("receipt_entry")
 }

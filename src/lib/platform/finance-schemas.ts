@@ -1,9 +1,23 @@
 import { z } from "zod";
+import { MAX_CENTS } from "@/lib/platform/money";
 
 const positiveCents = z
   .number()
   .int("Valor deve ser inteiro em centavos.")
-  .positive("Valor deve ser maior que zero.");
+  .positive("Valor deve ser maior que zero.")
+  .max(MAX_CENTS, "Valor acima do limite permitido.");
+
+function isValidCalendarDate(dateOnly: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) return false;
+  const [year, month, day] = dateOnly.split("-").map(Number);
+  if (!year || !month || !day) return false;
+  const dt = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  return (
+    dt.getUTCFullYear() === year &&
+    dt.getUTCMonth() === month - 1 &&
+    dt.getUTCDate() === day
+  );
+}
 
 export const createBillingRequestSchema = z.object({
   engagementId: z.string().min(1, "Contratação obrigatória."),
@@ -60,7 +74,8 @@ export const createReceiptEntrySchema = z.object({
   referenceDate: z
     .string()
     .trim()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida (AAAA-MM-DD)."),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida (AAAA-MM-DD).")
+    .refine(isValidCalendarDate, "Data de referência inexistente no calendário."),
   paymentMethod: z
     .enum(["pix", "transfer", "cash", "check", "card", "other"])
     .optional()
@@ -74,8 +89,8 @@ export type CreateReceiptEntryInput = z.infer<typeof createReceiptEntrySchema>;
 
 export const confirmReceiptSchema = z.object({
   receiptEntryId: z.string().min(1),
-  /** Valor efetivamente confirmado; padrão = valor solicitado. */
-  confirmedAmountCents: positiveCents.optional(),
+  /** Valor efetivamente confirmado pelo Financeiro (obrigatório, em centavos). */
+  confirmedAmountCents: positiveCents,
 });
 
 export type ConfirmReceiptInput = z.infer<typeof confirmReceiptSchema>;
