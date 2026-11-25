@@ -6,9 +6,10 @@
 
 ## Branch / SHA
 
-- Branch: `feature/11b-3-real-scheduling`
-- Base: `fix/11b-2-qa-readiness` @ `a61630a2ecadce543b0b4a9bec9ab5a63a8acbdb`
+- Branch: `fix/11b-3-acceptance`
 - Migration aditiva: `prisma/migrations/20261124180000_employees_appointments`
+- Executor: `scripts/homol-migrate-11b3.mjs` (plan/deploy; deploy exige autorização)
+- Preflight somente leitura: `scripts/preflight-11b3-homol.mjs` → `gate-11b3-homol-preflight-result.json`
 
 ## O que a migration adiciona
 

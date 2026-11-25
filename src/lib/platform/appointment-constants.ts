@@ -13,6 +13,36 @@ export type ConflictDetail = {
   employeeName: string;
 };
 
+export type ConflictAcceptanceContext = {
+  employeeId: string;
+  startsAt: Date;
+  endsAt: Date;
+  conflicts: readonly ConflictDetail[];
+};
+
+/**
+ * Token vinculado ao colaborador, janela solicitada e ao conjunto atual
+ * de conflitos (id + horários). Qualquer mudança exige novo aceite.
+ */
+export function conflictAcceptanceToken(
+  context: ConflictAcceptanceContext,
+): string {
+  const conflictPart = context.conflicts
+    .map(
+      (row) =>
+        `${row.id}@${row.startsAt.toISOString()}@${row.endsAt.toISOString()}@${row.serviceOrderCode}`,
+    )
+    .sort()
+    .join("|");
+  return [
+    context.employeeId,
+    context.startsAt.toISOString(),
+    context.endsAt.toISOString(),
+    conflictPart,
+  ].join("::");
+}
+
+/** @deprecated use conflictAcceptanceToken — mantido para leitura de erros legados. */
 export function conflictKeysFromDetails(
   details: readonly ConflictDetail[],
 ): string {
@@ -22,35 +52,51 @@ export function conflictKeysFromDetails(
     .join(",");
 }
 
-export function encodeConflictError(details: ConflictDetail[]): string {
-  const keys = conflictKeysFromDetails(details);
-  const lines = details.map((row) => {
+export function encodeConflictError(
+  context: ConflictAcceptanceContext,
+): string {
+  const token = conflictAcceptanceToken(context);
+  const lines = context.conflicts.map((row) => {
     const start = formatScheduleDateTime(row.startsAt);
     const end = formatScheduleDateTime(row.endsAt);
     return `• ${row.serviceOrderCode} · ${start} — ${end} · ${row.employeeName}`;
   });
-  return `${CONFLICT_MESSAGE}\n${lines.join("\n")}\n[conflictKeys:${keys}]`;
+  return `${CONFLICT_MESSAGE}\n${lines.join("\n")}\n[conflictToken:${token}]`;
 }
 
-export function parseConflictKeysFromError(
+export function parseConflictTokenFromError(
   error: string | null | undefined,
 ): string | null {
   if (!error) return null;
-  const match = /\[conflictKeys:([^\]]+)\]/.exec(error);
-  return match?.[1]?.trim() || null;
+  const match = /\[conflictToken:([^\]]+)\]/.exec(error);
+  if (match?.[1]?.trim()) return match[1].trim();
+  // Compatibilidade com erros gerados antes desta correção.
+  const legacy = /\[conflictKeys:([^\]]+)\]/.exec(error);
+  return legacy?.[1]?.trim() || null;
+}
+
+/** Alias usado pelos formulários. */
+export function parseConflictKeysFromError(
+  error: string | null | undefined,
+): string | null {
+  return parseConflictTokenFromError(error);
 }
 
 export function isConflictError(error: string | null | undefined): boolean {
   if (!error) return false;
   return (
-    error.includes(CONFLICT_MESSAGE) && error.includes("[conflictKeys:")
+    error.includes(CONFLICT_MESSAGE) &&
+    (error.includes("[conflictToken:") || error.includes("[conflictKeys:"))
   );
 }
 
-/** Texto amigável sem o token interno de chaves. */
+/** Texto amigável sem o token interno. */
 export function conflictErrorForDisplay(
   error: string | null | undefined,
 ): string | undefined {
   if (!error) return undefined;
-  return error.replace(/\n\[conflictKeys:[^\]]+\]\s*$/, "").trim();
+  return error
+    .replace(/\n\[conflictToken:[^\]]+\]\s*$/, "")
+    .replace(/\n\[conflictKeys:[^\]]+\]\s*$/, "")
+    .trim();
 }

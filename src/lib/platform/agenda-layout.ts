@@ -77,6 +77,71 @@ export function weekdayShortLabel(dateOnly: string): string {
 }
 
 /**
+ * Eventos que começam ou terminam fora da faixa visível 06h–22h (Belém),
+ * ou que não intersectam a grade (ex.: só madrugada).
+ */
+export function eventsOutsideVisibleHours(
+  events: AgendaEventInput[],
+  dayKeys?: readonly string[],
+): AgendaEventInput[] {
+  const keys = dayKeys ? new Set(dayKeys) : null;
+  const seen = new Set<string>();
+  const result: AgendaEventInput[] = [];
+
+  for (const event of events) {
+    if (seen.has(event.id)) continue;
+    const startKey = formatScheduleDateOnly(event.startsAt);
+    const endKey = formatScheduleDateOnly(
+      new Date(event.endsAt.getTime() - 1),
+    );
+    let cursor = startOfScheduleDay(startKey)!;
+    const last = startOfScheduleDay(endKey)!;
+    let outside = false;
+    while (cursor.getTime() <= last.getTime()) {
+      const dayKey = formatScheduleDateOnly(cursor);
+      if (!keys || keys.has(dayKey)) {
+        const dayStart = startOfScheduleDay(dayKey)!;
+        const visibleStart = new Date(
+          dayStart.getTime() + AGENDA_DAY_START_HOUR * 3_600_000,
+        );
+        const visibleEnd = new Date(
+          dayStart.getTime() + AGENDA_DAY_END_HOUR * 3_600_000,
+        );
+        const intersectsDay =
+          event.startsAt.getTime() < addDays(dayStart, 1).getTime() &&
+          event.endsAt.getTime() > dayStart.getTime();
+        if (!intersectsDay) {
+          cursor = addDays(cursor, 1);
+          continue;
+        }
+        const clippedStart = Math.max(
+          event.startsAt.getTime(),
+          visibleStart.getTime(),
+        );
+        const clippedEnd = Math.min(
+          event.endsAt.getTime(),
+          visibleEnd.getTime(),
+        );
+        if (
+          event.startsAt.getTime() < visibleStart.getTime() ||
+          event.endsAt.getTime() > visibleEnd.getTime() ||
+          clippedEnd <= clippedStart
+        ) {
+          outside = true;
+          break;
+        }
+      }
+      cursor = addDays(cursor, 1);
+    }
+    if (outside) {
+      seen.add(event.id);
+      result.push(event);
+    }
+  }
+  return result;
+}
+
+/**
  * Posiciona eventos em um dia civil (Belém), cortando ao intervalo visível 06–22.
  * Sobreposições recebem colunas distintas.
  */

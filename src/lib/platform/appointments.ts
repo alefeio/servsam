@@ -25,7 +25,7 @@ import {
 } from "@/lib/platform/service-result";
 import {
   CONFLICT_MESSAGE,
-  conflictKeysFromDetails,
+  conflictAcceptanceToken,
   encodeConflictError,
   type ConflictDetail,
 } from "@/lib/platform/appointment-constants";
@@ -105,20 +105,49 @@ async function findEmployeeConflicts(
   }));
 }
 
+/**
+ * Bloqueio transacional por organização+colaborador evita gravação concorrente
+ * de sobreposições sem o conjunto de conflitos recalculado sob o mesmo lock.
+ */
+async function lockEmployeeSchedule(
+  tx: Prisma.TransactionClient,
+  organizationId: string,
+  employeeId: string,
+): Promise<void> {
+  await tx.$executeRaw`
+    SELECT pg_advisory_xact_lock(
+      hashtext(${`servsam:schedule:${organizationId}`}),
+      hashtext(${employeeId})
+    )
+  `;
+}
+
 function assertConflictAccepted(
   conflicts: ConflictDetail[],
   acceptConflict: boolean | undefined,
-  acceptConflictKeys: string | undefined,
-): void {
-  if (conflicts.length === 0) return;
-  const expectedKeys = conflictKeysFromDetails(conflicts);
+  acceptConflictToken: string | undefined,
+  context: {
+    employeeId: string;
+    startsAt: Date;
+    endsAt: Date;
+  },
+): string | null {
+  if (conflicts.length === 0) return null;
+  const acceptance = {
+    employeeId: context.employeeId,
+    startsAt: context.startsAt,
+    endsAt: context.endsAt,
+    conflicts,
+  };
+  const expected = conflictAcceptanceToken(acceptance);
   if (
     !acceptConflict ||
-    !acceptConflictKeys ||
-    acceptConflictKeys !== expectedKeys
+    !acceptConflictToken ||
+    acceptConflictToken !== expected
   ) {
-    throw new Error(encodeConflictError(conflicts));
+    throw new Error(encodeConflictError(acceptance));
   }
+  return expected;
 }
 
 /**
@@ -393,6 +422,7 @@ export async function createAppointment(
       let conflictingCodes: string[] = [];
       let acceptedConflictKeys: string | null = null;
       if (employeeId) {
+        await lockEmployeeSchedule(tx, actor.organizationId, employeeId);
         const conflicts = await findEmployeeConflicts(tx, {
           organizationId: actor.organizationId,
           employeeId,
@@ -400,13 +430,17 @@ export async function createAppointment(
           endsAt: window.endsAt,
         });
         if (conflicts.length > 0) {
-          assertConflictAccepted(
+          acceptedConflictKeys = assertConflictAccepted(
             conflicts,
             parsed.data.acceptConflict,
             parsed.data.acceptConflictKeys,
+            {
+              employeeId,
+              startsAt: window.startsAt,
+              endsAt: window.endsAt,
+            },
           );
           conflictAccepted = true;
-          acceptedConflictKeys = conflictKeysFromDetails(conflicts);
           conflictingCodes = conflicts.map((row) => row.serviceOrderCode);
         }
       }
@@ -579,6 +613,7 @@ export async function rescheduleAppointment(
       let conflictingCodes: string[] = [];
       let acceptedConflictKeys: string | null = null;
       if (employeeId) {
+        await lockEmployeeSchedule(tx, actor.organizationId, employeeId);
         const conflicts = await findEmployeeConflicts(tx, {
           organizationId: actor.organizationId,
           employeeId,
@@ -587,13 +622,17 @@ export async function rescheduleAppointment(
           excludeAppointmentId: current.id,
         });
         if (conflicts.length > 0) {
-          assertConflictAccepted(
+          acceptedConflictKeys = assertConflictAccepted(
             conflicts,
             parsed.data.acceptConflict,
             parsed.data.acceptConflictKeys,
+            {
+              employeeId,
+              startsAt: window.startsAt,
+              endsAt: window.endsAt,
+            },
           );
           conflictAccepted = true;
-          acceptedConflictKeys = conflictKeysFromDetails(conflicts);
           conflictingCodes = conflicts.map((row) => row.serviceOrderCode);
         }
       }

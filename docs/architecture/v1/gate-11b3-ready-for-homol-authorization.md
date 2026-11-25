@@ -1,19 +1,28 @@
-# 11B.3 READY FOR HOMOL AUTHORIZATION
+# 11B.3 FINAL QA PASS — READY FOR HOMOL AUTHORIZATION
 
 **Branch:** `fix/11b-3-acceptance`  
-**Base auditada:** `7d9cac57f9ef80b7002ff103fc00f008a9b97d6a`  
-**SHA remoto:** `a7bfa47937af89917b7d232238866e9231d21cff`  
-**Preview:** https://servsam-git-fix-11b-3-acceptance-alefeios-projects.vercel.app
+**Migration aditiva:** `prisma/migrations/20261124180000_employees_appointments`  
+**Preview:** (atualizar após publish do SHA)
 
-## Correções desta etapa
+## Correções finais (antes da autorização HOMOL)
 
-1. **Agenda visual** — calendário Dia (eixo horário), Semana (colunas) e Mês (grade); lista permanece como alternativa (`layout=lista`).
-2. **Filtro por interseção** — compromissos que atravessam meia-noite entram nos dias pertinentes.
-3. **Remoção de colaborador** — `undefined` preserva; `null`/vazio remove; id atribui; auditoria de assignee.
-4. **Redirects** — destino derivado no servidor; sem confiança em `redirectTo` do formulário.
-5. **Conflitos** — detalhe OS/horário/colaborador + confirmação vinculada a `acceptConflictKeys` recalculadas no servidor.
-6. **Grant ADMINISTRATIVO** — script de plano preparado; **não** concedido; FINANCEIRO sem `employee.manage`.
-7. **Executor migration 11B.3** — `scripts/homol-migrate-11b3.mjs` (padrão 11B.2); **não** executado no HOMOL.
+1. **Concorrência** — `pg_advisory_xact_lock` por organização+colaborador antes de recalcular conflitos e gravar; impede conflito silencioso entre OS distintas.
+2. **Aceite vinculado** — token `conflictToken` amarra colaborador, janela solicitada e conjunto atual de conflitos (id + horários + código OS); qualquer mudança exige novo aceite.
+3. **Executor HOMOL** — `scripts/homol-migrate-11b3.mjs` verifica hostHash da CLI Prisma, exige exatamente uma pendente, audita `_prisma_migrations.finished_at`, tabelas, enum, FKs, índice único parcial e contagens; diferencia falha de migrate (exit 1) de falha de auditoria (exit 3). Sem seed/grants/reset/rollback.
+4. **Grade 06h–22h** — aviso visível + link para lista completa quando há compromissos fora da faixa.
+
+## Evidências de QA (local)
+
+| Gate | Resultado |
+|------|-----------|
+| lint | PASS |
+| typecheck | PASS |
+| unitários | PASS (200) |
+| integração isolada Docker (OS + agenda + concorrência) | PASS (3) |
+| build | (ver pipeline desta entrega) |
+| E2E isolado | (ver pipeline desta entrega) |
+| preflight HOMOL somente leitura | PASS |
+| migrate plan HOMOL | `evaluation.ok=true`, deploy **não** executado |
 
 ## Preflight HOMOL (somente leitura)
 
@@ -22,12 +31,13 @@
 | hostHash | `22e5c2dd2d93` |
 | instanceId | `0786bd682d75` |
 | org | `servsam` |
-| Migration 11B.3 | **pendente** |
+| prismaCliHostHash | `22e5c2dd2d93` |
+| Migration 11B.3 | **pendente** (única) |
+| Tabelas employee / service_appointment | ausentes (esperado) |
 | Clientes total / ativos / arquivados | 28 / 20 / 8 |
-| Grant `employee.manage` ADMINISTRATIVO | ausente (plano pronto) |
-| Grant FINANCEIRO | sem alteração |
+| Grant `employee.manage` ADMINISTRATIVO | ausente (plano pronto; **não** aplicar nesta entrega) |
 
-## Comandos preparados (não executar sem autorização)
+## Comando preparado (não executar sem autorização)
 
 ```bash
 CONFIRM=YES MIGRATION_11B3_AUTHORIZE=YES DATABASE_ENV=preview \
@@ -35,19 +45,6 @@ CONFIRM=YES MIGRATION_11B3_AUTHORIZE=YES DATABASE_ENV=preview \
   node scripts/homol-migrate-11b3.mjs deploy
 ```
 
-Grant (após decisão):
-
-```bash
-# apply permanece bloqueado no script até nova liberação explícita no código
-DATABASE_ENV=preview node scripts/homol-grant-employee-manage-admin.mjs plan
-```
-
-## Riscos
-
-- ADMINISTRATIVO no HOMOL ainda sem `employee.manage` até grant autorizado.
-- Preview protegido exige login Vercel para validação visual humana.
-- Calendário cobre 06h–22h na grade; compromissos fora da faixa aparecem cortados/no dia via interseção.
-
 ## Restrições respeitadas
 
-Sem migrate HOMOL, sem grant aplicado, sem seed, sem Production, sem merge `main`, sem Financeiro/RH/Google Calendar.
+Sem migrate HOMOL, sem alteração de permissões, sem seed, sem Production, sem merge `main`, sem 11B.4, sem drag-and-drop / Google Calendar.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   eventsByDayKey,
+  eventsOutsideVisibleHours,
   positionEventsForDay,
   type AgendaEventInput,
 } from "@/lib/platform/agenda-layout";
@@ -58,5 +59,17 @@ describe("filtro visual e janelas Belém", () => {
     const month = resolveAgendaWindow("month", "2026-11-25");
     expect(formatScheduleDateOnly(month.from)).toBe("2026-11-01");
     expect(formatScheduleDateOnly(month.to)).toBe("2026-12-01");
+  });
+
+  it("detecta compromissos fora da faixa 06h–22h", () => {
+    const late = event("late", "2026-11-25T22:30", "2026-11-25T23:30");
+    const early = event("early", "2026-11-25T05:00", "2026-11-25T06:30");
+    const inside = event("in", "2026-11-25T08:00", "2026-11-25T09:00");
+    const outside = eventsOutsideVisibleHours(
+      [late, early, inside],
+      ["2026-11-25"],
+    );
+    expect(outside.map((row) => row.id).sort()).toEqual(["early", "late"]);
+    expect(positionEventsForDay([late], "2026-11-25")).toHaveLength(0);
   });
 });

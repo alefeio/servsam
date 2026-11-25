@@ -4,6 +4,7 @@ import {
   AGENDA_DAY_START_HOUR,
   AGENDA_HOUR_PX,
   eventsByDayKey,
+  eventsOutsideVisibleHours,
   formatHourLabel,
   hourLabels,
   monthCellKeys,
@@ -105,6 +106,56 @@ function DayTimeline({
   );
 }
 
+function OutOfHoursNotice({
+  events,
+  dayKeys,
+  listHref,
+}: {
+  events: AgendaEventInput[];
+  dayKeys?: readonly string[];
+  listHref: string;
+}) {
+  const outside = eventsOutsideVisibleHours(events, dayKeys);
+  if (outside.length === 0) return null;
+  return (
+    <div
+      role="status"
+      className="rounded-xl border border-amber-500/40 bg-amber-50 px-3 py-2 text-sm text-amber-950"
+    >
+      <p className="font-medium">
+        {outside.length === 1
+          ? "1 compromisso fora da faixa 06h–22h da grade"
+          : `${outside.length} compromissos fora da faixa 06h–22h da grade`}
+      </p>
+      <ul className="mt-1 space-y-0.5 text-xs">
+        {outside.slice(0, 5).map((event) => (
+          <li key={event.id}>
+            <Link
+              href={`/sistema/agenda/${event.id}`}
+              className="font-medium text-navy underline-offset-2 hover:underline"
+            >
+              {event.serviceOrder.code}
+            </Link>
+            {" · "}
+            {formatScheduleDateTime(event.startsAt)} —{" "}
+            {formatScheduleDateTime(event.endsAt)}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-xs">
+        A grade mostra só 06h–22h.{" "}
+        <Link
+          href={listHref}
+          className="font-medium text-navy underline-offset-2 hover:underline"
+        >
+          Abrir lista completa do período
+        </Link>
+        .
+      </p>
+    </div>
+  );
+}
+
 export function AgendaCalendar({
   view,
   windowFrom,
@@ -119,9 +170,22 @@ export function AgendaCalendar({
   queryBase: Record<string, string>;
 }) {
   const byDay = eventsByDayKey(events);
+  const listHref = `/sistema/agenda?${new URLSearchParams({
+    ...queryBase,
+    layout: "lista",
+  }).toString()}`;
 
   if (view === "day") {
-    return <DayTimeline dayKey={focusDate} events={events} />;
+    return (
+      <div className="space-y-3">
+        <OutOfHoursNotice
+          events={events}
+          dayKeys={[focusDate]}
+          listHref={listHref}
+        />
+        <DayTimeline dayKey={focusDate} events={events} />
+      </div>
+    );
   }
 
   if (view === "week") {
@@ -130,64 +194,67 @@ export function AgendaCalendar({
     const height =
       (AGENDA_DAY_END_HOUR - AGENDA_DAY_START_HOUR) * AGENDA_HOUR_PX;
     return (
-      <div className="overflow-x-auto rounded-xl border border-border bg-background">
-        <div
-          className="grid min-w-[56rem]"
-          style={{ gridTemplateColumns: `3rem repeat(7, minmax(0, 1fr))` }}
-        >
-          <div className="border-b border-r border-border bg-muted/30" />
-          {days.map((day) => (
-            <div
-              key={day}
-              className="border-b border-r border-border bg-muted/20 px-2 py-2 text-center text-xs font-medium capitalize"
-            >
-              <Link
-                href={`/sistema/agenda?${new URLSearchParams({
-                  ...queryBase,
-                  view: "day",
-                  data: day,
-                }).toString()}`}
-                className="text-navy hover:underline"
-              >
-                {weekdayShortLabel(day)}
-              </Link>
-            </div>
-          ))}
-          <div className="border-r border-border bg-muted/30">
-            {hours.map((hour) => (
-              <div
-                key={hour}
-                className="border-b border-border/60 px-1 text-[10px] text-muted-foreground"
-                style={{ height: AGENDA_HOUR_PX }}
-              >
-                {formatHourLabel(hour)}
-              </div>
-            ))}
-          </div>
-          {days.map((day) => {
-            const positioned = positionEventsForDay(byDay.get(day) ?? [], day);
-            return (
+      <div className="space-y-3">
+        <OutOfHoursNotice events={events} dayKeys={days} listHref={listHref} />
+        <div className="overflow-x-auto rounded-xl border border-border bg-background">
+          <div
+            className="grid min-w-[56rem]"
+            style={{ gridTemplateColumns: `3rem repeat(7, minmax(0, 1fr))` }}
+          >
+            <div className="border-b border-r border-border bg-muted/30" />
+            {days.map((day) => (
               <div
                 key={day}
-                className="relative border-r border-border"
-                style={{ height }}
+                className="border-b border-r border-border bg-muted/20 px-2 py-2 text-center text-xs font-medium capitalize"
               >
-                {hours.map((hour) => (
-                  <div
-                    key={hour}
-                    className="absolute inset-x-0 border-b border-border/40"
-                    style={{
-                      top: (hour - AGENDA_DAY_START_HOUR) * AGENDA_HOUR_PX,
-                      height: AGENDA_HOUR_PX,
-                    }}
-                  />
-                ))}
-                {positioned.map((event) => (
-                  <EventBlock key={`${day}-${event.id}`} event={event} />
-                ))}
+                <Link
+                  href={`/sistema/agenda?${new URLSearchParams({
+                    ...queryBase,
+                    view: "day",
+                    data: day,
+                  }).toString()}`}
+                  className="text-navy hover:underline"
+                >
+                  {weekdayShortLabel(day)}
+                </Link>
               </div>
-            );
-          })}
+            ))}
+            <div className="border-r border-border bg-muted/30">
+              {hours.map((hour) => (
+                <div
+                  key={hour}
+                  className="border-b border-border/60 px-1 text-[10px] text-muted-foreground"
+                  style={{ height: AGENDA_HOUR_PX }}
+                >
+                  {formatHourLabel(hour)}
+                </div>
+              ))}
+            </div>
+            {days.map((day) => {
+              const positioned = positionEventsForDay(byDay.get(day) ?? [], day);
+              return (
+                <div
+                  key={day}
+                  className="relative border-r border-border"
+                  style={{ height }}
+                >
+                  {hours.map((hour) => (
+                    <div
+                      key={hour}
+                      className="absolute inset-x-0 border-b border-border/40"
+                      style={{
+                        top: (hour - AGENDA_DAY_START_HOUR) * AGENDA_HOUR_PX,
+                        height: AGENDA_HOUR_PX,
+                      }}
+                    />
+                  ))}
+                  {positioned.map((event) => (
+                    <EventBlock key={`${day}-${event.id}`} event={event} />
+                  ))}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
@@ -196,64 +263,68 @@ export function AgendaCalendar({
   const cells = monthCellKeys(windowFrom);
   const focusMonth = focusDate.slice(0, 7);
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-background">
-      <div className="grid min-w-[48rem] grid-cols-7">
-        {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((label) => (
-          <div
-            key={label}
-            className="border-b border-r border-border bg-muted/30 px-2 py-2 text-center text-xs font-medium"
-          >
-            {label}
-          </div>
-        ))}
-        {cells.map((day) => {
-          const inMonth = day.startsWith(focusMonth);
-          const dayEvents = byDay.get(day) ?? [];
-          return (
+    <div className="space-y-3">
+      <OutOfHoursNotice events={events} listHref={listHref} />
+      <div className="overflow-x-auto rounded-xl border border-border bg-background">
+        <div className="grid min-w-[48rem] grid-cols-7">
+          {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((label) => (
             <div
-              key={day}
-              className={cn(
-                "min-h-28 border-b border-r border-border p-1.5",
-                inMonth ? "bg-background" : "bg-muted/20 text-muted-foreground",
-              )}
+              key={label}
+              className="border-b border-r border-border bg-muted/30 px-2 py-2 text-center text-xs font-medium"
             >
-              <Link
-                href={`/sistema/agenda?${new URLSearchParams({
-                  ...queryBase,
-                  view: "day",
-                  data: day,
-                }).toString()}`}
-                className="mb-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium hover:bg-navy/10 hover:text-navy"
-              >
-                {day.slice(-2)}
-              </Link>
-              <ul className="space-y-1">
-                {dayEvents.slice(0, 3).map((event) => (
-                  <li key={`${day}-${event.id}`}>
-                    <Link
-                      href={`/sistema/agenda/${event.id}`}
-                      className="block truncate rounded border border-navy/20 bg-navy/5 px-1 py-0.5 text-[10px] text-navy hover:bg-navy/10"
-                    >
-                      {formatScheduleDateTime(event.startsAt).slice(-5)}{" "}
-                      {event.serviceOrder.code}
-                    </Link>
-                  </li>
-                ))}
-                {dayEvents.length > 3 ? (
-                  <li className="text-[10px] text-muted-foreground">
-                    +{dayEvents.length - 3} mais
-                  </li>
-                ) : null}
-              </ul>
+              {label}
             </div>
-          );
-        })}
+          ))}
+          {cells.map((day) => {
+            const inMonth = day.startsWith(focusMonth);
+            const dayEvents = byDay.get(day) ?? [];
+            return (
+              <div
+                key={day}
+                className={cn(
+                  "min-h-28 border-b border-r border-border p-1.5",
+                  inMonth ? "bg-background" : "bg-muted/20 text-muted-foreground",
+                )}
+              >
+                <Link
+                  href={`/sistema/agenda?${new URLSearchParams({
+                    ...queryBase,
+                    view: "day",
+                    data: day,
+                  }).toString()}`}
+                  className="mb-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium hover:bg-navy/10 hover:text-navy"
+                >
+                  {day.slice(-2)}
+                </Link>
+                <ul className="space-y-1">
+                  {dayEvents.slice(0, 3).map((event) => (
+                    <li key={`${day}-${event.id}`}>
+                      <Link
+                        href={`/sistema/agenda/${event.id}`}
+                        className="block truncate rounded border border-navy/20 bg-navy/5 px-1 py-0.5 text-[10px] text-navy hover:bg-navy/10"
+                      >
+                        {formatScheduleDateTime(event.startsAt).slice(-5)}{" "}
+                        {event.serviceOrder.code}
+                      </Link>
+                    </li>
+                  ))}
+                  {dayEvents.length > 3 ? (
+                    <li className="text-[10px] text-muted-foreground">
+                      +{dayEvents.length - 3} mais
+                    </li>
+                  ) : null}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+        <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
+          Clique no dia para a visão diária · clique no compromisso para o
+          detalhe. Fuso America/Belém. Grade 06h–22h — use a lista para horários
+          fora da faixa.
+          {focusDate ? ` · foco ${formatScheduleDateOnly(windowFrom)}` : ""}
+        </p>
       </div>
-      <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
-        Clique no dia para a visão diária · clique no compromisso para o
-        detalhe. Fuso America/Belém.
-        {focusDate ? ` · foco ${formatScheduleDateOnly(windowFrom)}` : ""}
-      </p>
     </div>
   );
 }

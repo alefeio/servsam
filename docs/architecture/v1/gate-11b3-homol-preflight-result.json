@@ -10,16 +10,28 @@
     "instanceId": "0786bd682d75",
     "instanceIdMatches": true,
     "organization": {
-      "slug": "servsam",
-      "name": "SERVSAM"
+      "id": "5cf87c1f-ace8-4e5d-bdc8-04dd3f1eaad4",
+      "name": "SERVSAM",
+      "slug": "servsam"
     }
   },
   "migrations": {
+    "totalApplied": 5,
+    "sampleRecent": [
+      "20261022140103_platform_foundation",
+      "20261118160000_customers_proposals",
+      "20261118193000_customer_document_active_unique",
+      "20261123140000_engagements_purchase_orders",
+      "20261124010000_service_orders"
+    ],
     "migration11b2Recorded": true,
     "migration11b3Recorded": false,
     "migration11b3Pending": true
   },
   "tables": {
+    "customer": true,
+    "proposal": true,
+    "engagement": true,
     "service_order": true,
     "employee": false,
     "service_appointment": false
@@ -33,12 +45,57 @@
     "auditLogs": 342
   },
   "grants": {
+    "keysChecked": [
+      "employee.view",
+      "employee.manage",
+      "schedule.view",
+      "schedule.create",
+      "schedule.update"
+    ],
+    "byRole": {
+      "ADMINISTRATIVO": [
+        "employee.view",
+        "schedule.create",
+        "schedule.update",
+        "schedule.view"
+      ],
+      "DIRETORIA": [
+        "employee.manage",
+        "employee.view",
+        "schedule.create",
+        "schedule.update",
+        "schedule.view"
+      ],
+      "FINANCEIRO": [
+        "employee.view",
+        "schedule.create",
+        "schedule.update",
+        "schedule.view"
+      ],
+      "GERENCIA": [
+        "employee.manage",
+        "employee.view",
+        "schedule.create",
+        "schedule.update",
+        "schedule.view"
+      ]
+    },
     "missingByRole": {
-      "ADMINISTRATIVO": ["employee.manage"],
+      "ADMINISTRATIVO": [
+        "employee.manage"
+      ],
       "GERENCIA": [],
       "DIRETORIA": [],
-      "FINANCEIRO": ["employee.manage"]
-    }
+      "FINANCEIRO": [
+        "employee.manage"
+      ]
+    },
+    "note": "Não executar seed para corrigir grants. Preparar procedimento idempotente separado se faltar chave."
   },
-  "deployAuthorized": false
+  "additiveCompatibility": {
+    "ok": true,
+    "note": "11B.3 é aditiva: cria employee + service_appointment sem alterar 11B.2."
+  },
+  "deployAuthorized": false,
+  "note": "Somente leitura. Não migrar HOMOL nesta entrega."
 }

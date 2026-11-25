@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   CONFLICT_MESSAGE,
-  conflictKeysFromDetails,
+  conflictAcceptanceToken,
   encodeConflictError,
-  parseConflictKeysFromError,
+  parseConflictTokenFromError,
 } from "@/lib/platform/appointment-constants";
 import {
   cancelAppointmentSchema,
@@ -133,8 +133,10 @@ describe("permissões e mensagem de conflito", () => {
     expect(CONFLICT_MESSAGE).toContain("já possui outro serviço agendado");
   });
 
-  it("codifica e recupera chaves de conflito para confirmação consciente", () => {
-    const encoded = encodeConflictError([
+  it("codifica token vinculado a colaborador, janela e conflitos", () => {
+    const startsAt = parseScheduleDateTimeLocal("2026-11-25T09:00")!;
+    const endsAt = parseScheduleDateTimeLocal("2026-11-25T11:00")!;
+    const conflicts = [
       {
         id: "b",
         serviceOrderCode: "OS-2",
@@ -151,28 +153,31 @@ describe("permissões e mensagem de conflito", () => {
         employeeId: "e1",
         employeeName: "Carla",
       },
-    ]);
+    ];
+    const context = {
+      employeeId: "e1",
+      startsAt,
+      endsAt,
+      conflicts,
+    };
+    const encoded = encodeConflictError(context);
     expect(encoded).toContain("OS-1");
     expect(encoded).toContain("OS-2");
-    expect(parseConflictKeysFromError(encoded)).toBe(
-      conflictKeysFromDetails([
+    expect(parseConflictTokenFromError(encoded)).toBe(
+      conflictAcceptanceToken(context),
+    );
+    const shifted = {
+      ...context,
+      conflicts: [
         {
-          id: "a",
-          serviceOrderCode: "OS-1",
-          startsAt: new Date(),
-          endsAt: new Date(),
-          employeeId: "e1",
-          employeeName: "Carla",
+          ...conflicts[0]!,
+          startsAt: parseScheduleDateTimeLocal("2026-11-25T09:30")!,
         },
-        {
-          id: "b",
-          serviceOrderCode: "OS-2",
-          startsAt: new Date(),
-          endsAt: new Date(),
-          employeeId: "e1",
-          employeeName: "Carla",
-        },
-      ]),
+        conflicts[1]!,
+      ],
+    };
+    expect(conflictAcceptanceToken(shifted)).not.toBe(
+      conflictAcceptanceToken(context),
     );
   });
 

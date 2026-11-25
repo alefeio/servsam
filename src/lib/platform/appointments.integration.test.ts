@@ -269,7 +269,7 @@ describe.skipIf(!guard.allowed)(
         expect(secondOs.ok).toBe(false);
         if (!secondOs.ok) {
           expect(secondOs.message).toContain(CONFLICT_MESSAGE);
-          expect(secondOs.message).toContain("[conflictKeys:");
+          expect(secondOs.message).toContain("[conflictToken:");
         }
 
         const silentAccept = await createAppointment(owner, {
@@ -278,12 +278,12 @@ describe.skipIf(!guard.allowed)(
           endsAtLocal: "2026-12-01T11:00",
           employeeId: employeeA.data.id,
           acceptConflict: true,
-          acceptConflictKeys: "chaves-antigas",
+          acceptConflictKeys: "token-antigo",
         });
         expect(silentAccept.ok).toBe(false);
 
-        const conflictKeys = !secondOs.ok
-          ? (secondOs.message.match(/\[conflictKeys:([^\]]+)\]/)?.[1] ?? "")
+        const conflictToken = !secondOs.ok
+          ? (secondOs.message.match(/\[conflictToken:([^\]]+)\]/)?.[1] ?? "")
           : "";
         const forced = await createAppointment(owner, {
           serviceOrderId: os2.id,
@@ -291,7 +291,7 @@ describe.skipIf(!guard.allowed)(
           endsAtLocal: "2026-12-01T11:00",
           employeeId: employeeA.data.id,
           acceptConflict: true,
-          acceptConflictKeys: conflictKeys,
+          acceptConflictKeys: conflictToken,
         });
         expect(forced.ok).toBe(true);
         if (forced.ok) {
@@ -445,6 +445,147 @@ describe.skipIf(!guard.allowed)(
           os3.id,
         );
         expect(activeOs3).not.toBeNull();
+      },
+      180_000,
+    );
+
+    it(
+      "concorrência entre OS distintas e token obsoleto após remarcação",
+      async () => {
+        const { createEmployee } = await import("@/lib/platform/employees");
+        const {
+          createAppointment,
+          rescheduleAppointment,
+          listAppointments,
+        } = await import("@/lib/platform/appointments");
+
+        const tech = await createEmployee(owner, {
+          fullName: "Elena Concorrência",
+          jobTitle: "Técnica",
+        });
+        expect(tech.ok).toBe(true);
+        if (!tech.ok) return;
+
+        const osA = await issueServiceOrder(owner);
+        const osB = await issueServiceOrder(owner);
+
+        const [raceA, raceB] = await Promise.all([
+          createAppointment(owner, {
+            serviceOrderId: osA.id,
+            startsAtLocal: "2026-12-22T08:00",
+            endsAtLocal: "2026-12-22T10:00",
+            employeeId: tech.data.id,
+          }),
+          createAppointment(owner, {
+            serviceOrderId: osB.id,
+            startsAtLocal: "2026-12-22T09:00",
+            endsAtLocal: "2026-12-22T11:00",
+            employeeId: tech.data.id,
+          }),
+        ]);
+        const raceOk = [raceA, raceB].filter((row) => row.ok);
+        const raceFail = [raceA, raceB].filter((row) => !row.ok);
+        expect(raceOk).toHaveLength(1);
+        expect(raceFail).toHaveLength(1);
+        if (!raceFail[0]!.ok) {
+          expect(raceFail[0].message).toContain(CONFLICT_MESSAGE);
+          expect(raceFail[0].message).toContain("[conflictToken:");
+        }
+
+        const winnerId = raceOk[0]!.ok ? raceOk[0].data.id : "";
+        const loserOsId = !raceA.ok ? osA.id : osB.id;
+
+        const probe = await createAppointment(owner, {
+          serviceOrderId: loserOsId,
+          startsAtLocal: "2026-12-22T09:00",
+          endsAtLocal: "2026-12-22T11:00",
+          employeeId: tech.data.id,
+        });
+        expect(probe.ok).toBe(false);
+        const staleToken = !probe.ok
+          ? (probe.message.match(/\[conflictToken:([^\]]+)\]/)?.[1] ?? "")
+          : "";
+        expect(staleToken.length).toBeGreaterThan(0);
+
+        const moved = await rescheduleAppointment(owner, {
+          appointmentId: winnerId,
+          startsAtLocal: "2026-12-22T14:00",
+          endsAtLocal: "2026-12-22T16:00",
+          employeeId: tech.data.id,
+          reason: "Mudou antes do aceite concorrente",
+        });
+        expect(moved.ok).toBe(true);
+        if (!moved.ok) return;
+
+        const freeSlot = await createAppointment(owner, {
+          serviceOrderId: loserOsId,
+          startsAtLocal: "2026-12-22T09:00",
+          endsAtLocal: "2026-12-22T11:00",
+          employeeId: tech.data.id,
+          acceptConflict: true,
+          acceptConflictKeys: staleToken,
+        });
+        expect(freeSlot.ok).toBe(true);
+
+        const osC = await issueServiceOrder(owner);
+        const blocking = await createAppointment(owner, {
+          serviceOrderId: osC.id,
+          startsAtLocal: "2026-12-22T14:30",
+          endsAtLocal: "2026-12-22T15:30",
+          employeeId: tech.data.id,
+        });
+        expect(blocking.ok).toBe(false);
+        if (!blocking.ok) {
+          const token = blocking.message.match(
+            /\[conflictToken:([^\]]+)\]/,
+          )?.[1];
+          expect(token).toBeTruthy();
+
+          const afterReschedule = await rescheduleAppointment(owner, {
+            appointmentId: moved.data.id,
+            startsAtLocal: "2026-12-22T14:15",
+            endsAtLocal: "2026-12-22T16:15",
+            employeeId: tech.data.id,
+            reason: "Ajuste fino durante aviso",
+          });
+          expect(afterReschedule.ok).toBe(true);
+
+          const staleDuringAlert = await createAppointment(owner, {
+            serviceOrderId: osC.id,
+            startsAtLocal: "2026-12-22T14:30",
+            endsAtLocal: "2026-12-22T15:30",
+            employeeId: tech.data.id,
+            acceptConflict: true,
+            acceptConflictKeys: token,
+          });
+          expect(staleDuringAlert.ok).toBe(false);
+          if (!staleDuringAlert.ok) {
+            expect(staleDuringAlert.message).toContain(CONFLICT_MESSAGE);
+          }
+
+          const freshToken = !staleDuringAlert.ok
+            ? (staleDuringAlert.message.match(
+                /\[conflictToken:([^\]]+)\]/,
+              )?.[1] ?? "")
+            : "";
+          const accepted = await createAppointment(owner, {
+            serviceOrderId: osC.id,
+            startsAtLocal: "2026-12-22T14:30",
+            endsAtLocal: "2026-12-22T15:30",
+            employeeId: tech.data.id,
+            acceptConflict: true,
+            acceptConflictKeys: freshToken,
+          });
+          expect(accepted.ok).toBe(true);
+        }
+
+        const dayRows = await listAppointments(owner, {
+          from: new Date("2026-12-22T00:00:00.000-03:00"),
+          to: new Date("2026-12-23T00:00:00.000-03:00"),
+          employeeId: tech.data.id,
+          status: "scheduled",
+        });
+        expect(dayRows.length).toBeGreaterThanOrEqual(2);
       },
       180_000,
     );
