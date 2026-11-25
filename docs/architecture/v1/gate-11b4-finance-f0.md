@@ -3,7 +3,9 @@
 **Status:** READY FOR REVIEW  
 **Branch:** `feature/11b-4-finance-f0`  
 **Base:** `fix/11b-3-acceptance` @ `d2aa06cc4b5d0735ae98b4213ab3169defd54fea`  
-**SHA funcional:** `f430c4b90b23239926e309eb6e3b94b56be6750d`
+**SHA funcional:** `f430c4b90b23239926e309eb6e3b94b56be6750d`  
+**HEAD publicado:** `8ba6de8ca36f90020769be1a7ee9b6cb7addeaef`  
+**Preview protegido:** https://servsam-git-feature-11b-4-finance-f0-alefeios-projects.vercel.app — **READY** (auth Vercel)
 
 ## Migration e modelos
 
