@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { CONFLICT_MESSAGE } from "@/lib/platform/appointment-constants";
+import {
+  CONFLICT_MESSAGE,
+  conflictKeysFromDetails,
+  encodeConflictError,
+  parseConflictKeysFromError,
+} from "@/lib/platform/appointment-constants";
 import {
   cancelAppointmentSchema,
   createAppointmentSchema,
@@ -126,5 +131,68 @@ describe("permissões e mensagem de conflito", () => {
 
   it("mantém texto de conflito operacional", () => {
     expect(CONFLICT_MESSAGE).toContain("já possui outro serviço agendado");
+  });
+
+  it("codifica e recupera chaves de conflito para confirmação consciente", () => {
+    const encoded = encodeConflictError([
+      {
+        id: "b",
+        serviceOrderCode: "OS-2",
+        startsAt: parseScheduleDateTimeLocal("2026-11-25T09:00")!,
+        endsAt: parseScheduleDateTimeLocal("2026-11-25T11:00")!,
+        employeeId: "e1",
+        employeeName: "Carla",
+      },
+      {
+        id: "a",
+        serviceOrderCode: "OS-1",
+        startsAt: parseScheduleDateTimeLocal("2026-11-25T08:00")!,
+        endsAt: parseScheduleDateTimeLocal("2026-11-25T10:00")!,
+        employeeId: "e1",
+        employeeName: "Carla",
+      },
+    ]);
+    expect(encoded).toContain("OS-1");
+    expect(encoded).toContain("OS-2");
+    expect(parseConflictKeysFromError(encoded)).toBe(
+      conflictKeysFromDetails([
+        {
+          id: "a",
+          serviceOrderCode: "OS-1",
+          startsAt: new Date(),
+          endsAt: new Date(),
+          employeeId: "e1",
+          employeeName: "Carla",
+        },
+        {
+          id: "b",
+          serviceOrderCode: "OS-2",
+          startsAt: new Date(),
+          endsAt: new Date(),
+          employeeId: "e1",
+          employeeName: "Carla",
+        },
+      ]),
+    );
+  });
+
+  it("distingue omissão e limpeza de colaborador no schema", () => {
+    expect(
+      rescheduleAppointmentSchema.safeParse({
+        appointmentId: "a1",
+        startsAtLocal: "2026-11-26T08:00",
+        endsAtLocal: "2026-11-26T09:00",
+        reason: "Cliente pediu",
+        employeeId: null,
+      }).success,
+    ).toBe(true);
+    expect(
+      rescheduleAppointmentSchema.safeParse({
+        appointmentId: "a1",
+        startsAtLocal: "2026-11-26T08:00",
+        endsAtLocal: "2026-11-26T09:00",
+        reason: "Cliente pediu",
+      }).success,
+    ).toBe(true);
   });
 });

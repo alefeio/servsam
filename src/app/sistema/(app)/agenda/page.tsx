@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { APPOINTMENT_STATUS_LABELS } from "@/data/platform/labels";
+import { AgendaCalendar } from "@/features/platform/agenda-calendar";
 import {
   EmptyState,
   LinkButton,
@@ -38,6 +39,7 @@ type SearchParams = Promise<{
   cliente?: string | string[];
   status?: string | string[];
   os?: string | string[];
+  layout?: string | string[];
 }>;
 
 function first(value: string | string[] | undefined): string {
@@ -76,6 +78,7 @@ export default async function AgendaPage({
       ? statusRaw
       : "scheduled";
   const osQuery = first(params.os);
+  const layout = first(params.layout) === "lista" ? "lista" : "calendario";
 
   const window = resolveAgendaWindow(view, focus);
   const appointments = await listAppointments(actor, {
@@ -103,13 +106,29 @@ export default async function AgendaPage({
     cliente: customerId,
     status,
     os: osQuery,
+    layout,
   };
+
+  const calendarEvents = appointments.map((item) => ({
+    id: item.id,
+    startsAt: item.startsAt,
+    endsAt: item.endsAt,
+    serviceOrder: {
+      id: item.serviceOrder.id,
+      code: item.serviceOrder.code,
+      description: item.serviceOrder.description,
+      customer: { legalName: item.serviceOrder.customer.legalName },
+    },
+    employee: item.employee
+      ? { fullName: item.employee.fullName }
+      : null,
+  }));
 
   return (
     <PlatformPage width="wide">
       <PageHeader
         title="Agenda operacional"
-        description="Compromissos vinculados às ordens de serviço reais. Horários em America/Belém."
+        description="Calendário com compromissos reais do PostgreSQL. Horários em America/Belém."
         actions={
           userHasPermission(actor, "service_order.view") ? (
             <LinkButton href="/sistema/ordens-servico" variant="outline">
@@ -166,6 +185,33 @@ export default async function AgendaPage({
         >
           Próximo
         </Link>
+        <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+        <Link
+          href={`/sistema/agenda${buildQuery({
+            ...baseParams,
+            layout: "calendario",
+          })}`}
+          className={
+            layout === "calendario"
+              ? "rounded-lg bg-navy/10 px-3 py-1.5 text-sm font-medium text-navy"
+              : "rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted"
+          }
+        >
+          Calendário
+        </Link>
+        <Link
+          href={`/sistema/agenda${buildQuery({
+            ...baseParams,
+            layout: "lista",
+          })}`}
+          className={
+            layout === "lista"
+              ? "rounded-lg bg-navy/10 px-3 py-1.5 text-sm font-medium text-navy"
+              : "rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted"
+          }
+        >
+          Lista
+        </Link>
         <p className="ml-2 text-sm font-medium text-navy capitalize">
           {window.label}
         </p>
@@ -177,6 +223,7 @@ export default async function AgendaPage({
       >
         <input type="hidden" name="view" value={view} />
         <input type="hidden" name="data" value={focus} />
+        <input type="hidden" name="layout" value={layout} />
         <label className="space-y-1 text-sm">
           <span className="text-muted-foreground">Status</span>
           <select
@@ -246,6 +293,14 @@ export default async function AgendaPage({
         <EmptyState
           title="Nenhum compromisso neste período"
           description="Agende a partir de uma OS emitida ou remova filtros."
+        />
+      ) : layout === "calendario" ? (
+        <AgendaCalendar
+          view={view}
+          windowFrom={window.from}
+          events={calendarEvents}
+          focusDate={focus}
+          queryBase={baseParams}
         />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border bg-background">

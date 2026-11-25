@@ -268,15 +268,30 @@ describe.skipIf(!guard.allowed)(
         });
         expect(secondOs.ok).toBe(false);
         if (!secondOs.ok) {
-          expect(secondOs.message).toBe(CONFLICT_MESSAGE);
+          expect(secondOs.message).toContain(CONFLICT_MESSAGE);
+          expect(secondOs.message).toContain("[conflictKeys:");
         }
 
+        const silentAccept = await createAppointment(owner, {
+          serviceOrderId: os2.id,
+          startsAtLocal: "2026-12-01T09:00",
+          endsAtLocal: "2026-12-01T11:00",
+          employeeId: employeeA.data.id,
+          acceptConflict: true,
+          acceptConflictKeys: "chaves-antigas",
+        });
+        expect(silentAccept.ok).toBe(false);
+
+        const conflictKeys = !secondOs.ok
+          ? (secondOs.message.match(/\[conflictKeys:([^\]]+)\]/)?.[1] ?? "")
+          : "";
         const forced = await createAppointment(owner, {
           serviceOrderId: os2.id,
           startsAtLocal: "2026-12-01T09:00",
           endsAtLocal: "2026-12-01T11:00",
           employeeId: employeeA.data.id,
           acceptConflict: true,
+          acceptConflictKeys: conflictKeys,
         });
         expect(forced.ok).toBe(true);
         if (forced.ok) {

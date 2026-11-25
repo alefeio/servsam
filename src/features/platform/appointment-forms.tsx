@@ -13,7 +13,11 @@ import {
   createAppointmentAction,
   rescheduleAppointmentAction,
 } from "@/lib/platform/appointment-actions";
-import { CONFLICT_MESSAGE } from "@/lib/platform/appointment-constants";
+import {
+  conflictErrorForDisplay,
+  isConflictError,
+  parseConflictKeysFromError,
+} from "@/lib/platform/appointment-constants";
 
 export type EmployeeOption = {
   id: string;
@@ -21,45 +25,49 @@ export type EmployeeOption = {
   jobTitle: string;
 };
 
-function ConflictCheckbox({ show }: { show: boolean }) {
-  if (!show) return null;
+function ConflictConfirm({ error }: { error?: string }) {
+  if (!isConflictError(error)) return null;
+  const keys = parseConflictKeysFromError(error);
   return (
-    <label className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-      <input
-        type="checkbox"
-        name="acceptConflict"
-        value="1"
-        className="mt-1"
-        aria-label="Confirme para salvar mesmo assim"
-      />
-      <span>
-        {CONFLICT_MESSAGE} Confirme para salvar mesmo assim. A decisão será
-        registrada na auditoria.
-      </span>
-    </label>
+    <div className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+      <p className="whitespace-pre-wrap font-medium">
+        {conflictErrorForDisplay(error)}
+      </p>
+      {keys ? (
+        <input type="hidden" name="acceptConflictKeys" value={keys} />
+      ) : null}
+      <label className="flex items-start gap-2">
+        <input
+          type="checkbox"
+          name="acceptConflict"
+          value="1"
+          className="mt-1"
+          aria-label="Confirme para salvar mesmo assim"
+          required
+        />
+        <span>
+          Confirmo o conflito acima e desejo salvar mesmo assim. A decisão será
+          registrada na auditoria.
+        </span>
+      </label>
+    </div>
   );
 }
 
 export function CreateAppointmentForm({
   serviceOrderId,
   employees,
-  redirectTo,
 }: {
   serviceOrderId: string;
   employees: EmployeeOption[];
-  redirectTo?: string;
 }) {
   const { state, onSubmit, pending } = useGuardedForm(createAppointmentAction);
-  const showConflict = state?.error === CONFLICT_MESSAGE;
   return (
     <form
       onSubmit={onSubmit}
       className="space-y-4 rounded-xl border border-border bg-background p-4"
     >
       <input type="hidden" name="serviceOrderId" value={serviceOrderId} />
-      {redirectTo ? (
-        <input type="hidden" name="redirectTo" value={redirectTo} />
-      ) : null}
       <div className="grid gap-4 md:grid-cols-2">
         <TextField
           label="Início"
@@ -93,8 +101,14 @@ export function CreateAppointmentForm({
         </select>
       </div>
       <TextAreaField label="Observações" name="notes" maxLength={2000} />
-      <ConflictCheckbox show={Boolean(showConflict)} />
-      <FormError message={state?.error} />
+      <ConflictConfirm error={state?.error} />
+      <FormError
+        message={
+          isConflictError(state?.error)
+            ? undefined
+            : state?.error
+        }
+      />
       <Button type="submit" disabled={pending}>
         {pending ? "Salvando..." : "Confirmar agendamento"}
       </Button>
@@ -110,7 +124,6 @@ export function RescheduleAppointmentForm({
   defaultEndsAtLocal,
   defaultEmployeeId,
   defaultNotes,
-  redirectTo,
 }: {
   appointmentId: string;
   serviceOrderId: string;
@@ -119,12 +132,10 @@ export function RescheduleAppointmentForm({
   defaultEndsAtLocal?: string;
   defaultEmployeeId?: string | null;
   defaultNotes?: string | null;
-  redirectTo?: string;
 }) {
   const { state, onSubmit, pending } = useGuardedForm(
     rescheduleAppointmentAction,
   );
-  const showConflict = state?.error === CONFLICT_MESSAGE;
   return (
     <form
       onSubmit={onSubmit}
@@ -132,9 +143,6 @@ export function RescheduleAppointmentForm({
     >
       <input type="hidden" name="appointmentId" value={appointmentId} />
       <input type="hidden" name="serviceOrderId" value={serviceOrderId} />
-      {redirectTo ? (
-        <input type="hidden" name="redirectTo" value={redirectTo} />
-      ) : null}
       <div className="grid gap-4 md:grid-cols-2">
         <TextField
           label="Novo início"
@@ -181,8 +189,14 @@ export function RescheduleAppointmentForm({
         defaultValue={defaultNotes}
         maxLength={2000}
       />
-      <ConflictCheckbox show={Boolean(showConflict)} />
-      <FormError message={state?.error} />
+      <ConflictConfirm error={state?.error} />
+      <FormError
+        message={
+          isConflictError(state?.error)
+            ? undefined
+            : state?.error
+        }
+      />
       <Button type="submit" disabled={pending}>
         {pending ? "Salvando..." : "Remarcar"}
       </Button>
@@ -193,11 +207,9 @@ export function RescheduleAppointmentForm({
 export function CancelAppointmentForm({
   appointmentId,
   serviceOrderId,
-  redirectTo,
 }: {
   appointmentId: string;
   serviceOrderId: string;
-  redirectTo?: string;
 }) {
   const [open, setOpen] = useState(false);
   const { state, onSubmit, pending } = useGuardedForm(cancelAppointmentAction);
@@ -215,9 +227,6 @@ export function CancelAppointmentForm({
     >
       <input type="hidden" name="appointmentId" value={appointmentId} />
       <input type="hidden" name="serviceOrderId" value={serviceOrderId} />
-      {redirectTo ? (
-        <input type="hidden" name="redirectTo" value={redirectTo} />
-      ) : null}
       <TextField
         label="Motivo do cancelamento"
         name="reason"

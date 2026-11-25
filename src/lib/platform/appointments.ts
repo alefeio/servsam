@@ -23,7 +23,12 @@ import {
   fail,
   type ServiceResult,
 } from "@/lib/platform/service-result";
-import { CONFLICT_MESSAGE } from "@/lib/platform/appointment-constants";
+import {
+  CONFLICT_MESSAGE,
+  conflictKeysFromDetails,
+  encodeConflictError,
+  type ConflictDetail,
+} from "@/lib/platform/appointment-constants";
 import { getPrisma } from "@/lib/db/prisma";
 
 const FIRST_ISSUE = (issues: { message: string }[]) =>
@@ -67,8 +72,8 @@ async function findEmployeeConflicts(
     endsAt: Date;
     excludeAppointmentId?: string;
   },
-) {
-  return tx.serviceAppointment.findMany({
+): Promise<ConflictDetail[]> {
+  const rows = await tx.serviceAppointment.findMany({
     where: {
       organizationId: input.organizationId,
       employeeId: input.employeeId,
@@ -84,10 +89,48 @@ async function findEmployeeConflicts(
       id: true,
       startsAt: true,
       endsAt: true,
+      employeeId: true,
+      employee: { select: { fullName: true } },
       serviceOrder: { select: { code: true } },
     },
     take: 10,
   });
+  return rows.map((row) => ({
+    id: row.id,
+    serviceOrderCode: row.serviceOrder.code,
+    startsAt: row.startsAt,
+    endsAt: row.endsAt,
+    employeeId: row.employeeId ?? input.employeeId,
+    employeeName: row.employee?.fullName ?? "Colaborador",
+  }));
+}
+
+function assertConflictAccepted(
+  conflicts: ConflictDetail[],
+  acceptConflict: boolean | undefined,
+  acceptConflictKeys: string | undefined,
+): void {
+  if (conflicts.length === 0) return;
+  const expectedKeys = conflictKeysFromDetails(conflicts);
+  if (
+    !acceptConflict ||
+    !acceptConflictKeys ||
+    acceptConflictKeys !== expectedKeys
+  ) {
+    throw new Error(encodeConflictError(conflicts));
+  }
+}
+
+/**
+ * undefined = preservar; null / "" = remover; string = atribuir.
+ */
+function resolveEmployeeAssignment(
+  requested: string | null | undefined,
+  currentEmployeeId: string | null,
+): string | null {
+  if (requested === undefined) return currentEmployeeId;
+  if (requested === null || requested === "") return null;
+  return requested;
 }
 
 export type AppointmentListFilter = {
@@ -116,14 +159,17 @@ export async function listAppointments(
       ...(filter.serviceOrderId
         ? { serviceOrderId: filter.serviceOrderId }
         : {}),
-      ...(filter.from || filter.to
+      // Interseção com a janela: inclui compromissos que atravessam meia-noite.
+      ...(filter.from && filter.to
         ? {
-            startsAt: {
-              ...(filter.from ? { gte: filter.from } : {}),
-              ...(filter.to ? { lt: filter.to } : {}),
-            },
+            startsAt: { lt: filter.to },
+            endsAt: { gt: filter.from },
           }
-        : {}),
+        : filter.from
+          ? { endsAt: { gt: filter.from } }
+          : filter.to
+            ? { startsAt: { lt: filter.to } }
+            : {}),
       ...(query
         ? {
             OR: [
@@ -320,10 +366,14 @@ export async function createAppointment(
       }
 
       let employeeId: string | null = null;
-      if (parsed.data.employeeId) {
+      const requestedEmployee = resolveEmployeeAssignment(
+        parsed.data.employeeId,
+        null,
+      );
+      if (requestedEmployee) {
         const employee = await tx.employee.findFirst({
           where: {
-            id: parsed.data.employeeId,
+            id: requestedEmployee,
             organizationId: actor.organizationId,
             deletedAt: null,
           },
@@ -341,6 +391,7 @@ export async function createAppointment(
 
       let conflictAccepted = false;
       let conflictingCodes: string[] = [];
+      let acceptedConflictKeys: string | null = null;
       if (employeeId) {
         const conflicts = await findEmployeeConflicts(tx, {
           organizationId: actor.organizationId,
@@ -349,11 +400,14 @@ export async function createAppointment(
           endsAt: window.endsAt,
         });
         if (conflicts.length > 0) {
-          conflictingCodes = conflicts.map((row) => row.serviceOrder.code);
-          if (!parsed.data.acceptConflict) {
-            throw new Error(CONFLICT_MESSAGE);
-          }
+          assertConflictAccepted(
+            conflicts,
+            parsed.data.acceptConflict,
+            parsed.data.acceptConflictKeys,
+          );
           conflictAccepted = true;
+          acceptedConflictKeys = conflictKeysFromDetails(conflicts);
+          conflictingCodes = conflicts.map((row) => row.serviceOrderCode);
         }
       }
 
@@ -421,6 +475,7 @@ export async function createAppointment(
             endsAt: window.endsAt.toISOString(),
             employeeId,
             conflictAccepted,
+            acceptedConflictKeys,
             conflictingCodes,
           },
         },
@@ -443,14 +498,15 @@ export async function createAppointment(
     if (error instanceof Error) {
       if (
         error.message === NOT_FOUND_MESSAGE ||
-        error.message === CONFLICT_MESSAGE ||
+        error.message.includes(CONFLICT_MESSAGE) ||
         error.message.includes("OS") ||
         error.message.includes("Colaborador") ||
         error.message.includes("agendamento") ||
         error.message.includes("elegível") ||
         error.message.includes("cancelada") ||
         error.message.includes("Transição") ||
-        error.message.includes("inativo")
+        error.message.includes("inativo") ||
+        error.message.includes("Confirme novamente")
       ) {
         return fail(error.message);
       }
@@ -496,15 +552,14 @@ export async function rescheduleAppointment(
         throw new Error("Ordem de serviço cancelada não pode ser remarcada.");
       }
 
-      let employeeId: string | null = null;
-      const requestedEmployeeId =
-        parsed.data.employeeId === undefined
-          ? current.employeeId
-          : parsed.data.employeeId;
-      if (requestedEmployeeId) {
+      let employeeId = resolveEmployeeAssignment(
+        parsed.data.employeeId,
+        current.employeeId,
+      );
+      if (employeeId) {
         const employee = await tx.employee.findFirst({
           where: {
-            id: requestedEmployeeId,
+            id: employeeId,
             organizationId: actor.organizationId,
             deletedAt: null,
           },
@@ -522,6 +577,7 @@ export async function rescheduleAppointment(
 
       let conflictAccepted = false;
       let conflictingCodes: string[] = [];
+      let acceptedConflictKeys: string | null = null;
       if (employeeId) {
         const conflicts = await findEmployeeConflicts(tx, {
           organizationId: actor.organizationId,
@@ -531,11 +587,14 @@ export async function rescheduleAppointment(
           excludeAppointmentId: current.id,
         });
         if (conflicts.length > 0) {
-          conflictingCodes = conflicts.map((row) => row.serviceOrder.code);
-          if (!parsed.data.acceptConflict) {
-            throw new Error(CONFLICT_MESSAGE);
-          }
+          assertConflictAccepted(
+            conflicts,
+            parsed.data.acceptConflict,
+            parsed.data.acceptConflictKeys,
+          );
           conflictAccepted = true;
+          acceptedConflictKeys = conflictKeysFromDetails(conflicts);
+          conflictingCodes = conflicts.map((row) => row.serviceOrderCode);
         }
       }
 
@@ -606,6 +665,7 @@ export async function rescheduleAppointment(
               employeeId,
             },
             conflictAccepted,
+            acceptedConflictKeys,
             conflictingCodes,
           },
         },
@@ -639,6 +699,7 @@ export async function rescheduleAppointment(
               fromEmployeeId: current.employeeId,
               toEmployeeId: employeeId,
               serviceOrderCode: current.serviceOrder.code,
+              cleared: employeeId === null && current.employeeId !== null,
             },
           },
           tx,
@@ -661,12 +722,13 @@ export async function rescheduleAppointment(
     if (error instanceof Error) {
       if (
         error.message === NOT_FOUND_MESSAGE ||
-        error.message === CONFLICT_MESSAGE ||
+        error.message.includes(CONFLICT_MESSAGE) ||
         error.message.includes("agendamento") ||
         error.message.includes("Colaborador") ||
         error.message.includes("cancelada") ||
         error.message.includes("inativo") ||
-        error.message.includes("remarcad")
+        error.message.includes("remarcad") ||
+        error.message.includes("Confirme novamente")
       ) {
         return fail(error.message);
       }

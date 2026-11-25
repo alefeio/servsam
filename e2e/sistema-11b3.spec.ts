@@ -217,15 +217,19 @@ test.describe("11B.3 agenda operacional real", () => {
 
     for (const view of ["day", "week", "month"] as const) {
       await page.goto(
-        `/sistema/agenda?view=${view}&data=${day}&status=scheduled&os=${encodeURIComponent(firstOsCode)}`,
+        `/sistema/agenda?view=${view}&data=${day}&status=scheduled&os=${encodeURIComponent(firstOsCode)}&layout=calendario`,
       );
-      await expect(page.getByRole("link", { name: firstOsCode })).toBeVisible({
-        timeout: 60_000,
-      });
       await expect(
-        page.getByRole("cell", { name: employeeA }),
-      ).toBeVisible();
+        page.getByRole("link", { name: new RegExp(firstOsCode) }).first(),
+      ).toBeVisible({ timeout: 60_000 });
     }
+    await page.goto(
+      `/sistema/agenda?view=week&data=${day}&status=scheduled&os=${encodeURIComponent(firstOsCode)}&layout=lista`,
+    );
+    await expect(page.getByRole("link", { name: firstOsCode })).toBeVisible({
+      timeout: 60_000,
+    });
+    await expect(page.getByRole("cell", { name: employeeA })).toBeVisible();
 
     await page.goto(engagementUrl);
     await page.getByRole("button", { name: "Emitir OS" }).click();
@@ -240,11 +244,11 @@ test.describe("11B.3 agenda operacional real", () => {
       .selectOption({ label: `${employeeA} · Técnica de campo` });
     await page.getByRole("button", { name: "Confirmar agendamento" }).click();
     await expect(
-      page.getByRole("alert").filter({
-        hasText:
-          "Este colaborador já possui outro serviço agendado neste horário.",
-      }),
+      page.getByText(
+        "Este colaborador já possui outro serviço agendado neste horário.",
+      ),
     ).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText(firstOsCode)).toBeVisible();
     await page.getByLabel("Confirme para salvar mesmo assim").check();
     await page.getByRole("button", { name: "Confirmar agendamento" }).click();
     await expect(
@@ -256,8 +260,13 @@ test.describe("11B.3 agenda operacional real", () => {
     await page.getByLabel("Novo término").fill(rescheduleEnd);
     await page.getByLabel("Motivo da remarcação").fill("Cliente remarcou E2E");
     await page.getByRole("button", { name: "Remarcar" }).click();
-    await expect(page.getByText("Cliente remarcou E2E")).toBeVisible({
+    await expect(page).toHaveURL(/\/sistema\/agenda\/[^/?#]+/, {
       timeout: 90_000,
+    });
+    await expect(page.getByText(/Agendado/)).toBeVisible();
+    await page.getByRole("link", { name: "Abrir OS" }).click();
+    await expect(page.getByText("Cliente remarcou E2E")).toBeVisible({
+      timeout: 60_000,
     });
     await expect(
       page.getByRole("definition").filter({ hasText: "Agendada" }),

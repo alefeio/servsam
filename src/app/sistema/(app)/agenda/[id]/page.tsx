@@ -157,7 +157,6 @@ export default async function AppointmentDetailPage({
           <CancelAppointmentForm
             appointmentId={appointment.id}
             serviceOrderId={appointment.serviceOrder.id}
-            redirectTo={`/sistema/ordens-servico/${appointment.serviceOrder.id}`}
           />
         </section>
       ) : null}

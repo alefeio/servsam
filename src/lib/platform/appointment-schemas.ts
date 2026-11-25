@@ -9,28 +9,30 @@ const datetimeLocal = z
     "Informe data e horário válidos.",
   );
 
+/**
+ * undefined = campo omitido (preservar na remarcação).
+ * null = "Sem atribuição" (remover).
+ * string = colaborador escolhido.
+ */
+const employeeAssignment = z
+  .union([z.string().trim(), z.null()])
+  .optional();
+
 export const createAppointmentSchema = z.object({
   serviceOrderId: z.string().trim().min(1, "Informe a ordem de serviço."),
   startsAtLocal: datetimeLocal,
   endsAtLocal: datetimeLocal,
-  employeeId: z
-    .string()
-    .trim()
-    .optional()
-    .transform((value) => (value ? value : undefined)),
+  employeeId: employeeAssignment,
   notes: optionalText(2000),
   acceptConflict: z.boolean().optional(),
+  acceptConflictKeys: z.string().trim().optional(),
 });
 
 export const rescheduleAppointmentSchema = z.object({
   appointmentId: z.string().trim().min(1, "Informe o agendamento."),
   startsAtLocal: datetimeLocal,
   endsAtLocal: datetimeLocal,
-  employeeId: z
-    .string()
-    .trim()
-    .optional()
-    .transform((value) => (value ? value : undefined)),
+  employeeId: employeeAssignment,
   reason: z
     .string()
     .trim()
@@ -38,6 +40,7 @@ export const rescheduleAppointmentSchema = z.object({
     .max(500),
   notes: optionalText(2000),
   acceptConflict: z.boolean().optional(),
+  acceptConflictKeys: z.string().trim().optional(),
 });
 
 export const cancelAppointmentSchema = z.object({

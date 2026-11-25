@@ -258,12 +258,10 @@ export default async function ServiceOrderDetailPage({
                     )}
                     defaultEmployeeId={active.employeeId}
                     defaultNotes={active.notes}
-                    redirectTo={`/sistema/ordens-servico/${order.id}`}
                   />
                   <CancelAppointmentForm
                     appointmentId={active.id}
                     serviceOrderId={order.id}
-                    redirectTo={`/sistema/ordens-servico/${order.id}`}
                   />
                 </>
               ) : null}
@@ -273,7 +271,6 @@ export default async function ServiceOrderDetailPage({
             <CreateAppointmentForm
               serviceOrderId={order.id}
               employees={employees}
-              redirectTo={`/sistema/ordens-servico/${order.id}`}
             />
           ) : (
             <p className="text-sm text-muted-foreground">
