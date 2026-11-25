@@ -1,0 +1,302 @@
+{
+  "ok": true,
+  "identity": {
+    "hostHash": "22e5c2dd2d93",
+    "instanceId": "0786bd682d75",
+    "organization": "servsam"
+  },
+  "users": [
+    {
+      "id": "6ff9b815-0fee-4931-a0df-35bf5985f1e8",
+      "email": "alexandrefpenha@gmail.com",
+      "name": "Alexandre Penha",
+      "isActive": true,
+      "roles": [
+        "DIRETORIA"
+      ]
+    },
+    {
+      "id": "b1ef0cde-ae76-49dc-ae8e-05dbb71af5fa",
+      "email": "diretoria@servsam.local",
+      "name": "Diretoria",
+      "isActive": true,
+      "roles": [
+        "DIRETORIA"
+      ]
+    }
+  ],
+  "qa": {
+    "customers": [
+      {
+        "id": "60e327ef-dce3-4a85-b580-85b933071298",
+        "legalName": "[HOMOL-QA-11B3] Cliente validação agenda",
+        "deletedAt": null,
+        "createdAt": "2026-11-25T15:07:19.543Z"
+      }
+    ],
+    "employees": [
+      {
+        "id": "d292604c-c4d7-4877-933b-20dd41349679",
+        "fullName": "[HOMOL-QA-11B3] Técnico de validação",
+        "jobTitle": "Técnico operacional de teste",
+        "isActive": true,
+        "deletedAt": null,
+        "createdAt": "2026-11-25T15:06:59.794Z"
+      }
+    ],
+    "proposals": [
+      {
+        "id": "2454550f-07c1-4f0d-aa7b-7ac7c76b31c6",
+        "code": "ORC-2026-0022",
+        "title": "[HOMOL-QA-11B3] Orçamento validação agenda",
+        "status": "accepted",
+        "createdAt": "2026-11-25T15:07:34.597Z"
+      }
+    ],
+    "serviceOrders": [
+      {
+        "id": "8296fbd4-1dfe-428b-aa15-0e7b6db7254d",
+        "code": "OS-2026-0002",
+        "status": "cancelled",
+        "description": "[HOMOL-QA-11B3] Dedetização de validação",
+        "createdAt": "2026-11-25T15:07:57.346Z"
+      }
+    ]
+  },
+  "appointments": [
+    {
+      "id": "75554bce-736a-45b9-aaf3-82b1abaa3fec",
+      "status": "cancelled",
+      "startsAt": "2026-11-27T15:00:00.000Z",
+      "endsAt": "2026-11-27T17:00:00.000Z",
+      "conflictAccepted": false,
+      "changeReason": "Testando",
+      "serviceOrderId": "c02e52da-f4c3-4d80-b869-9c6da0934905",
+      "employeeId": "00fe0157-895c-4510-92fa-d7c3bcd2faf3",
+      "deletedAt": null,
+      "os_code": "OS-2026-0001",
+      "employee_name": "Teste"
+    },
+    {
+      "id": "7dd6cfb8-84b6-43a4-8bdc-bb4640856428",
+      "status": "scheduled",
+      "startsAt": "2026-11-26T15:00:00.000Z",
+      "endsAt": "2026-11-27T17:00:00.000Z",
+      "conflictAccepted": false,
+      "changeReason": null,
+      "serviceOrderId": "c02e52da-f4c3-4d80-b869-9c6da0934905",
+      "employeeId": "00fe0157-895c-4510-92fa-d7c3bcd2faf3",
+      "deletedAt": null,
+      "os_code": "OS-2026-0001",
+      "employee_name": "Teste"
+    },
+    {
+      "id": "62211fa2-82cd-44b5-ba85-0cb1b3d64d5f",
+      "status": "cancelled",
+      "startsAt": "2026-11-27T15:00:00.000Z",
+      "endsAt": "2026-11-27T17:00:00.000Z",
+      "conflictAccepted": false,
+      "changeReason": "[HOMOL-QA-11B3] Cliente remarcou validação operacional",
+      "serviceOrderId": "8296fbd4-1dfe-428b-aa15-0e7b6db7254d",
+      "employeeId": "d292604c-c4d7-4877-933b-20dd41349679",
+      "deletedAt": null,
+      "os_code": "OS-2026-0002",
+      "employee_name": "[HOMOL-QA-11B3] Técnico de validação"
+    },
+    {
+      "id": "d635d7c5-410c-4117-83f2-236c341fdd0a",
+      "status": "cancelled",
+      "startsAt": "2026-11-28T20:00:00.000Z",
+      "endsAt": "2026-11-28T22:00:00.000Z",
+      "conflictAccepted": false,
+      "changeReason": "[HOMOL-QA-11B3] Encerramento do aceite operacional",
+      "serviceOrderId": "8296fbd4-1dfe-428b-aa15-0e7b6db7254d",
+      "employeeId": "d292604c-c4d7-4877-933b-20dd41349679",
+      "deletedAt": null,
+      "os_code": "OS-2026-0002",
+      "employee_name": "[HOMOL-QA-11B3] Técnico de validação"
+    }
+  ],
+  "recentAudits": [
+    {
+      "action": "APPOINTMENT_CANCELLED",
+      "entityType": "ServiceAppointment",
+      "entityId": "d635d7c5-410c-4117-83f2-236c341fdd0a",
+      "createdAt": "2026-11-25T15:09:17.009Z"
+    },
+    {
+      "action": "SERVICE_ORDER_STATUS_CHANGED",
+      "entityType": "ServiceOrder",
+      "entityId": "8296fbd4-1dfe-428b-aa15-0e7b6db7254d",
+      "createdAt": "2026-11-25T15:09:16.856Z"
+    },
+    {
+      "action": "APPOINTMENT_CANCELLED",
+      "entityType": "ServiceAppointment",
+      "entityId": "62211fa2-82cd-44b5-ba85-0cb1b3d64d5f",
+      "createdAt": "2026-11-25T15:08:33.842Z"
+    },
+    {
+      "action": "APPOINTMENT_RESCHEDULED",
+      "entityType": "ServiceAppointment",
+      "entityId": "d635d7c5-410c-4117-83f2-236c341fdd0a",
+      "createdAt": "2026-11-25T15:08:33.688Z"
+    },
+    {
+      "action": "APPOINTMENT_CREATED",
+      "entityType": "ServiceAppointment",
+      "entityId": "62211fa2-82cd-44b5-ba85-0cb1b3d64d5f",
+      "createdAt": "2026-11-25T15:08:05.311Z"
+    },
+    {
+      "action": "SERVICE_ORDER_STATUS_CHANGED",
+      "entityType": "ServiceOrder",
+      "entityId": "8296fbd4-1dfe-428b-aa15-0e7b6db7254d",
+      "createdAt": "2026-11-25T15:08:05.161Z"
+    },
+    {
+      "action": "ENGAGEMENT_CREATED",
+      "entityType": "Engagement",
+      "entityId": "ae4ad592-8976-4197-bd41-dc6b8fc847f4",
+      "createdAt": "2026-11-25T15:07:51.026Z"
+    },
+    {
+      "action": "PROPOSAL_STATUS_CHANGED",
+      "entityType": "Proposal",
+      "entityId": "2454550f-07c1-4f0d-aa7b-7ac7c76b31c6",
+      "createdAt": "2026-11-25T15:07:46.058Z"
+    },
+    {
+      "action": "PROPOSAL_STATUS_CHANGED",
+      "entityType": "Proposal",
+      "entityId": "2454550f-07c1-4f0d-aa7b-7ac7c76b31c6",
+      "createdAt": "2026-11-25T15:07:41.680Z"
+    },
+    {
+      "action": "PROPOSAL_CREATED",
+      "entityType": "Proposal",
+      "entityId": "2454550f-07c1-4f0d-aa7b-7ac7c76b31c6",
+      "createdAt": "2026-11-25T15:07:34.917Z"
+    },
+    {
+      "action": "CUSTOMER_CREATED",
+      "entityType": "Customer",
+      "entityId": "60e327ef-dce3-4a85-b580-85b933071298",
+      "createdAt": "2026-11-25T15:07:19.701Z"
+    },
+    {
+      "action": "EMPLOYEE_CREATED",
+      "entityType": "Employee",
+      "entityId": "d292604c-c4d7-4877-933b-20dd41349679",
+      "createdAt": "2026-11-25T15:06:59.948Z"
+    },
+    {
+      "action": "APPOINTMENT_CANCELLED",
+      "entityType": "ServiceAppointment",
+      "entityId": "75554bce-736a-45b9-aaf3-82b1abaa3fec",
+      "createdAt": "2026-11-25T14:51:08.044Z"
+    },
+    {
+      "action": "APPOINTMENT_RESCHEDULED",
+      "entityType": "ServiceAppointment",
+      "entityId": "7dd6cfb8-84b6-43a4-8bdc-bb4640856428",
+      "createdAt": "2026-11-25T14:51:08.033Z"
+    },
+    {
+      "action": "APPOINTMENT_CREATED",
+      "entityType": "ServiceAppointment",
+      "entityId": "75554bce-736a-45b9-aaf3-82b1abaa3fec",
+      "createdAt": "2026-11-25T14:50:23.893Z"
+    },
+    {
+      "action": "SERVICE_ORDER_STATUS_CHANGED",
+      "entityType": "ServiceOrder",
+      "entityId": "c02e52da-f4c3-4d80-b869-9c6da0934905",
+      "createdAt": "2026-11-25T14:50:23.878Z"
+    },
+    {
+      "action": "EMPLOYEE_CREATED",
+      "entityType": "Employee",
+      "entityId": "00fe0157-895c-4510-92fa-d7c3bcd2faf3",
+      "createdAt": "2026-11-25T14:49:28.396Z"
+    },
+    {
+      "action": "ENGAGEMENT_CREATED",
+      "entityType": "Engagement",
+      "entityId": "43e0f1ce-c102-4823-a915-40b55cf7aa1f",
+      "createdAt": "2026-11-24T00:22:51.854Z"
+    },
+    {
+      "action": "CUSTOMER_CREATED",
+      "entityType": "Customer",
+      "entityId": "4bf12fe8-2844-4ef8-94cb-b071dddb4bc9",
+      "createdAt": "2026-11-24T00:22:16.880Z"
+    },
+    {
+      "action": "ENGAGEMENT_CREATED",
+      "entityType": "Engagement",
+      "entityId": "07cba98f-5763-43aa-9afd-62848943e6e3",
+      "createdAt": "2026-11-24T00:21:12.550Z"
+    },
+    {
+      "action": "PROPOSAL_STATUS_CHANGED",
+      "entityType": "Proposal",
+      "entityId": "54d0da8b-fd76-40ea-a1bf-aca045f062fb",
+      "createdAt": "2026-11-24T00:21:04.702Z"
+    },
+    {
+      "action": "PROPOSAL_STATUS_CHANGED",
+      "entityType": "Proposal",
+      "entityId": "54d0da8b-fd76-40ea-a1bf-aca045f062fb",
+      "createdAt": "2026-11-24T00:20:57.039Z"
+    },
+    {
+      "action": "PROPOSAL_CREATED",
+      "entityType": "Proposal",
+      "entityId": "54d0da8b-fd76-40ea-a1bf-aca045f062fb",
+      "createdAt": "2026-11-24T00:20:43.126Z"
+    },
+    {
+      "action": "CUSTOMER_CREATED",
+      "entityType": "Customer",
+      "entityId": "b38efcc3-c513-4e9a-b81b-fabbfdbb5050",
+      "createdAt": "2026-11-24T00:20:23.922Z"
+    },
+    {
+      "action": "PROPOSAL_CREATED",
+      "entityType": "Proposal",
+      "entityId": "02a2f97f-310c-4a5a-880b-7ed79cfadfc0",
+      "createdAt": "2026-11-24T00:14:44.050Z"
+    },
+    {
+      "action": "CUSTOMER_CREATED",
+      "entityType": "Customer",
+      "entityId": "390593f4-fc21-4ec8-a1c3-28249ed7689a",
+      "createdAt": "2026-11-24T00:14:09.237Z"
+    },
+    {
+      "action": "CUSTOMER_CREATED",
+      "entityType": "Customer",
+      "entityId": "76d105c9-77fa-44ea-b1bd-7276f5e80873",
+      "createdAt": "2026-11-23T23:36:09.405Z"
+    },
+    {
+      "action": "PROPOSAL_CREATED",
+      "entityType": "Proposal",
+      "entityId": "5cc117f9-9423-49e8-b4a9-917d40016db4",
+      "createdAt": "2026-11-23T23:26:19.118Z"
+    },
+    {
+      "action": "CUSTOMER_CREATED",
+      "entityType": "Customer",
+      "entityId": "2c608f00-4915-4cb5-92db-6cf20f3c6ada",
+      "createdAt": "2026-11-23T23:25:41.890Z"
+    },
+    {
+      "action": "ENGAGEMENT_CREATED",
+      "entityType": "Engagement",
+      "entityId": "8f3ee440-4dcd-4945-97b1-00e097496de6",
+      "createdAt": "2026-11-23T23:23:01.433Z"
+    }
+  ]
+}

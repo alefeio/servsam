@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "phase": "homol-11b3-operational-ui",
+  "baseUrl": "http://127.0.0.1:3463",
+  "testerRole": "DIRETORIA",
+  "testerEmailHash": "b90393b46338",
+  "prefix": "[HOMOL-QA-11B3]",
+  "schedule": {
+    "day": "2026-11-27",
+    "rescheduleDay": "2026-11-28",
+    "startLocal": "2026-11-27T09:00",
+    "endLocal": "2026-11-27T11:00"
+  },
+  "ids": {
+    "customerId": "60e327ef-dce3-4a85-b580-85b933071298",
+    "proposalId": "2454550f-07c1-4f0d-aa7b-7ac7c76b31c6",
+    "engagementId": "ae4ad592-8976-4197-bd41-dc6b8fc847f4",
+    "serviceOrderId": "8296fbd4-1dfe-428b-aa15-0e7b6db7254d",
+    "serviceOrderCode": "OS-2026-0002",
+    "employeeId": "d292604c-c4d7-4877-933b-20dd41349679",
+    "appointmentId": null,
+    "appointmentRescheduledId": "d635d7c5-410c-4117-83f2-236c341fdd0a"
+  },
+  "screenshotsDir": "C:\\AleFeio\\Projetos\\AlexandreFeio\\Projetos\\Servsam\\Projetos\\site\\docs\\architecture\\v1\\artifacts-11b3-operational"
+}

@@ -1,0 +1,48 @@
+{
+  "ok": true,
+  "phase": "postaudit-11b3-homol-readonly",
+  "readOnly": true,
+  "identity": {
+    "hostHash": "22e5c2dd2d93",
+    "targetHostHash": "22e5c2dd2d93",
+    "instanceId": "0786bd682d75",
+    "expectedHostHash": "22e5c2dd2d93",
+    "expectedInstanceId": "0786bd682d75",
+    "organizationSlug": "servsam",
+    "hostHashMatches": true,
+    "instanceIdMatches": true
+  },
+  "migration": {
+    "migration_name": "20261124180000_employees_appointments",
+    "finished_at": "2026-11-25T03:32:56.753Z",
+    "rolled_back_at": null
+  },
+  "schema": {
+    "employee": true,
+    "serviceAppointment": true,
+    "enumServiceAppointmentStatus": true,
+    "foreignKeys": [
+      "employee_organizationId_fkey",
+      "service_appointment_employeeId_fkey",
+      "service_appointment_organizationId_fkey",
+      "service_appointment_serviceOrderId_fkey"
+    ],
+    "uniquePartialIndex": "service_appointment_active_service_order_unique"
+  },
+  "emptyDomainTables": {
+    "employees": 2,
+    "appointments": 4
+  },
+  "commercialCounts": {
+    "customers_total": 29,
+    "customers_active": 21,
+    "customers_archived": 8,
+    "proposals_active": 22,
+    "engagements_active": 8,
+    "purchase_orders_active": 4,
+    "service_orders_active": 2,
+    "users": 2,
+    "audit_logs": 366
+  },
+  "unfinishedMigrations": []
+}

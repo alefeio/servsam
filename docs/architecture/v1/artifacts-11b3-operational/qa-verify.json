@@ -1,0 +1,140 @@
+{
+  "ok": true,
+  "customer": {
+    "id": "60e327ef-dce3-4a85-b580-85b933071298",
+    "legalName": "[HOMOL-QA-11B3] Cliente validação agenda"
+  },
+  "employee": {
+    "id": "d292604c-c4d7-4877-933b-20dd41349679",
+    "fullName": "[HOMOL-QA-11B3] Técnico de validação",
+    "jobTitle": "Técnico operacional de teste",
+    "isActive": false
+  },
+  "serviceOrder": {
+    "id": "8296fbd4-1dfe-428b-aa15-0e7b6db7254d",
+    "code": "OS-2026-0002",
+    "status": "cancelled",
+    "description": "[HOMOL-QA-11B3] Dedetização de validação"
+  },
+  "appointments": [
+    {
+      "id": "62211fa2-82cd-44b5-ba85-0cb1b3d64d5f",
+      "status": "cancelled",
+      "startsAt": "2026-11-27T15:00:00.000Z",
+      "endsAt": "2026-11-27T17:00:00.000Z",
+      "changeReason": "[HOMOL-QA-11B3] Cliente remarcou validação operacional",
+      "conflictAccepted": false,
+      "createdAt": "2026-11-25T15:08:04.847Z",
+      "cancelledAt": "2026-11-25T15:08:31.898Z"
+    },
+    {
+      "id": "d635d7c5-410c-4117-83f2-236c341fdd0a",
+      "status": "cancelled",
+      "startsAt": "2026-11-28T20:00:00.000Z",
+      "endsAt": "2026-11-28T22:00:00.000Z",
+      "changeReason": "[HOMOL-QA-11B3] Encerramento do aceite operacional",
+      "conflictAccepted": false,
+      "createdAt": "2026-11-25T15:08:33.283Z",
+      "cancelledAt": "2026-11-25T15:09:16.004Z"
+    }
+  ],
+  "activeAppointments": 0,
+  "audits": [
+    {
+      "action": "EMPLOYEE_CREATED",
+      "entityType": "Employee",
+      "entityId": "d292604c-c4d7-4877-933b-20dd41349679",
+      "createdAt": "2026-11-25T15:06:59.948Z"
+    },
+    {
+      "action": "CUSTOMER_CREATED",
+      "entityType": "Customer",
+      "entityId": "60e327ef-dce3-4a85-b580-85b933071298",
+      "createdAt": "2026-11-25T15:07:19.701Z"
+    },
+    {
+      "action": "PROPOSAL_CREATED",
+      "entityType": "Proposal",
+      "entityId": "2454550f-07c1-4f0d-aa7b-7ac7c76b31c6",
+      "createdAt": "2026-11-25T15:07:34.917Z"
+    },
+    {
+      "action": "PROPOSAL_STATUS_CHANGED",
+      "entityType": "Proposal",
+      "entityId": "2454550f-07c1-4f0d-aa7b-7ac7c76b31c6",
+      "createdAt": "2026-11-25T15:07:41.680Z"
+    },
+    {
+      "action": "PROPOSAL_STATUS_CHANGED",
+      "entityType": "Proposal",
+      "entityId": "2454550f-07c1-4f0d-aa7b-7ac7c76b31c6",
+      "createdAt": "2026-11-25T15:07:46.058Z"
+    },
+    {
+      "action": "ENGAGEMENT_CREATED",
+      "entityType": "Engagement",
+      "entityId": "ae4ad592-8976-4197-bd41-dc6b8fc847f4",
+      "createdAt": "2026-11-25T15:07:51.026Z"
+    },
+    {
+      "action": "SERVICE_ORDER_CREATED",
+      "entityType": "ServiceOrder",
+      "entityId": "8296fbd4-1dfe-428b-aa15-0e7b6db7254d",
+      "createdAt": "2026-11-25T15:07:57.501Z"
+    },
+    {
+      "action": "SERVICE_ORDER_STATUS_CHANGED",
+      "entityType": "ServiceOrder",
+      "entityId": "8296fbd4-1dfe-428b-aa15-0e7b6db7254d",
+      "createdAt": "2026-11-25T15:08:05.161Z"
+    },
+    {
+      "action": "APPOINTMENT_CREATED",
+      "entityType": "ServiceAppointment",
+      "entityId": "62211fa2-82cd-44b5-ba85-0cb1b3d64d5f",
+      "createdAt": "2026-11-25T15:08:05.311Z"
+    },
+    {
+      "action": "APPOINTMENT_RESCHEDULED",
+      "entityType": "ServiceAppointment",
+      "entityId": "d635d7c5-410c-4117-83f2-236c341fdd0a",
+      "createdAt": "2026-11-25T15:08:33.688Z"
+    },
+    {
+      "action": "APPOINTMENT_CANCELLED",
+      "entityType": "ServiceAppointment",
+      "entityId": "62211fa2-82cd-44b5-ba85-0cb1b3d64d5f",
+      "createdAt": "2026-11-25T15:08:33.842Z"
+    },
+    {
+      "action": "SERVICE_ORDER_STATUS_CHANGED",
+      "entityType": "ServiceOrder",
+      "entityId": "8296fbd4-1dfe-428b-aa15-0e7b6db7254d",
+      "createdAt": "2026-11-25T15:09:16.856Z"
+    },
+    {
+      "action": "APPOINTMENT_CANCELLED",
+      "entityType": "ServiceAppointment",
+      "entityId": "d635d7c5-410c-4117-83f2-236c341fdd0a",
+      "createdAt": "2026-11-25T15:09:17.009Z"
+    },
+    {
+      "action": "SERVICE_ORDER_CANCELLED",
+      "entityType": "ServiceOrder",
+      "entityId": "8296fbd4-1dfe-428b-aa15-0e7b6db7254d",
+      "createdAt": "2026-11-25T15:09:23.309Z"
+    },
+    {
+      "action": "EMPLOYEE_UPDATED",
+      "entityType": "Employee",
+      "entityId": "d292604c-c4d7-4877-933b-20dd41349679",
+      "createdAt": "2026-11-25T15:11:22.462Z"
+    }
+  ],
+  "adminStillMissingEmployeeManage": true,
+  "financeTables": {
+    "payment": null,
+    "invoice": null,
+    "finance_entry": null
+  }
+}
