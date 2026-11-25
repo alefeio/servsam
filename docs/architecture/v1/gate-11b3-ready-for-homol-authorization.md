@@ -1,8 +1,9 @@
 # 11B.3 FINAL QA PASS — READY FOR HOMOL AUTHORIZATION
 
 **Branch:** `fix/11b-3-acceptance`  
+**SHA:** `7f33b25f55f644842c3ccd8e1feaa7d6afe6ab01`  
 **Migration aditiva:** `prisma/migrations/20261124180000_employees_appointments`  
-**Preview:** (atualizar após publish do SHA)
+**Preview:** https://servsam-git-fix-11b-3-acceptance-alefeios-projects.vercel.app
 
 ## Correções finais (antes da autorização HOMOL)
 
