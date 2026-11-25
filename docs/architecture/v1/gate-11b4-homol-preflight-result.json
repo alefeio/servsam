@@ -1,0 +1,70 @@
+{
+  "phase": "preflight-11b4-homol",
+  "readOnly": true,
+  "databaseEnv": "preview",
+  "targetHostHash": "22e5c2dd2d93",
+  "identity": {
+    "database": "postgres",
+    "hostHash": "22e5c2dd2d93",
+    "hostHashMatches": true,
+    "instanceId": "0786bd682d75",
+    "instanceIdMatches": true,
+    "organization": {
+      "id": "5cf87c1f-ace8-4e5d-bdc8-04dd3f1eaad4",
+      "name": "SERVSAM",
+      "slug": "servsam"
+    }
+  },
+  "migrations": {
+    "totalApplied": 6,
+    "requiredPresent": true,
+    "migration11b3Recorded": true,
+    "migration11b4Recorded": false,
+    "migration11b4Pending": true,
+    "pending": [
+      "20261125120000_finance_f0"
+    ]
+  },
+  "tables": {
+    "service_appointment": true,
+    "billing_request": false,
+    "receipt_entry": false
+  },
+  "commercialCounts": {
+    "customers": 21,
+    "proposals": 22,
+    "engagements": 8,
+    "serviceOrders": 2,
+    "users": 2,
+    "auditLogs": 368,
+    "billingRequests": null,
+    "receiptEntries": null
+  },
+  "grants": {
+    "byRole": {
+      "ADMINISTRATIVO": [
+        "contract.manage",
+        "contract.view"
+      ],
+      "DIRETORIA": [
+        "contract.manage",
+        "contract.view",
+        "finance.manage",
+        "finance.view"
+      ],
+      "FINANCEIRO": [
+        "contract.manage",
+        "contract.view",
+        "finance.manage",
+        "finance.view"
+      ],
+      "GERENCIA": [
+        "contract.manage",
+        "contract.view"
+      ]
+    },
+    "note": "Não executar seed/grants nesta sprint. finance.* já previsto no catálogo."
+  },
+  "deployAuthorized": false,
+  "note": "Somente leitura. Não migrar HOMOL nesta entrega."
+}

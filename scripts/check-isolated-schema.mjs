@@ -17,7 +17,9 @@ try {
     SELECT
       to_regclass('public.service_order') AS service_order,
       to_regclass('public.employee') AS employee,
-      to_regclass('public.service_appointment') AS service_appointment
+      to_regclass('public.service_appointment') AS service_appointment,
+      to_regclass('public.billing_request') AS billing_request,
+      to_regclass('public.receipt_entry') AS receipt_entry
   `);
   console.log(
     JSON.stringify(
@@ -26,6 +28,8 @@ try {
         serviceOrderPresent: Boolean(tables.rows[0]?.service_order),
         employeePresent: Boolean(tables.rows[0]?.employee),
         appointmentPresent: Boolean(tables.rows[0]?.service_appointment),
+        billingRequestPresent: Boolean(tables.rows[0]?.billing_request),
+        receiptEntryPresent: Boolean(tables.rows[0]?.receipt_entry),
       },
       null,
       2,

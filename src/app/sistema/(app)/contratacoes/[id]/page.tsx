@@ -2,10 +2,24 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  BILLING_REQUEST_STATUS_LABELS,
   ENGAGEMENT_ORIGIN_LABELS,
   ENGAGEMENT_STATUS_LABELS,
+  RECEIPT_KIND_LABELS,
+  RECEIPT_STATUS_LABELS,
   SERVICE_ORDER_STATUS_LABELS,
 } from "@/data/platform/labels";
+import {
+  CancelBillingForm,
+  CancelPendingReceiptForm,
+  ConfirmReceiptForm,
+  FinanceStatusBadge,
+  InformReceiptForm,
+  ProcessBillingForm,
+  RejectReceiptForm,
+  RequestBillingForm,
+  ReverseReceiptForm,
+} from "@/features/platform/finance-forms";
 import {
   LinkButton,
   NoAccess,
@@ -21,6 +35,16 @@ import {
   getEngagementDetail,
   getEngagementHistory,
 } from "@/lib/platform/engagements";
+import {
+  classifyFinanceQueryError,
+  logFinanceQueryFailure,
+  type FinanceModuleState,
+} from "@/lib/platform/finance-availability";
+import {
+  getEngagementFinanceSummary,
+  listBillingRequestsForEngagement,
+  listReceiptsForEngagement,
+} from "@/lib/platform/finance";
 import { formatCents } from "@/lib/platform/money";
 import {
   classifyServiceOrderQueryError,
@@ -88,6 +112,36 @@ export default async function EngagementDetailPage({
   const cancelledOrders = serviceOrders.filter(
     (order) => order.status === "cancelled",
   );
+
+  let financeModule: FinanceModuleState = { status: "ready" };
+  let financeSummary: Awaited<
+    ReturnType<typeof getEngagementFinanceSummary>
+  > = null;
+  let billingRequests: Awaited<
+    ReturnType<typeof listBillingRequestsForEngagement>
+  > = [];
+  let receipts: Awaited<ReturnType<typeof listReceiptsForEngagement>> = [];
+
+  if (can("contract.view")) {
+    try {
+      financeSummary = await getEngagementFinanceSummary(actor, engagement.id);
+      billingRequests = await listBillingRequestsForEngagement(
+        actor,
+        engagement.id,
+      );
+      receipts = await listReceiptsForEngagement(actor, engagement.id);
+    } catch (error) {
+      logFinanceQueryFailure("engagement-detail", error);
+      financeModule = classifyFinanceQueryError(error);
+      financeSummary = null;
+      billingRequests = [];
+      receipts = [];
+    }
+  }
+
+  const canRequestFinance = can("contract.manage");
+  const canManageFinance = can("finance.manage");
+  const financeReady = financeModule.status === "ready";
 
   return (
     <section className="mx-auto max-w-4xl space-y-8">
@@ -321,6 +375,182 @@ export default async function EngagementDetailPage({
           </p>
         </section>
       ) : null}
+
+      <section className="space-y-4" aria-labelledby="financeiro-f0">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 id="financeiro-f0" className="text-lg font-semibold text-navy">
+              Financeiro (FIN-F0)
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Solicitação fiscal comercial e recebimentos confirmados
+              manualmente pelo Financeiro. Não é conciliação bancária nem
+              emissão de NF-e.
+            </p>
+          </div>
+          {can("finance.view") ? (
+            <LinkButton href="/sistema/financeiro" variant="outline">
+              Painel financeiro
+            </LinkButton>
+          ) : null}
+        </div>
+
+        {financeModule.status === "unavailable" ? (
+          <p
+            role="status"
+            className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+          >
+            {financeModule.message}
+          </p>
+        ) : null}
+
+        {financeReady && financeSummary ? (
+          <dl className="grid gap-3 rounded-xl border border-border bg-background p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <dt className="text-muted-foreground">Contratado</dt>
+              <dd className="mt-1 font-medium">
+                {formatCents(financeSummary.contractedCents)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Confirmado pelo Financeiro</dt>
+              <dd className="mt-1 font-medium">
+                {formatCents(financeSummary.confirmedCents)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Aguardando confirmação</dt>
+              <dd className="mt-1 font-medium">
+                {formatCents(financeSummary.pendingCents)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Saldo de referência</dt>
+              <dd className="mt-1 font-medium">
+                {formatCents(financeSummary.referenceBalanceCents)}
+              </dd>
+            </div>
+          </dl>
+        ) : null}
+
+        {financeReady && canRequestFinance ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <RequestBillingForm
+              engagementId={engagement.id}
+              defaultReferenceReais={(engagement.totalCents / 100).toFixed(2).replace(".", ",")}
+            />
+            <InformReceiptForm engagementId={engagement.id} />
+          </div>
+        ) : null}
+
+        {financeReady ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-3 rounded-xl border border-border bg-background p-4">
+              <h3 className="text-sm font-semibold">Solicitações de nota</h3>
+              {billingRequests.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhuma solicitação.</p>
+              ) : (
+                <ul className="space-y-3 text-sm">
+                  {billingRequests.map((row) => (
+                    <li key={row.id} className="rounded-lg border border-border/70 p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-medium">{row.description}</span>
+                        <FinanceStatusBadge kind="billing" status={row.status} />
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {formatDateTimeBr(row.requestedAt)}
+                        {row.referenceAmountCents != null
+                          ? ` · ref. ${formatCents(row.referenceAmountCents)}`
+                          : ""}
+                        {row.invoiceIssuedExternally
+                          ? ` · doc. externo: ${row.externalDocumentRef ?? "—"}`
+                          : ""}
+                      </p>
+                      {canManageFinance &&
+                      (row.status === "requested" ||
+                        row.status === "under_review") ? (
+                        <ProcessBillingForm
+                          billingRequestId={row.id}
+                          engagementId={engagement.id}
+                        />
+                      ) : null}
+                      {canRequestFinance &&
+                      (row.status === "requested" ||
+                        row.status === "under_review") ? (
+                        <CancelBillingForm
+                          billingRequestId={row.id}
+                          engagementId={engagement.id}
+                        />
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="space-y-3 rounded-xl border border-border bg-background p-4">
+              <h3 className="text-sm font-semibold">Recebimentos</h3>
+              {receipts.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhum lançamento.</p>
+              ) : (
+                <ul className="space-y-3 text-sm">
+                  {receipts.map((row) => (
+                    <li key={row.id} className="rounded-lg border border-border/70 p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-medium">
+                          {RECEIPT_KIND_LABELS[row.kind]} ·{" "}
+                          {formatCents(row.amountCents)}
+                        </span>
+                        <FinanceStatusBadge kind="receipt" status={row.status} />
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Ref. {formatDateTimeBr(row.referenceDate)} ·{" "}
+                        {RECEIPT_STATUS_LABELS[row.status]}
+                        {row.confirmedManually
+                          ? " · registrado pelo Financeiro"
+                          : ""}
+                      </p>
+                      {canManageFinance && row.status === "pending" ? (
+                        <>
+                          <ConfirmReceiptForm
+                            receiptEntryId={row.id}
+                            engagementId={engagement.id}
+                            amountCents={row.amountCents}
+                          />
+                          <RejectReceiptForm
+                            receiptEntryId={row.id}
+                            engagementId={engagement.id}
+                          />
+                        </>
+                      ) : null}
+                      {row.status === "pending" && canRequestFinance ? (
+                        <CancelPendingReceiptForm
+                          receiptEntryId={row.id}
+                          engagementId={engagement.id}
+                        />
+                      ) : null}
+                      {canManageFinance && row.status === "confirmed" ? (
+                        <ReverseReceiptForm
+                          receiptEntryId={row.id}
+                          engagementId={engagement.id}
+                        />
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        {financeReady ? (
+          <p className="text-xs text-muted-foreground">
+            Situações:{" "}
+            {Object.values(BILLING_REQUEST_STATUS_LABELS).join(" · ")}. Emissão
+            de OS permanece independente de sinal obrigatório.
+          </p>
+        ) : null}
+      </section>
 
       {history.length > 0 ? (
         <section className="space-y-3" aria-labelledby="historico">

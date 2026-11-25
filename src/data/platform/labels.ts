@@ -49,6 +49,40 @@ export const APPOINTMENT_STATUS_LABELS = {
   cancelled: "Cancelado",
 } as const;
 
+export const BILLING_REQUEST_STATUS_LABELS = {
+  requested: "Solicitada",
+  under_review: "Em análise",
+  processed: "Processada",
+  cancelled: "Cancelada",
+} as const;
+
+export const BILLING_REQUEST_TYPE_LABELS = {
+  invoice_provision: "Providências de nota fiscal",
+} as const;
+
+export const RECEIPT_KIND_LABELS = {
+  signal: "Sinal",
+  installment: "Parcela / recebimento",
+  other: "Outro recebimento",
+} as const;
+
+export const RECEIPT_STATUS_LABELS = {
+  pending: "Aguardando confirmação",
+  confirmed: "Confirmado pelo Financeiro",
+  rejected: "Rejeitado",
+  cancelled: "Cancelado",
+  reversed: "Revertido",
+} as const;
+
+export const RECEIPT_PAYMENT_METHOD_LABELS = {
+  pix: "PIX",
+  transfer: "Transferência",
+  cash: "Dinheiro",
+  check: "Cheque",
+  card: "Cartão",
+  other: "Outro",
+} as const;
+
 export const PLATFORM_NAV = [
   {
     href: "/sistema",
@@ -89,6 +123,11 @@ export const PLATFORM_NAV = [
     href: "/sistema/colaboradores",
     label: "Colaboradores",
     anyOf: ["employee.view"],
+  },
+  {
+    href: "/sistema/financeiro",
+    label: "Financeiro",
+    anyOf: ["finance.view", "finance.manage"],
   },
   {
     href: "/sistema/configuracoes/usuarios",

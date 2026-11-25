@@ -92,6 +92,7 @@ if (mode === "integration" || mode === "all") {
       "run",
       "src/lib/platform/service-orders.integration.test.ts",
       "src/lib/platform/appointments.integration.test.ts",
+      "src/lib/platform/finance.integration.test.ts",
     ],
     env,
   );
@@ -105,6 +106,7 @@ if (mode === "e2e" || mode === "all") {
       "test",
       "e2e/sistema-11b2.spec.ts",
       "e2e/sistema-11b3.spec.ts",
+      "e2e/sistema-11b4.spec.ts",
       "--project=chromium",
     ],
     env,
@@ -117,6 +119,6 @@ console.log(
     database: identity.database,
     hostHash: identity.hostHash,
     instanceId: identity.instanceId,
-    migration11b3AppliedOnDisposable: true,
+    migration11b4AppliedOnDisposable: true,
   }),
 );

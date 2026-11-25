@@ -30,6 +30,8 @@ model Organization {
   serviceOrders            ServiceOrder[]
   employees                Employee[]
   serviceAppointments      ServiceAppointment[]
+  billingRequests          BillingRequest[]
+  receiptEntries           ReceiptEntry[]
 
   @@map("organization")
 }
@@ -203,6 +205,8 @@ model Customer {
   receivedPurchaseOrders ReceivedPurchaseOrder[]
   engagements            Engagement[]
   serviceOrders          ServiceOrder[]
+  billingRequests        BillingRequest[]
+  receiptEntries         ReceiptEntry[]
 
   @@index([organizationId, deletedAt])
   @@index([organizationId, document])
@@ -429,6 +433,8 @@ model Engagement {
   updatedAt       DateTime               @updatedAt
   items           EngagementItem[]
   serviceOrders   ServiceOrder[]
+  billingRequests BillingRequest[]
+  receiptEntries  ReceiptEntry[]
 
   @@unique([organizationId, code])
   @@index([organizationId, status, deletedAt])
@@ -569,4 +575,123 @@ model ServiceAppointment {
   @@index([serviceOrderId, status])
   @@index([organizationId, customerId])
   @@map("service_appointment")
+}
+
+/// Sprint 11B.4 FIN-F0 — Solicitação comercial de providências fiscais (não emite NF-e).
+enum BillingRequestStatus {
+  requested
+  under_review
+  processed
+  cancelled
+}
+
+enum BillingRequestType {
+  invoice_provision
+}
+
+model BillingRequest {
+  id                       String               @id
+  organizationId           String
+  organization             Organization         @relation(fields: [organizationId], references: [id])
+  engagementId             String
+  engagement               Engagement           @relation(fields: [engagementId], references: [id])
+  customerId               String
+  customer                 Customer             @relation(fields: [customerId], references: [id])
+  requestType              BillingRequestType   @default(invoice_provision)
+  description              String
+  notes                    String?
+  /// Valor de referência opcional em centavos (não é receita confirmada).
+  referenceAmountCents     Int?
+  status                   BillingRequestStatus @default(requested)
+  /// True somente quando a nota foi emitida fora do sistema e registrada manualmente.
+  invoiceIssuedExternally  Boolean              @default(false)
+  externalDocumentRef      String?
+  requestedById            String?
+  requestedAt              DateTime
+  processedById            String?
+  processedAt              DateTime?
+  cancelledById            String?
+  cancelledAt              DateTime?
+  cancellationReason       String?
+  /// Protege reenvio de formulário.
+  idempotencyKey           String?
+  createdById              String?
+  updatedById              String?
+  deletedAt                DateTime?
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
+
+  @@index([organizationId, status, deletedAt])
+  @@index([organizationId, engagementId])
+  @@index([organizationId, customerId])
+  @@map("billing_request")
+}
+
+/// Sprint 11B.4 FIN-F0 — Recebimento informado pelo Comercial e confirmado pelo Financeiro.
+enum ReceiptKind {
+  signal
+  installment
+  other
+}
+
+enum ReceiptStatus {
+  pending
+  confirmed
+  rejected
+  cancelled
+  reversed
+}
+
+enum ReceiptPaymentMethod {
+  pix
+  transfer
+  cash
+  check
+  card
+  other
+}
+
+model ReceiptEntry {
+  id                 String               @id
+  organizationId     String
+  organization       Organization         @relation(fields: [organizationId], references: [id])
+  engagementId       String
+  engagement         Engagement           @relation(fields: [engagementId], references: [id])
+  customerId         String
+  customer           Customer             @relation(fields: [customerId], references: [id])
+  kind               ReceiptKind
+  amountCents        Int
+  referenceDate      DateTime
+  status             ReceiptStatus        @default(pending)
+  paymentMethod      ReceiptPaymentMethod?
+  /// Referência textual de comprovante — sem dados bancários sensíveis.
+  proofReference     String?
+  notes              String?
+  requestedById      String?
+  requestedAt        DateTime
+  confirmedById      String?
+  confirmedAt        DateTime?
+  /// Confirmação registrada manualmente pelo Financeiro (não é conciliação bancária).
+  confirmedManually  Boolean              @default(false)
+  rejectedById       String?
+  rejectedAt         DateTime?
+  rejectionReason    String?
+  cancelledById      String?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  reversedById       String?
+  reversedAt         DateTime?
+  reversalReason     String?
+  idempotencyKey     String?
+  createdById        String?
+  updatedById        String?
+  deletedAt          DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@index([organizationId, status, deletedAt])
+  @@index([organizationId, engagementId, status])
+  @@index([organizationId, customerId])
+  @@index([organizationId, referenceDate])
+  @@map("receipt_entry")
 }

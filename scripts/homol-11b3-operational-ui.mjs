@@ -9,8 +9,6 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { chromium } from "playwright";
 import { config as loadEnv } from "dotenv";
-import { parseEnvFile } from "./lib/homol-env.mjs";
-
 loadEnv({ path: ".env.local" });
 
 const BASE = process.env.HOMOL_QA_BASE_URL || "http://127.0.0.1:3463";
