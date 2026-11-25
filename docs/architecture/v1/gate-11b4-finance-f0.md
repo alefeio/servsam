@@ -3,7 +3,7 @@
 **Status:** READY FOR REVIEW  
 **Branch:** `feature/11b-4-finance-f0`  
 **Base:** `fix/11b-3-acceptance` @ `d2aa06cc4b5d0735ae98b4213ab3169defd54fea`  
-**SHA funcional:** (preencher após commit de publicação)
+**SHA funcional:** `f430c4b90b23239926e309eb6e3b94b56be6750d`
 
 ## Migration e modelos
 
