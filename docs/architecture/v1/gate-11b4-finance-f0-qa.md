@@ -3,8 +3,8 @@
 **Status:** READY FOR HOMOL AUTHORIZATION  
 **Branch:** `fix/11b-4-finance-qa`  
 **Base auditada:** `feature/11b-4-finance-f0` @ `5c2e5f5dff90f270baa505582e058b6753de8bcb`  
-**SHA funcional:** (preencher após commit)  
-**Preview:** https://servsam-git-fix-11b-4-finance-qa-alefeios-projects.vercel.app
+**SHA funcional:** `8f6d8bd9da7e376d4866237750be21ccde3cdfe2`  
+**Preview protegido:** https://servsam-git-fix-11b-4-finance-qa-alefeios-projects.vercel.app
 
 ## Problemas corrigidos
 
