@@ -3,8 +3,8 @@
 **Status:** READY FOR HOMOL AUTHORIZATION  
 **Branch:** `fix/11b-4-finance-qa`  
 **HEAD base:** `0767c281bc1e38d303e4d6edea51f18270b9854d`  
-**SHA funcional:** (após commit)  
-**Preview:** https://servsam-git-fix-11b-4-finance-qa-alefeios-projects.vercel.app
+**SHA funcional:** `0537f9735a8ae9dacfce8cfec8903983c9c072a0`  
+**Preview protegido:** https://servsam-git-fix-11b-4-finance-qa-alefeios-projects.vercel.app — READY
 
 ## Pendências corrigidas
 
@@ -40,11 +40,12 @@ Probe da CLI: hostHash + database + instanceId físicos (`print-migration-url-id
 |------|-----------|
 | lint | PASS |
 | typecheck | PASS |
-| unitários | PASS — ver contagem no commit |
-| integração | PASS (idempotência conflito, concorrência, painel 30/11) |
-| E2E | PASS |
+| unitários | PASS — **179** passed / **30** skipped |
+| integração | PASS — **4** (idempotência conflito, concorrência, painel 30/11) |
+| E2E | PASS — **4** |
 | build | PASS |
 | Preflight HOMOL RO | PASS (duas migrations pendentes; tabelas ausentes) |
+| Migrate plan RO | PASS (`evaluation.ok`, deploy não executado) |
 
 ## Testes skipped
 
