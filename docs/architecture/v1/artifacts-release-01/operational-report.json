@@ -1,0 +1,89 @@
+{
+  "ok": true,
+  "phase": "release-01-operational-ui",
+  "environment": "local-ui-homol",
+  "baseUrl": "http://127.0.0.1:3463",
+  "prefix": "[HOMOL-QA-11B4]",
+  "actorRoleExpected": "DIRETORIA",
+  "actorEmailDomain": "servsam.local",
+  "ids": {
+    "customerId": "35c1516b-a5c3-41f2-8163-4f0ef3c05f2b",
+    "customerIdHash": "cb6fbe167ff0",
+    "proposalId": "97ec34ba-fd9e-4713-baed-e42797113118",
+    "proposalIdHash": "689b58b8b642",
+    "engagementId": "99f6bf74-83e9-486a-a97c-63bfe15afd0b",
+    "engagementIdHash": "a074b7216eaa"
+  },
+  "evidence": {
+    "beforeConfirm": {
+      "contracted": null,
+      "confirmed": null,
+      "pending": null,
+      "balance": null,
+      "rawSnippet": "Financeiro (FIN-F0)\n\nSolicitação fiscal comercial e recebimentos confirmados manualmente pelo Financeiro. Não é conciliação bancária nem emissão de NF-e.\n\nPainel financeiro"
+    },
+    "afterConfirm": {
+      "contracted": null,
+      "confirmed": null,
+      "pending": null,
+      "balance": null,
+      "rawSnippet": "Financeiro (FIN-F0)\n\nSolicitação fiscal comercial e recebimentos confirmados manualmente pelo Financeiro. Não é conciliação bancária nem emissão de NF-e.\n\nPainel financeiro"
+    },
+    "afterReverse": {
+      "contracted": null,
+      "confirmed": null,
+      "pending": null,
+      "balance": null,
+      "rawSnippet": "Financeiro (FIN-F0)\n\nSolicitação fiscal comercial e recebimentos confirmados manualmente pelo Financeiro. Não é conciliação bancária nem emissão de NF-e.\n\nPainel financeiro"
+    },
+    "integrity": {
+      "overBalanceRejected": true,
+      "confirmOverRequestedUiBlocked": true,
+      "diffPreviewOk": true
+    },
+    "navModules": [
+      {
+        "name": "Clientes",
+        "url": "http://127.0.0.1:3463/sistema/clientes",
+        "ok": true
+      },
+      {
+        "name": "Orçamentos",
+        "url": "http://127.0.0.1:3463/sistema/clientes",
+        "ok": true
+      },
+      {
+        "name": "Contratações",
+        "url": "http://127.0.0.1:3463/sistema/clientes",
+        "ok": true
+      },
+      {
+        "name": "Ordens de compra",
+        "url": "http://127.0.0.1:3463/sistema/clientes",
+        "ok": true
+      },
+      {
+        "name": "Ordens de serviço",
+        "url": "http://127.0.0.1:3463/sistema/clientes",
+        "ok": true
+      },
+      {
+        "name": "Colaboradores",
+        "url": "http://127.0.0.1:3463/sistema/clientes",
+        "ok": true
+      },
+      {
+        "name": "Agenda",
+        "url": "http://127.0.0.1:3463/sistema/clientes",
+        "ok": true
+      },
+      {
+        "name": "Financeiro",
+        "url": "http://127.0.0.1:3463/sistema/clientes",
+        "ok": true
+      }
+    ],
+    "hostedPreview": "not_in_this_script"
+  },
+  "capturedAt": "2026-11-26T21:46:29.261Z"
+}

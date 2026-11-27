@@ -1,0 +1,512 @@
+{
+  "phase": "release-01-inventory-ro",
+  "readOnly": true,
+  "capturedAt": "2026-11-26T21:27:24.601Z",
+  "identity": {
+    "hostHash": "22e5c2dd2d93",
+    "hostHashMatches": true,
+    "database": "postgres",
+    "instanceId": "0786bd682d75",
+    "instanceIdMatches": true
+  },
+  "migrations": {
+    "total": 8,
+    "pending": [],
+    "failed": [],
+    "applied": [
+      "20261022140103_platform_foundation",
+      "20261118160000_customers_proposals",
+      "20261118193000_customer_document_active_unique",
+      "20261123140000_engagements_purchase_orders",
+      "20261124010000_service_orders",
+      "20261124180000_employees_appointments",
+      "20261125120000_finance_f0",
+      "20261125180000_finance_f0_requested_amount"
+    ],
+    "allFinished": true
+  },
+  "tables": {
+    "billing_request": true,
+    "receipt_entry": true,
+    "service_order": true,
+    "service_appointment": true,
+    "requestedAmountOk": true,
+    "confirmedAtIdx": true
+  },
+  "counts": {
+    "customers_total": 29,
+    "customers_active": 21,
+    "customers_archived": 8,
+    "proposals_active": 22,
+    "engagements_active": 8,
+    "purchase_orders_active": 4,
+    "service_orders_active": 2,
+    "employees_active": 2,
+    "appointments_active": 4,
+    "users_total": 2,
+    "audit_logs_total": 369,
+    "billing_requests": 0,
+    "receipt_entries": 0
+  },
+  "users": [
+    {
+      "id": "6ff9b815-0fee-4931-a0df-35bf5985f1e8",
+      "emailDomain": "gmail.com",
+      "name": "[redacted-operator]",
+      "isActive": true,
+      "roles": [
+        "DIRETORIA"
+      ]
+    },
+    {
+      "id": "b1ef0cde-ae76-49dc-ae8e-05dbb71af5fa",
+      "emailDomain": "servsam.local",
+      "name": "Diretoria",
+      "isActive": true,
+      "roles": [
+        "DIRETORIA"
+      ]
+    }
+  ],
+  "grants": {
+    "byRole": {
+      "ADMINISTRATIVO": [
+        "certificate.create",
+        "certificate.issue",
+        "certificate.view",
+        "contract.manage",
+        "contract.view",
+        "customer.create",
+        "customer.update",
+        "customer.view",
+        "dashboard.view",
+        "document.view",
+        "employee.view",
+        "proposal.approve",
+        "proposal.create",
+        "proposal.send",
+        "proposal.update",
+        "proposal.view",
+        "schedule.create",
+        "schedule.update",
+        "schedule.view",
+        "service_order.create",
+        "service_order.execute",
+        "service_order.update",
+        "service_order.view",
+        "technical_report.create",
+        "technical_report.view",
+        "vehicle.view"
+      ],
+      "DIRETORIA": [
+        "audit.view",
+        "certificate.create",
+        "certificate.issue",
+        "certificate.view",
+        "contract.manage",
+        "contract.view",
+        "customer.create",
+        "customer.update",
+        "customer.view",
+        "dashboard.view",
+        "document.manage",
+        "document.view",
+        "employee.manage",
+        "employee.view",
+        "finance.manage",
+        "finance.view",
+        "proposal.approve",
+        "proposal.create",
+        "proposal.send",
+        "proposal.update",
+        "proposal.view",
+        "report.financial.view",
+        "report.managerial.view",
+        "role.manage",
+        "role.view",
+        "schedule.create",
+        "schedule.update",
+        "schedule.view",
+        "service_order.create",
+        "service_order.execute",
+        "service_order.update",
+        "service_order.view",
+        "stock.manage",
+        "stock.view",
+        "technical_report.create",
+        "technical_report.view",
+        "tender.manage",
+        "tender.view",
+        "user.manage",
+        "user.view",
+        "vehicle.manage",
+        "vehicle.view"
+      ],
+      "FINANCEIRO": [
+        "certificate.create",
+        "certificate.issue",
+        "certificate.view",
+        "contract.manage",
+        "contract.view",
+        "customer.create",
+        "customer.update",
+        "customer.view",
+        "dashboard.view",
+        "document.view",
+        "employee.view",
+        "finance.manage",
+        "finance.view",
+        "proposal.approve",
+        "proposal.create",
+        "proposal.send",
+        "proposal.update",
+        "proposal.view",
+        "report.financial.view",
+        "schedule.create",
+        "schedule.update",
+        "schedule.view",
+        "service_order.create",
+        "service_order.execute",
+        "service_order.update",
+        "service_order.view",
+        "technical_report.create",
+        "technical_report.view",
+        "tender.view",
+        "vehicle.view"
+      ],
+      "GERENCIA": [
+        "certificate.create",
+        "certificate.issue",
+        "certificate.view",
+        "contract.manage",
+        "contract.view",
+        "customer.create",
+        "customer.update",
+        "customer.view",
+        "dashboard.view",
+        "document.manage",
+        "document.view",
+        "employee.manage",
+        "employee.view",
+        "proposal.approve",
+        "proposal.create",
+        "proposal.send",
+        "proposal.update",
+        "proposal.view",
+        "report.managerial.view",
+        "schedule.create",
+        "schedule.update",
+        "schedule.view",
+        "service_order.create",
+        "service_order.execute",
+        "service_order.update",
+        "service_order.view",
+        "stock.manage",
+        "stock.view",
+        "technical_report.create",
+        "technical_report.view",
+        "tender.manage",
+        "tender.view",
+        "vehicle.manage",
+        "vehicle.view"
+      ]
+    }
+  },
+  "fictionalInventory": [
+    {
+      "kind": "customer",
+      "id": "cb3ca94b-2d93-4728-994d-d5347465f864",
+      "label": "[APRES] Condomínio Demonstrativo Verde"
+    },
+    {
+      "kind": "customer",
+      "id": "095b5721-a280-48e4-94b0-cc4e19576f81",
+      "label": "[APRES] Empresa Demonstrativo Porto Industrial"
+    },
+    {
+      "kind": "customer",
+      "id": "efd7828f-0d45-4bd4-8552-fe6d2108db0e",
+      "label": "[APRES] Hotel Demonstrativo Horizonte"
+    },
+    {
+      "kind": "customer",
+      "id": "11b7e60d-74f0-42b1-b5f7-b582984f42d4",
+      "label": "[E2E] CTR-A 084908-a"
+    },
+    {
+      "kind": "customer",
+      "id": "76d105c9-77fa-44ea-b1bd-7276f5e80873",
+      "label": "[E2E] CTR-A 098788-a"
+    },
+    {
+      "kind": "customer",
+      "id": "57a3b90f-41ba-4ae1-883e-1c365c4d954f",
+      "label": "[E2E] CTR-A 291614-a"
+    },
+    {
+      "kind": "customer",
+      "id": "390593f4-fc21-4ec8-a1c3-28249ed7689a",
+      "label": "[E2E] CTR-A 404896-a"
+    },
+    {
+      "kind": "customer",
+      "id": "2c608f00-4915-4cb5-92db-6cf20f3c6ada",
+      "label": "[E2E] CTR-A 498816-a"
+    },
+    {
+      "kind": "customer",
+      "id": "6480b351-1c50-4bc9-8072-cb7f45948352",
+      "label": "[E2E] CTR-A 749877"
+    },
+    {
+      "kind": "customer",
+      "id": "b38efcc3-c513-4e9a-b81b-fabbfdbb5050",
+      "label": "[E2E] CTR-A 777928-a"
+    },
+    {
+      "kind": "customer",
+      "id": "cc1888ec-8993-4e17-83fc-d78ce6b7e66a",
+      "label": "[E2E] CTR-A 965253-a"
+    },
+    {
+      "kind": "customer",
+      "id": "aa70d971-e4d1-4b96-91ae-d0bcd389a77b",
+      "label": "[E2E] CTR-B 025232-b"
+    },
+    {
+      "kind": "customer",
+      "id": "26dd3c84-a399-4f15-9805-dd570c3c2098",
+      "label": "[E2E] CTR-B 180795-b"
+    },
+    {
+      "kind": "customer",
+      "id": "0918a318-3c44-4374-bdee-518b62fba136",
+      "label": "[E2E] CTR-B 355035-b"
+    },
+    {
+      "kind": "customer",
+      "id": "18c4e2ab-3ef1-48a7-94b8-c57fad1ab9c9",
+      "label": "[E2E] CTR-B 749959"
+    },
+    {
+      "kind": "customer",
+      "id": "4bf12fe8-2844-4ef8-94cb-b071dddb4bc9",
+      "label": "[E2E] CTR-B 920974-b"
+    },
+    {
+      "kind": "customer",
+      "id": "19d1eb23-45e0-4dcd-91a8-1c0ab65bc943",
+      "label": "[E2E] Condomínio 102111"
+    },
+    {
+      "kind": "customer",
+      "id": "1c4037dd-fec5-4dba-a14e-04e8a27fa303",
+      "label": "[E2E] Condomínio 121527"
+    },
+    {
+      "kind": "customer",
+      "id": "787bb42f-e053-44ff-b6d4-288d2a1bf70b",
+      "label": "[E2E] Condomínio 515706"
+    },
+    {
+      "kind": "customer",
+      "id": "f6a105a5-88fd-4d7e-9971-9b42ffddfcc9",
+      "label": "[E2E] Condomínio 563204"
+    },
+    {
+      "kind": "customer",
+      "id": "ca9f6d92-3aee-40ba-a992-0cb5cefc52c9",
+      "label": "[E2E] Condomínio 699154"
+    },
+    {
+      "kind": "customer",
+      "id": "96beea55-7c83-4179-b816-2038e57bb04f",
+      "label": "[E2E] Condomínio 716926"
+    },
+    {
+      "kind": "customer",
+      "id": "c1377d3e-a815-4169-bb30-a5293b5cbf49",
+      "label": "[E2E] Condomínio 760554"
+    },
+    {
+      "kind": "customer",
+      "id": "2ce1f8d5-e885-4575-a10b-5829d1508897",
+      "label": "[E2E] Condomínio 832760"
+    },
+    {
+      "kind": "customer",
+      "id": "40cf5069-30f4-4651-8c78-5bcae235d217",
+      "label": "[E2E] Condomínio 931843"
+    },
+    {
+      "kind": "customer",
+      "id": "4476338b-3652-498e-92a1-d409b3720443",
+      "label": "[E2E] Condomínio 969243"
+    },
+    {
+      "kind": "customer",
+      "id": "e8cdfb6a-2bda-4aad-9b3e-1d7a5aeefab8",
+      "label": "[GATEF] Cliente Homol 398561"
+    },
+    {
+      "kind": "customer",
+      "id": "5f826b8d-cbaa-40c2-9247-20662569abd6",
+      "label": "[GATEF] Cliente Homol 795902"
+    },
+    {
+      "kind": "customer",
+      "id": "60e327ef-dce3-4a85-b580-85b933071298",
+      "label": "[HOMOL-QA-11B3] Cliente validação agenda"
+    },
+    {
+      "kind": "engagement",
+      "id": "00a4712d-d19b-42bf-857e-0ccfc7943c71",
+      "label": "O.C. E2E serviços 180795-b"
+    },
+    {
+      "kind": "engagement",
+      "id": "8f3ee440-4dcd-4945-97b1-00e097496de6",
+      "label": "O.C. E2E serviços 355035-b"
+    },
+    {
+      "kind": "engagement",
+      "id": "43e0f1ce-c102-4823-a915-40b55cf7aa1f",
+      "label": "O.C. E2E serviços 920974-b"
+    },
+    {
+      "kind": "engagement",
+      "id": "f4820a72-d0ad-4d22-803e-7c3825f9d494",
+      "label": "[E2E] Aceite CTR 084908-a"
+    },
+    {
+      "kind": "engagement",
+      "id": "5e6df45e-484a-4192-b96f-7cc048c69dd8",
+      "label": "[E2E] Aceite CTR 291614-a"
+    },
+    {
+      "kind": "engagement",
+      "id": "07cba98f-5763-43aa-9afd-62848943e6e3",
+      "label": "[E2E] Aceite CTR 777928-a"
+    },
+    {
+      "kind": "engagement",
+      "id": "9426e178-1ab1-4573-8439-59cfceba0b8e",
+      "label": "[E2E] Aceite CTR 965253-a"
+    },
+    {
+      "kind": "engagement",
+      "id": "ae4ad592-8976-4197-bd41-dc6b8fc847f4",
+      "label": "[HOMOL-QA-11B3] Orçamento validação agenda"
+    },
+    {
+      "kind": "proposal",
+      "id": "ac3a7a57-73a5-49cb-be0d-897101935b4c",
+      "label": "[APRES] Higienização avulsa — Condomínio Demonstrativo Verde"
+    },
+    {
+      "kind": "proposal",
+      "id": "27a076d9-8e76-4edf-a39a-61e0863e9925",
+      "label": "[APRES] Sanitização — Hotel Demonstrativo Horizonte"
+    },
+    {
+      "kind": "proposal",
+      "id": "8d26ab76-7338-43e4-a45e-9b0edf0ff7b0",
+      "label": "[APRES] Serviços periódicos — Empresa Demonstrativo Porto Industrial"
+    },
+    {
+      "kind": "proposal",
+      "id": "677128b4-d76c-4555-a76a-2c930fa734d2",
+      "label": "[E2E] Aceite CTR 084908-a"
+    },
+    {
+      "kind": "proposal",
+      "id": "8c59d00d-7626-4200-bc88-07978a8d38ea",
+      "label": "[E2E] Aceite CTR 291614-a"
+    },
+    {
+      "kind": "proposal",
+      "id": "02a2f97f-310c-4a5a-880b-7ed79cfadfc0",
+      "label": "[E2E] Aceite CTR 404896-a"
+    },
+    {
+      "kind": "proposal",
+      "id": "5cc117f9-9423-49e8-b4a9-917d40016db4",
+      "label": "[E2E] Aceite CTR 498816-a"
+    },
+    {
+      "kind": "proposal",
+      "id": "54d0da8b-fd76-40ea-a1bf-aca045f062fb",
+      "label": "[E2E] Aceite CTR 777928-a"
+    },
+    {
+      "kind": "proposal",
+      "id": "41c41581-0135-4201-8679-4d9f27f92949",
+      "label": "[E2E] Aceite CTR 965253-a"
+    },
+    {
+      "kind": "proposal",
+      "id": "17b29e81-c17b-4afc-aacf-7fe77746d1f1",
+      "label": "[E2E] Controle de pragas 102111"
+    },
+    {
+      "kind": "proposal",
+      "id": "2574096d-5a01-446e-90ac-afba165cb1f2",
+      "label": "[E2E] Controle de pragas 121527"
+    },
+    {
+      "kind": "proposal",
+      "id": "59887be1-4c34-419e-891a-705630a7c49f",
+      "label": "[E2E] Controle de pragas 515706"
+    },
+    {
+      "kind": "proposal",
+      "id": "ce8e8c7c-6d01-46f0-921b-fe2ba6d2ea43",
+      "label": "[E2E] Controle de pragas 563204"
+    },
+    {
+      "kind": "proposal",
+      "id": "26e69781-84bb-4e64-bf95-7cac0efaadcd",
+      "label": "[E2E] Controle de pragas 699154"
+    },
+    {
+      "kind": "proposal",
+      "id": "80e63726-1a6b-433e-8842-2834f3971c38",
+      "label": "[E2E] Controle de pragas 716926"
+    },
+    {
+      "kind": "proposal",
+      "id": "b7d146da-8e38-4422-b8c3-7a125741f02f",
+      "label": "[E2E] Controle de pragas 760554"
+    },
+    {
+      "kind": "proposal",
+      "id": "184f0557-e75d-4745-8e8f-0f642fde730d",
+      "label": "[E2E] Controle de pragas 832760"
+    },
+    {
+      "kind": "proposal",
+      "id": "41287a01-8c29-4321-89c7-877f0317c570",
+      "label": "[E2E] Controle de pragas 931843"
+    },
+    {
+      "kind": "proposal",
+      "id": "934647fd-ec6c-4bb9-86a6-e1aebdab5ac8",
+      "label": "[E2E] Controle de pragas 969243"
+    },
+    {
+      "kind": "proposal",
+      "id": "1977df95-f710-4b04-bb88-818946b47d26",
+      "label": "[GATEF] Orçamento 398561"
+    },
+    {
+      "kind": "proposal",
+      "id": "dafab2d2-164c-4bae-8c16-e26e0b6f355f",
+      "label": "[GATEF] Orçamento 795902"
+    },
+    {
+      "kind": "proposal",
+      "id": "2454550f-07c1-4f0d-aa7b-7ac7c76b31c6",
+      "label": "[HOMOL-QA-11B3] Orçamento validação agenda"
+    }
+  ]
+}

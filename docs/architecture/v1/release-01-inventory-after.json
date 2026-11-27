@@ -1,0 +1,151 @@
+{
+  "ok": true,
+  "phase": "release-01-verify-ro",
+  "readOnly": true,
+  "capturedAt": "2026-11-26T21:49:40.356Z",
+  "identity": {
+    "hostHash": "22e5c2dd2d93",
+    "hostHashMatches": true,
+    "database": "postgres",
+    "instanceId": "0786bd682d75",
+    "instanceIdMatches": true
+  },
+  "migrations": {
+    "total": 8,
+    "pending": [],
+    "failed": [],
+    "allFinished": true
+  },
+  "counts": {
+    "customers_total": 30,
+    "customers_active": 22,
+    "customers_archived": 8,
+    "proposals_active": 23,
+    "engagements_active": 9,
+    "purchase_orders_active": 4,
+    "service_orders_active": 2,
+    "employees_active": 2,
+    "appointments_active": 4,
+    "users_total": 2,
+    "audit_logs_total": 384,
+    "billing_requests": 1,
+    "receipt_entries": 1,
+    "receipts_confirmed_active": 0
+  },
+  "users": [
+    {
+      "id": "b1ef0cde-ae76-49dc-ae8e-05dbb71af5fa",
+      "emailDomain": "servsam.local",
+      "name": "Diretoria",
+      "isActive": true,
+      "roles": [
+        "DIRETORIA"
+      ]
+    },
+    {
+      "id": "6ff9b815-0fee-4931-a0df-35bf5985f1e8",
+      "emailDomain": "gmail.com",
+      "name": "[redacted-operator]",
+      "isActive": true,
+      "roles": [
+        "DIRETORIA"
+      ]
+    }
+  ],
+  "scenario": {
+    "customers": [
+      {
+        "id": "35c1516b-a5c3-41f2-8163-4f0ef3c05f2b",
+        "legalName": "[HOMOL-QA-11B4] Empresa de homologação financeira",
+        "deletedAt": null
+      }
+    ],
+    "proposals": [
+      {
+        "id": "97ec34ba-fd9e-4713-baed-e42797113118",
+        "title": "[HOMOL-QA-11B4] Validação financeira",
+        "status": "accepted",
+        "totalCents": 100000,
+        "customerId": "35c1516b-a5c3-41f2-8163-4f0ef3c05f2b"
+      }
+    ],
+    "engagements": [
+      {
+        "id": "99f6bf74-83e9-486a-a97c-63bfe15afd0b",
+        "code": "CTR-2026-0009",
+        "title": "[HOMOL-QA-11B4] Validação financeira",
+        "totalCents": 100000,
+        "status": "active",
+        "customerId": "35c1516b-a5c3-41f2-8163-4f0ef3c05f2b",
+        "proposalId": "97ec34ba-fd9e-4713-baed-e42797113118"
+      }
+    ],
+    "billing": [
+      {
+        "id": "752a40f8-170e-471a-8c3a-52e7d6321266",
+        "status": "processed",
+        "description": "[HOMOL-QA-11B4] Simulação — solicitar providências fiscais (sem emissão real)",
+        "notes": "[HOMOL-QA-11B4] Homologação operacional. Não emitir nota fiscal verdadeira.",
+        "referenceAmountCents": 100000,
+        "invoiceIssuedExternally": false,
+        "externalDocumentRef": null,
+        "requestedById": "b1ef0cde-ae76-49dc-ae8e-05dbb71af5fa",
+        "processedById": "b1ef0cde-ae76-49dc-ae8e-05dbb71af5fa",
+        "processedAt": "2026-11-27T00:45:11.847Z",
+        "requestedAt": "2026-11-27T00:44:53.935Z"
+      }
+    ],
+    "receipts": [
+      {
+        "id": "29311b29-d2b9-4e43-b473-799e30332d5a",
+        "status": "reversed",
+        "kind": "signal",
+        "amountCents": 25000,
+        "requestedAmountCents": 40000,
+        "confirmedManually": true,
+        "confirmedById": "b1ef0cde-ae76-49dc-ae8e-05dbb71af5fa",
+        "confirmedAt": "2026-11-27T00:45:43.069Z",
+        "reversedById": "b1ef0cde-ae76-49dc-ae8e-05dbb71af5fa",
+        "reversedAt": "2026-11-27T00:46:20.645Z",
+        "reversalReason": "[HOMOL-QA-11B4] Encerramento de simulação financeira",
+        "notes": "[HOMOL-QA-11B4] Sinal fictício R$ 400,00 para conferência — sem movimentação bancária.",
+        "requestedById": "b1ef0cde-ae76-49dc-ae8e-05dbb71af5fa",
+        "requestedAt": "2026-11-27T00:45:31.798Z"
+      }
+    ],
+    "confirmedNetCents": 0,
+    "referenceBalanceCents": 100000,
+    "auditActions": [
+      "CUSTOMER_CREATED",
+      "PROPOSAL_CREATED",
+      "PROPOSAL_STATUS_CHANGED",
+      "PROPOSAL_STATUS_CHANGED",
+      "ENGAGEMENT_CREATED",
+      "BILLING_REQUEST_CREATED",
+      "BILLING_REQUEST_UNDER_REVIEW",
+      "BILLING_REQUEST_PROCESSED",
+      "RECEIPT_REVIEW_REQUESTED",
+      "RECEIPT_CONFIRMED",
+      "RECEIPT_REVERSED"
+    ]
+  },
+  "checks": {
+    "identityOk": true,
+    "migrationsUnchanged": true,
+    "usersUnchanged": true,
+    "oneCustomer": true,
+    "oneProposal": true,
+    "oneEngagement": true,
+    "engagementTotal100000": true,
+    "billingProcessed": true,
+    "billingNoRealInvoice": true,
+    "receiptReversed": true,
+    "requestedAmount40000": true,
+    "confirmedAmountPreserved25000": true,
+    "confirmedManuallyTrue": true,
+    "noActiveConfirmed": true,
+    "referenceBalance100000": true,
+    "onlyOneReceipt": true,
+    "onlyOneBilling": true
+  }
+}
