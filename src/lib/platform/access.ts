@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/platform/auth";
@@ -19,52 +20,73 @@ export type AuthenticatedUser = {
   roleNames: string[];
 };
 
-export async function getSessionUserId(): Promise<string | null> {
+/**
+ * Deduplica getSession por requisição RSC/Server Action.
+ * Não é cache global entre requests.
+ */
+export const getSessionUserId = cache(async (): Promise<string | null> => {
   const session = await auth.api.getSession({ headers: await headers() });
   return session?.user.id ?? null;
-}
+});
 
-export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> {
-  const userId = await getSessionUserId();
-  if (!userId) return null;
+/**
+ * Carrega usuário + papéis + permissões uma vez por requisição.
+ * Layout e páginas podem chamar requireAuthenticatedUser sem dobrar consultas.
+ */
+export const getAuthenticatedUser = cache(
+  async (): Promise<AuthenticatedUser | null> => {
+    const userId = await getSessionUserId();
+    if (!userId) return null;
 
-  const user = await getPrisma().user.findUnique({
-    where: { id: userId },
-    include: {
-      userRoles: {
-        include: {
-          role: {
-            include: { rolePermissions: { include: { permission: true } } },
+    const user = await getPrisma().user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        organizationId: true,
+        isActive: true,
+        userRoles: {
+          select: {
+            role: {
+              select: {
+                code: true,
+                name: true,
+                rolePermissions: {
+                  select: { permission: { select: { key: true } } },
+                },
+              },
+            },
           },
         },
       },
-    },
-  });
+    });
 
-  if (!user || !user.isActive) return null;
+    if (!user || !user.isActive) return null;
 
-  const permissions = new Set<string>();
-  const roleCodes: string[] = [];
-  const roleNames: string[] = [];
-  for (const link of user.userRoles) {
-    roleCodes.push(link.role.code);
-    roleNames.push(link.role.name);
-    for (const grant of link.role.rolePermissions) {
-      permissions.add(grant.permission.key);
+    const permissions = new Set<string>();
+    const roleCodes: string[] = [];
+    const roleNames: string[] = [];
+    for (const link of user.userRoles) {
+      roleCodes.push(link.role.code);
+      roleNames.push(link.role.name);
+      for (const grant of link.role.rolePermissions) {
+        permissions.add(grant.permission.key);
+      }
     }
-  }
 
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    organizationId: user.organizationId,
-    isActive: user.isActive,
-    permissions,
-    roleCodes,
-    roleNames,
-  };
-}
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      organizationId: user.organizationId,
+      isActive: user.isActive,
+      permissions,
+      roleCodes,
+      roleNames,
+    };
+  },
+);
 
 export async function requireAuthenticatedUser(): Promise<AuthenticatedUser> {
   const user = await getAuthenticatedUser();

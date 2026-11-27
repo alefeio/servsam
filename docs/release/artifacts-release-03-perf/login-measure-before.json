@@ -1,0 +1,77 @@
+{
+  "ok": true,
+  "baseUrl": "https://servsam-git-fix-11b-4-finance-qa-alefeios-projects.vercel.app",
+  "actorRole": "DIRETORIA",
+  "emailDomain": "servsam.com",
+  "runs": [
+    {
+      "label": "cold_or_first",
+      "loginPageLoadMs": 6356,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 60408,
+      "homeRenderMs": 240,
+      "totalLoginJourneyMs": 67759
+    },
+    {
+      "label": "warm_1",
+      "loginPageLoadMs": 912,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 1418,
+      "homeRenderMs": 318,
+      "totalLoginJourneyMs": 3183
+    },
+    {
+      "label": "warm_2",
+      "loginPageLoadMs": 891,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 887,
+      "homeRenderMs": 200,
+      "totalLoginJourneyMs": 2785
+    },
+    {
+      "label": "warm_3",
+      "loginPageLoadMs": 1079,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 1302,
+      "homeRenderMs": 372,
+      "totalLoginJourneyMs": 3078
+    },
+    {
+      "label": "warm_4",
+      "loginPageLoadMs": 472,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 721,
+      "homeRenderMs": 102,
+      "totalLoginJourneyMs": 1537
+    },
+    {
+      "label": "warm_5",
+      "loginPageLoadMs": 395,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 724,
+      "homeRenderMs": 60,
+      "totalLoginJourneyMs": 1660
+    }
+  ],
+  "summary": {
+    "submitToHome": {
+      "first": 60408,
+      "medianWarm": 887,
+      "max": 60408,
+      "all": [
+        60408,
+        1418,
+        887,
+        1302,
+        721,
+        724
+      ]
+    },
+    "totalJourney": {
+      "first": 67759,
+      "medianWarm": 2785,
+      "max": 67759
+    }
+  },
+  "capturedAt": "2026-11-27T13:59:03.076Z"
+}

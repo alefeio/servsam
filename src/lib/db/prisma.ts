@@ -6,8 +6,16 @@ const globalForPrisma = globalThis as unknown as { servsamPrisma?: PrismaClient 
 
 function createPrismaClient() {
   const isolatedTest = process.env.DATABASE_ENV?.trim().toLowerCase() === "test";
+  // Em serverless (Preview/Production) limitar o pool evita tempestade de conexões
+  // em cold start; em test isolado permite um pouco mais de paralelismo.
+  const adapter = new PrismaPg({
+    connectionString: getRuntimeDatabaseUrl(),
+    max: isolatedTest ? 5 : 1,
+    idleTimeoutMillis: isolatedTest ? 10_000 : 5_000,
+    connectionTimeoutMillis: 20_000,
+  });
   return new PrismaClient({
-    adapter: new PrismaPg({ connectionString: getRuntimeDatabaseUrl() }),
+    adapter,
     // Docker local/E2E isolado pode exceder o default de 5s em txs interativas.
     ...(isolatedTest
       ? { transactionOptions: { maxWait: 20_000, timeout: 30_000 } }

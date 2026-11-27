@@ -15,20 +15,33 @@ export async function authenticate(email: string, password: string): Promise<Log
       headers: requestHeaders,
     });
     const userId = signedIn.user.id;
-    const user = await getPrisma().user.findUnique({
-      where: { id: userId },
-      select: { id: true, organizationId: true, isActive: true },
-    });
+    // Better Auth já aplica databaseHooks.session.create (isActive).
+    // Preferir campos retornados; só consultar o banco se faltar organizationId/isActive.
+    const signedInUser = signedIn.user as {
+      id: string;
+      organizationId?: string | null;
+      isActive?: boolean | null;
+    };
+    let organizationId = signedInUser.organizationId ?? null;
+    let isActive = signedInUser.isActive;
+    if (organizationId == null || typeof isActive !== "boolean") {
+      const user = await getPrisma().user.findUnique({
+        where: { id: userId },
+        select: { id: true, organizationId: true, isActive: true },
+      });
+      organizationId = user?.organizationId ?? null;
+      isActive = user?.isActive;
+    }
 
-    if (!user?.isActive) {
+    if (!isActive || !organizationId) {
       await auth.api.signOut({ headers: requestHeaders });
-      if (user) {
+      if (organizationId) {
         await writeAudit({
-          organizationId: user.organizationId,
+          organizationId,
           actorUserId: null,
           action: "LOGIN_FAILURE",
           entityType: "User",
-          entityId: user.id,
+          entityId: userId,
           metadata: { reason: "inactive" },
         });
       }
@@ -36,11 +49,11 @@ export async function authenticate(email: string, password: string): Promise<Log
     }
 
     await writeAudit({
-      organizationId: user.organizationId,
-      actorUserId: user.id,
+      organizationId,
+      actorUserId: userId,
       action: "LOGIN_SUCCESS",
       entityType: "User",
-      entityId: user.id,
+      entityId: userId,
       metadata: {},
     });
     return { ok: true };
