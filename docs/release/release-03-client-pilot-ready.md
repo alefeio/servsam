@@ -18,7 +18,7 @@
 **Data:** 2026-11-27  
 **Branch:** `fix/11b-4-finance-qa`  
 **HEAD de partida:** `e3c64f6d66289a9e15b4dea5394141596ac67d05`  
-**HEAD final (docs):** `065b64bba64a4979259f14fa0b1bbf088bd092e3`  
+**HEAD final (docs):** tip de `fix/11b-4-finance-qa` após commits `docs(release):…` (publicados no remoto)  
 **URL de entrega prevista:** https://servsam-git-fix-11b-4-finance-qa-alefeios-projects.vercel.app/sistema/login  
 
 Sem FIN-F1 / 11C / RH, sem Production, sem merge em `main`, sem alteração de código funcional.
