@@ -1,212 +1,138 @@
 # RELEASE-03 — Client Pilot Ready
 
-**Veredito:** **RELEASE-03 PARTIAL — CLIENT ACCESS PENDING**
+**Veredito:** **RELEASE-03 ACCOUNTS READY — VERCEL ACCESS PENDING**
 
 | Classificação | Resultado |
 | --- | --- |
-| HOSTED PREVIEW ACCEPTANCE | **BLOCKED** |
-| CLIENT ACCOUNTS | **PENDING** |
-| EXTERNAL ACCESS | **PENDING** |
-| ROLE SEPARATION | **INSPECTED** (grants HOMOL; contas piloto ainda inexistentes) |
+| CLIENT ACCOUNTS | **READY** |
+| VERCEL EXTERNAL ACCESS | **PENDING** (ação humana no painel) |
+| HOSTED PREVIEW ACCEPTANCE | **BLOCKED** (Deployment Protection sem sessão dos titulares) |
+| ROLE SEPARATION | **VERIFIED** (UI local HOMOL + grants; sem escrita de negócio) |
 | CLIENT CHECKLIST | **READY** |
+| NEW USERS | **3** |
+| ROLE PERMISSION MATRIX | **UNCHANGED** |
+| EXISTING BUSINESS RECORDS | **UNCHANGED** |
+| MIGRATIONS EXECUTED | **0** |
 | PRODUCTION | **UNCHANGED** |
 | MAIN | **UNCHANGED** |
-| EXISTING BUSINESS RECORDS | **UNCHANGED** |
-| ROLE PERMISSION MATRIX | **UNCHANGED** |
-| MIGRATIONS EXECUTED | **0** |
 
 **Data:** 2026-11-27  
 **Branch:** `fix/11b-4-finance-qa`  
-**HEAD de partida:** `e3c64f6d66289a9e15b4dea5394141596ac67d05`  
-**HEAD final (docs):** tip de `fix/11b-4-finance-qa` após commits `docs(release):…` (publicados no remoto)  
-**URL de entrega prevista:** https://servsam-git-fix-11b-4-finance-qa-alefeios-projects.vercel.app/sistema/login  
+**HEAD de partida desta retomada:** `82d890342462b33737adac0909c177b603920b82`  
+**Autorização:** formal do responsável (provisionamento HOMOL + convites Vercel restritos + validação sem escrita)
 
-Sem FIN-F1 / 11C / RH, sem Production, sem merge em `main`, sem alteração de código funcional.
-
----
-
-## Gate 1 — Consolidação documental
-
-Documentos confirmados localmente e publicados nesta execução:
-
-- `docs/architecture/v1/release-01-financial-operational-acceptance.md`
-- `docs/architecture/v1/release-01-inventory-before.json` / `after.json` (nomes de operador anonimizados)
-- `docs/architecture/v1/artifacts-release-01/`
-- `docs/release/release-02-client-access-readiness.md`
-- `docs/release/servsam-v1-client-pilot-checklist.md`
-- `docs/release/release-03-preflight-before.json`
-- este relatório
-
-Na auditoria anterior esses arquivos **não** estavam no remoto; a publicação fecha essa lacuna. HEAD final após o push: ver commit de docs nesta branch.
+**URL de entrega:** https://servsam-git-fix-11b-4-finance-qa-alefeios-projects.vercel.app/sistema/login  
+**Deployment READY citado:** https://servsam-ct9upi5pw-alefeios-projects.vercel.app  
+**Checklist:** `docs/release/servsam-v1-client-pilot-checklist.md`
 
 ---
 
-## Gate 2 — Preflight somente leitura
+## Preflight (antes do provisionamento)
 
-Artefato: `docs/release/release-03-preflight-before.json`
+Identidade confirmada: `postgres` · `DATABASE_ENV=preview` · hostHash `22e5c2dd2d93` · instanceId `0786bd682d75` · org `servsam` · **8** migrations · **0** pendentes.
 
-| Check | Resultado |
+| Métrica | Valor pré |
 | --- | --- |
-| Branch | `fix/11b-4-finance-qa` |
-| Banco | hostHash `22e5c2dd2d93` · instanceId `0786bd682d75` · database `postgres` · org `servsam` |
-| Migrations | **8** finalizadas · **0** pendentes |
-| FIN-F0 | `billing_request` / `receipt_entry` / `requestedAmountCents` OK |
-| Production / main | Intactas (`main` = `c8bc57f…`; HEAD da feature fora de `main`) |
-
-### Snapshot (antes de qualquer provisionamento)
-
-| Métrica | Valor |
-| --- | --- |
-| Clientes | 30 (22 ativos) |
-| Propostas | 23 |
-| Contratações | 9 |
-| O.C. | 4 |
-| OS | 2 |
-| Colaboradores / agenda | 2 / 4 |
-| Usuários | 2 (ambos DIRETORIA) |
+| Usuários | 2 |
+| Clientes / propostas / contratações | 30 / 23 / 9 |
 | Billing / receipts | 1 / 1 |
-| Audit logs | 384 |
+| E-mails piloto | **todos ausentes** |
 
-### E-mails piloto autorizados (existência)
+Operador legítimo: conta DIRETORIA `*.servsam.local` com `user.manage` (usada como `assignedById` / ator de auditoria).
 
-| E-mail | Situação |
-| --- | --- |
-| `diretoria@servsam.com` | **Ausente** |
-| `administrativo@servsam.com` | **Ausente** |
-| `financeiro@servsam.com` | **Ausente** |
-
-Nenhuma conta pré-existente desses três e-mails → não houve redefinição de senha nem alteração de papéis.
+Artefato: `docs/release/release-03-preflight-before.json`.
 
 ---
 
-## Gate 3 — Validação dos acessos existentes (inspeção)
+## Provisionamento
 
-| Item | Evidência | Tipo |
-| --- | --- | --- |
-| Operador com `user.manage` | Papel DIRETORIA no HOMOL inclui `user.manage`; 2 usuários DIRETORIA ativos | Inspeção de grants/usuários |
-| Criação de usuário | `createPlatformUser` exige `user.manage`, cria credential Better Auth + papéis + `USER_CREATED` | Inspeção de código (`accounts.ts`) |
-| Cadastro público | `disableSignUp: true` em Better Auth | Inspeção de código (`auth.ts`) |
-| Recuperação de senha | Fluxo ACCESS-01 (`/sistema/esqueci-senha`) documentado e implementado | Inspeção + runbook |
-| E-mail Preview | `RESEND_API_KEY` e `RESEND_FROM_EMAIL` presentes em Preview (valores Hidden; não expostos). Também: `DATABASE_ENV`, `HOMOL_*`, `BETTER_AUTH_SECRET` | `vercel env ls` (somente nomes) |
+Script auditado: `scripts/release-03-provision-users.mjs`  
+(`CONFIRM=YES` + `RELEASE_03_AUTHORIZE=YES`; Better Auth hash; sem INSERT cru).
 
-Não foi usado seed/SQL/grants para contornar autenticação.
+| Nome | E-mail | Papel | Status |
+| --- | --- | --- | --- |
+| Diretor | `diretoria@servsam.com` | DIRETORIA | criado · ativo · credential OK |
+| Administrador | `administrativo@servsam.com` | ADMINISTRATIVO | criado · ativo · credential OK |
+| Financeiro | `financeiro@servsam.com` | FINANCEIRO | criado · ativo · credential OK |
 
----
+Auditoria: `USER_CREATED` ×3 + `ROLE_ASSIGNED` ×3.  
+Usuários: **2 → 5**. Contas preexistentes preservadas. Matriz de grants **inalterada** (sem `employee.manage` no ADMINISTRATIVO; FINANCEIRO com `finance.manage` / sem `user.manage`).
 
-## Gate 4 — Provisionamento de usuários
+### Credenciais
 
-**Não executado.**
+Senhas temporárias individuais geradas e gravadas **somente** em:
 
-Motivo: esta execução **não contém autorização formal explícita** do responsável no formato “Autorizo o provisionamento…”. O próprio briefing condiciona a criação à autorização específica.
+`.credentials/release-03-pilot.local.json` (gitignored; **não** versionado)
 
-Contas planejadas (quando autorizadas):
-
-| Nome | E-mail | Papel |
-| --- | --- | --- |
-| Diretor | `diretoria@servsam.com` | DIRETORIA |
-| Administrador | `administrativo@servsam.com` | ADMINISTRATIVO |
-| Financeiro | `financeiro@servsam.com` | FINANCEIRO |
-
-Regras a respeitar na próxima autorização:
-
-- Usar papéis já existentes; **não** alterar matriz de permissões.
-- **Não** conceder `employee.manage` ao ADMINISTRATIVO.
-- **Não** conceder permissões extras ao FINANCEIRO.
-- Preferir senha via “Esqueci minha senha” (sem registrar senhas em git/docs/logs).
-- Fluxo oficial: UI `/sistema` com `user.manage` **ou** script auditado equivalente com `CONFIRM=YES` após autorização escrita.
+Entregar ao responsável por canal seguro 1:1.  
+Não usar Resend de teste como prova de entrega aos três `@servsam.com` (remetente HOMOL típico limitado). Preferir envelope local + troca posterior.
 
 ---
 
-## Gate 5 — Acesso externo (Deployment Protection)
-
-| Item | Situação |
-| --- | --- |
-| Proteção | **Ativa** — Preview redireciona para login Vercel |
-| Desativação global | **Não** realizada |
-| Bypass permanente / tokens | **Não** gerados |
-| Convites aos 3 e-mails | **PENDING** — ação humana no painel Vercel |
-| Acesso a projeto/env/logs/billing/repo | **Não** concedido |
-
-### Alternativas (aguardando decisão)
-
-1. **Preferida:** Vercel Authentication / Deployment Protection — convidar apenas os 3 e-mails como visitantes do deployment (sem tornar admins da equipe).  
-2. Se o plano atual **não** permitir convidados externos restritos: reportar limitação do plano e aguardar decisão (upgrade pago **não** automático; ou sessão assistida com operador já autorizado).  
-3. **Não** usar Shareable Link / protection bypass permanente.
-
-Nesta sessão automatizada não foi possível administrar a allowlist Vercel.
-
----
-
-## Gate 6 — Homologação do Preview hospedado
-
-**BLOCKED** — sem comprovação de login SERVSAM no deployment hospedado.
-
-Evidência: navegação a `/sistema/login` no Preview resulta em `vercel.com/login` (SSO Deployment Protection).  
-Localhost **não** substitui esta etapa (já usado no RELEASE-01).
-
-Roteiro humano pendente:
-
-1. Aceitar convite Vercel com e-mail autorizado.  
-2. Abrir a URL de entrega.  
-3. Passar pela proteção Vercel.  
-4. Login SERVSAM → painel → nav (Clientes, Orçamentos, Contratações, O.C., OS, Colaboradores, Agenda, Financeiro) → logout.  
-5. Sem novos registros financeiros/comerciais nesta etapa.
-
----
-
-## Gate 7 — Separação de responsabilidades (inspeção de grants)
-
-Contas piloto ainda inexistentes → verificação **por grants persistidos** + testes isolados anteriores, **não** por operação autenticada dos três perfis.
-
-| Papel | Comprovado por inspeção | Ainda não testado com conta piloto |
-| --- | --- | --- |
-| ADMINISTRATIVO | Tem `contract.*` / comercial / OS / agenda; **sem** `finance.manage` / `finance.view`; `employee.view` (sem `employee.manage`); sem `user.manage` | Login e menus reais |
-| FINANCEIRO | Tem `finance.manage` + `finance.view`; sem `user.manage` / `role.manage`; sem `employee.manage` | Login e ações financeiras |
-| DIRETORIA | Tem `user.manage`, `role.manage`, `audit.view`, `finance.manage`, etc. | Conta `diretoria@servsam.com` |
-
-Matriz de permissões **não** foi alterada.
-
----
-
-## Gate 8 — Entrega
+## Acesso Vercel (Deployment Protection)
 
 | Item | Estado |
 | --- | --- |
-| URL | https://servsam-git-fix-11b-4-finance-qa-alefeios-projects.vercel.app/sistema/login |
-| Domínio customizado / DNS | **Não** configurado |
-| Checklist cliente | `docs/release/servsam-v1-client-pilot-checklist.md` — **READY** |
-| Aviso | Ambiente de homologação; sem NF real, sem movimentação bancária, sem dados sensíveis reais |
+| Proteção | **Ativa** (Preview → login Vercel) |
+| Desativação / bypass permanente / tokens | **Não** |
+| Convites aos 3 e-mails | **PENDING — humano** |
+| Admin de equipe / env / logs / billing | **Não** concedido |
+
+### Caminho humano exato
+
+1. Abrir [Vercel Dashboard](https://vercel.com) → projeto **servsam**.  
+2. **Settings** → **Deployment Protection** (ou **Vercel Authentication**).  
+3. Manter proteção **ligada**.  
+4. Convidar individualmente: `diretoria@servsam.com`, `administrativo@servsam.com`, `financeiro@servsam.com` como acesso ao Preview (visitante/share do deployment — **não** Member/Admin do time).  
+5. Pedir que cada titular aceite o e-mail da Vercel.  
+6. Só então abrir a URL de login SERVSAM.
+
+Se o plano atual só permitir membros da equipe: **não** promover a Admin; reportar limitação e decidir com o responsável (sem contratar plano automaticamente).
 
 ---
 
-## Gate 9 — Auditoria de encerramento
+## Validação de perfis
+
+### Preview hospedado
+
+**BLOCKED** — sem sessão autenticada na Deployment Protection nesta execução automatizada.
+
+### UI local → HOMOL (complementar; sem escrita de negócio)
+
+`scripts/release-03-validate-roles-ui.mjs` · artefatos em `docs/release/artifacts-release-03/`.
+
+| Papel | Menus comprovados | Ausências comprovadas |
+| --- | --- | --- |
+| DIRETORIA | Comercial, OS, Agenda, Colaboradores, Financeiro, Usuários, Perfis | — |
+| ADMINISTRATIVO | Clientes, Orçamentos, Contratações, O.C., OS, Agenda, Colaboradores | Financeiro (menu), Usuários, Perfis |
+| FINANCEIRO | Comercial + Financeiro | Usuários, Perfis |
+
+Nota: ADMINISTRATIVO sem `finance.view` no grant HOMOL → módulo **Financeiro** oculto no menu; solicitação fiscal / informar recebimento permanecem nos fluxos de contratação conforme `contract.manage` (inspeção de grants + código FIN-F0). Confirmação/reversão exige `finance.manage` (ausente neste papel).
+
+---
+
+## Auditoria final
+
+Artefato: `docs/release/release-03-audit-after.json`
 
 | Critério | Resultado |
 | --- | --- |
-| Novos usuários piloto | **0** (não autorizados nesta execução) |
-| Grants / roles matrix | Inalterados |
-| Clientes / propostas / contratações / O.C. / OS / agenda / colaboradores / financeiro | Inalterados vs preflight |
+| Usuários | 5 |
+| Novas contas piloto | 3 |
+| Negócio (clientes/propostas/CTR/billing/receipts) | Inalterado vs pré |
 | Migrations | 0 executadas |
-| Production / main | Intactas |
-| Usuários preexistentes | Intactos (2 × DIRETORIA) |
+| Production / main | Intactas (`main` = `c8bc57f…`) |
 
 ---
 
-## Ações humanas restantes (exatas)
+## Entrega ao cliente (quando Vercel estiver pronto)
 
-1. **Autorização formal escrita** do responsável para provisionar os três usuários HOMOL (`diretoria@` / `administrativo@` / `financeiro@servsam.com`) e, se desejado, preferência por senha via recuperação de e-mail.  
-2. No painel Vercel → Deployment Protection: **convidar** os três e-mails (sem admin de equipe / sem bypass).  
-3. Após (1): criar as três contas pelo fluxo oficial e confirmar papéis.  
-4. Smoke **hospedado** (Gate 6) e, se possível, login de cada perfil para fechar ROLE SEPARATION VERIFIED.  
-5. Entregar URL + checklist ao cliente por canal seguro (**sem** senhas em chat aberto).  
+1. Responsável obtém senhas em `.credentials/release-03-pilot.local.json` (máquina local / vault).  
+2. Concluir convites Vercel (seção acima).  
+3. Smoke hospedado: proteção → login SERVSAM → painel → logout (um perfil basta para desbloquear HOSTED; idealmente os três).  
+4. Enviar URL + `servsam-v1-client-pilot-checklist.md` por canal seguro (**sem** senhas em chat aberto).  
+5. Não enviar mensagem comercial automática.
 
-Não enviar mensagens comerciais automaticamente. Não iniciar RELEASE seguinte / FIN-F1 / 11C / RH.
+### Revogação
 
----
-
-## Procedimento de revogação (quando o piloto encerrar)
-
-1. Desativar usuários piloto (`isActive = false`) ou remover papéis.  
-2. Remover e-mails da allowlist Vercel Authentication.  
-3. Rotacionar qualquer senha temporária no vault.  
-4. Preservar auditoria; não limpar dados de negócio sem autorização.
+Desativar usuários piloto · remover e-mails da allowlist Vercel · rotacionar senhas do envelope · preservar auditoria.

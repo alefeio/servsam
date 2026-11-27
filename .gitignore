@@ -42,6 +42,9 @@ yarn-error.log*
 scripts/tmp-*.mjs
 .tmp-homol-inventory.json
 
+# local credential envelopes (never commit)
+.credentials/
+
 # generated
 /src/generated
 

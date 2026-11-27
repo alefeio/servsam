@@ -1,0 +1,130 @@
+{
+  "phase": "release-03-audit-after-ro",
+  "readOnly": true,
+  "capturedAt": "2026-11-27T12:57:15.601Z",
+  "identity": {
+    "hostHash": "22e5c2dd2d93",
+    "hostOk": true,
+    "database": "postgres",
+    "instanceId": "0786bd682d75",
+    "instanceOk": true
+  },
+  "migrations": {
+    "total": 8,
+    "pending": [],
+    "failed": []
+  },
+  "counts": {
+    "customers_total": 30,
+    "customers_active": 22,
+    "proposals_active": 23,
+    "engagements_active": 9,
+    "purchase_orders_active": 4,
+    "service_orders_active": 2,
+    "employees_active": 2,
+    "appointments_active": 4,
+    "users_total": 5,
+    "audit_logs_total": 396,
+    "billing_requests": 1,
+    "receipt_entries": 1
+  },
+  "pilots": [
+    {
+      "email": "administrativo@servsam.com",
+      "name": "Administrador",
+      "isActive": true,
+      "roles": [
+        "ADMINISTRATIVO"
+      ],
+      "hasCredential": true,
+      "emailHash": "4b1e22b7513e"
+    },
+    {
+      "email": "diretoria@servsam.com",
+      "name": "Diretor",
+      "isActive": true,
+      "roles": [
+        "DIRETORIA"
+      ],
+      "hasCredential": true,
+      "emailHash": "57b5058ccd51"
+    },
+    {
+      "email": "financeiro@servsam.com",
+      "name": "Financeiro",
+      "isActive": true,
+      "roles": [
+        "FINANCEIRO"
+      ],
+      "hasCredential": true,
+      "emailHash": "82383a3ce130"
+    }
+  ],
+  "preexistingUsers": [
+    {
+      "domain": "servsam.local",
+      "name": "Diretoria",
+      "isActive": true,
+      "roles": [
+        "DIRETORIA"
+      ]
+    },
+    {
+      "domain": "gmail.com",
+      "name": "[redacted-operator]",
+      "isActive": true,
+      "roles": [
+        "DIRETORIA"
+      ]
+    }
+  ],
+  "grantCounts": [
+    {
+      "role": "ADMINISTRATIVO",
+      "permission_count": 26
+    },
+    {
+      "role": "DIRETORIA",
+      "permission_count": 42
+    },
+    {
+      "role": "FINANCEIRO",
+      "permission_count": 30
+    },
+    {
+      "role": "GERENCIA",
+      "permission_count": 34
+    }
+  ],
+  "sensitiveGrantSample": [
+    {
+      "role": "FINANCEIRO",
+      "key": "finance.manage"
+    },
+    {
+      "role": "FINANCEIRO",
+      "key": "finance.view"
+    }
+  ],
+  "recentProvisionAudits": [
+    {
+      "action": "ROLE_ASSIGNED",
+      "n": 3
+    },
+    {
+      "action": "USER_CREATED",
+      "n": 3
+    }
+  ],
+  "checks": {
+    "usersNow5": true,
+    "threePilots": true,
+    "rolesExact": true,
+    "adminNoFinanceManage": true,
+    "adminNoEmployeeManage": true,
+    "financeiroHasFinanceManage": true,
+    "financeiroNoUserManage": true,
+    "businessUnchangedHint": true
+  },
+  "ok": true
+}

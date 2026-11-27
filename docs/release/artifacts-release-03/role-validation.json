@@ -1,0 +1,67 @@
+{
+  "ok": true,
+  "baseUrl": "http://127.0.0.1:3463",
+  "profiles": [
+    {
+      "email": "diretoria@servsam.com",
+      "role": "DIRETORIA",
+      "modules": {
+        "Clientes": true,
+        "Orçamentos": true,
+        "Contratações": true,
+        "Ordens de compra": true,
+        "Ordens de serviço": true,
+        "Agenda": true,
+        "Colaboradores": true,
+        "Financeiro": true,
+        "Usuários": true,
+        "Perfis": true
+      },
+      "financeConfirmControl": {
+        "hasConfirmLabel": true,
+        "pageOk": true
+      },
+      "usersAdmin": true,
+      "ok": true
+    },
+    {
+      "email": "administrativo@servsam.com",
+      "role": "ADMINISTRATIVO",
+      "modules": {
+        "Clientes": true,
+        "Orçamentos": true,
+        "Contratações": true,
+        "Ordens de compra": true,
+        "Ordens de serviço": true,
+        "Agenda": true,
+        "Colaboradores": true,
+        "Financeiro": false,
+        "Usuários": false,
+        "Perfis": false
+      },
+      "financeConfirmControl": {
+        "menuFinanceiro": true
+      },
+      "usersAdmin": true,
+      "ok": true
+    },
+    {
+      "email": "financeiro@servsam.com",
+      "role": "FINANCEIRO",
+      "modules": {
+        "Clientes": true,
+        "Orçamentos": true,
+        "Contratações": true,
+        "Financeiro": true,
+        "Usuários": false,
+        "Perfis": false
+      },
+      "financeConfirmControl": {
+        "hasConfirmLabel": true,
+        "pageOk": true
+      },
+      "usersAdmin": true,
+      "ok": true
+    }
+  ]
+}
