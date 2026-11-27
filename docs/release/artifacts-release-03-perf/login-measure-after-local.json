@@ -1,0 +1,96 @@
+{
+  "ok": true,
+  "baseUrl": "http://127.0.0.1:3463",
+  "actorRole": "DIRETORIA",
+  "emailDomain": "servsam.com",
+  "runs": [
+    {
+      "label": "cold_or_first",
+      "loginPageLoadMs": 10624,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 13058,
+      "homeRenderMs": 145,
+      "totalLoginJourneyMs": 25415,
+      "navClientesMs": 3284
+    },
+    {
+      "label": "warm_1",
+      "loginPageLoadMs": 1074,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 3027,
+      "homeRenderMs": 1423,
+      "totalLoginJourneyMs": 5972,
+      "navClientesMs": 2372
+    },
+    {
+      "label": "warm_2",
+      "loginPageLoadMs": 2970,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 5776,
+      "homeRenderMs": 104,
+      "totalLoginJourneyMs": 9185,
+      "navClientesMs": 2275
+    },
+    {
+      "label": "warm_3",
+      "loginPageLoadMs": 822,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 3135,
+      "homeRenderMs": 1441,
+      "totalLoginJourneyMs": 5793,
+      "navClientesMs": 3260
+    },
+    {
+      "label": "warm_4",
+      "loginPageLoadMs": 618,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 2893,
+      "homeRenderMs": 1419,
+      "totalLoginJourneyMs": 5317,
+      "navClientesMs": 2832
+    },
+    {
+      "label": "warm_5",
+      "loginPageLoadMs": 443,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 3440,
+      "homeRenderMs": 5485,
+      "totalLoginJourneyMs": 9805,
+      "navClientesMs": 5321
+    }
+  ],
+  "summary": {
+    "submitToHome": {
+      "first": 13058,
+      "medianWarm": 3135,
+      "max": 13058,
+      "all": [
+        13058,
+        3027,
+        5776,
+        3135,
+        2893,
+        3440
+      ]
+    },
+    "totalJourney": {
+      "first": 25415,
+      "medianWarm": 5972,
+      "max": 25415
+    },
+    "navClientes": {
+      "first": 3284,
+      "medianWarm": 2832,
+      "max": 5321,
+      "all": [
+        3284,
+        2372,
+        2275,
+        3260,
+        2832,
+        5321
+      ]
+    }
+  },
+  "capturedAt": "2026-11-27T14:51:51.968Z"
+}

@@ -1,0 +1,96 @@
+{
+  "ok": true,
+  "baseUrl": "https://servsam-git-fix-11b-4-finance-qa-alefeios-projects.vercel.app",
+  "actorRole": "DIRETORIA",
+  "emailDomain": "servsam.com",
+  "runs": [
+    {
+      "label": "cold_or_first",
+      "loginPageLoadMs": 2597,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 1735,
+      "homeRenderMs": 166,
+      "totalLoginJourneyMs": 4958,
+      "navClientesMs": 889
+    },
+    {
+      "label": "warm_1",
+      "loginPageLoadMs": 527,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 1807,
+      "homeRenderMs": 447,
+      "totalLoginJourneyMs": 4531,
+      "navClientesMs": 998
+    },
+    {
+      "label": "warm_2",
+      "loginPageLoadMs": 820,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 811,
+      "homeRenderMs": 292,
+      "totalLoginJourneyMs": 2292,
+      "navClientesMs": 897
+    },
+    {
+      "label": "warm_3",
+      "loginPageLoadMs": 401,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 760,
+      "homeRenderMs": 65,
+      "totalLoginJourneyMs": 1508,
+      "navClientesMs": 867
+    },
+    {
+      "label": "warm_4",
+      "loginPageLoadMs": 821,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 826,
+      "homeRenderMs": 68,
+      "totalLoginJourneyMs": 2166,
+      "navClientesMs": 1352
+    },
+    {
+      "label": "warm_5",
+      "loginPageLoadMs": 387,
+      "loginHttpStatus": 200,
+      "authSubmitToHomeMs": 882,
+      "homeRenderMs": 60,
+      "totalLoginJourneyMs": 1524,
+      "navClientesMs": 544
+    }
+  ],
+  "summary": {
+    "submitToHome": {
+      "first": 1735,
+      "medianWarm": 826,
+      "max": 1807,
+      "all": [
+        1735,
+        1807,
+        811,
+        760,
+        826,
+        882
+      ]
+    },
+    "totalJourney": {
+      "first": 4958,
+      "medianWarm": 2166,
+      "max": 4958
+    },
+    "navClientes": {
+      "first": 889,
+      "medianWarm": 897,
+      "max": 1352,
+      "all": [
+        889,
+        998,
+        897,
+        867,
+        1352,
+        544
+      ]
+    }
+  },
+  "capturedAt": "2026-11-27T14:45:02.172Z"
+}

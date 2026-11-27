@@ -57,6 +57,18 @@ async function measureOnce(page, label) {
   marks.homeRenderMs = Date.now() - homeReady;
   marks.totalLoginJourneyMs = Date.now() - t0;
 
+  const navAt = Date.now();
+  await page
+    .getByRole("navigation", { name: "Sistema", exact: true })
+    .getByRole("link", { name: "Clientes", exact: true })
+    .click();
+  await page.waitForURL(/\/sistema\/clientes/);
+  await page
+    .getByRole("heading", { name: /Clientes/i })
+    .first()
+    .waitFor({ state: "visible", timeout: 60_000 });
+  marks.navClientesMs = Date.now() - navAt;
+
   await page.getByRole("button", { name: "Sair" }).click();
   await page.waitForURL(/\/sistema\/login$/, { timeout: 60_000 });
 
@@ -105,6 +117,7 @@ async function main() {
 
   const submitTimes = runs.map((r) => r.authSubmitToHomeMs);
   const totals = runs.map((r) => r.totalLoginJourneyMs);
+  const navTimes = runs.map((r) => r.navClientesMs).filter((n) => typeof n === "number");
   const report = {
     ok: true,
     baseUrl: BASE,
@@ -123,10 +136,20 @@ async function main() {
         medianWarm: median(totals.slice(1)),
         max: Math.max(...totals),
       },
+      navClientes: navTimes.length
+        ? {
+            first: navTimes[0],
+            medianWarm: median(navTimes.slice(1)),
+            max: Math.max(...navTimes),
+            all: navTimes,
+          }
+        : null,
     },
     capturedAt: new Date().toISOString(),
   };
-  writeFileSync(resolve(outDir, "login-measure-before.json"), JSON.stringify(report, null, 2));
+  const outName =
+    process.env.PERF_OUT_NAME?.trim() || "login-measure-before.json";
+  writeFileSync(resolve(outDir, outName), JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
 }
 
