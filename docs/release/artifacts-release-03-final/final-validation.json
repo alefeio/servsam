@@ -1,0 +1,96 @@
+{
+  "ok": true,
+  "baseUrl": "https://servsam-git-fix-11b-4-finance-qa-alefeios-projects.vercel.app",
+  "capturedAt": "2026-11-27T16:37:50.763Z",
+  "credentialsEnvelopePresent": true,
+  "credentialsAccountCount": 3,
+  "directLogin": true,
+  "privateRoutes": {
+    "/sistema": {
+      "status": 200,
+      "finalUrl": "https://servsam-git-fix-11b-4-finance-qa-alefeios-projects.vercel.app/sistema/login",
+      "redirectedToLogin": true,
+      "vercelSso": false
+    },
+    "/sistema/clientes": {
+      "status": 200,
+      "finalUrl": "https://servsam-git-fix-11b-4-finance-qa-alefeios-projects.vercel.app/sistema/login",
+      "redirectedToLogin": true,
+      "vercelSso": false
+    },
+    "/sistema/financeiro": {
+      "status": 200,
+      "finalUrl": "https://servsam-git-fix-11b-4-finance-qa-alefeios-projects.vercel.app/sistema/login",
+      "redirectedToLogin": true,
+      "vercelSso": false
+    }
+  },
+  "performance": {
+    "moduleNav": {
+      "clientes": 996,
+      "orcamentos": 1852,
+      "contratacoes": 1003,
+      "agenda": 1645,
+      "financeiro": 1464
+    },
+    "loginPageLoadsMs": [
+      441,
+      625,
+      368,
+      972
+    ],
+    "submitToHomeMs": [
+      1991,
+      957,
+      842,
+      729
+    ],
+    "firstSubmitMs": 1991,
+    "consecutiveMedianMs": 842,
+    "consecutiveMaxMs": 957,
+    "note": "firstSubmit pode refletir warm se o ambiente acabou de ser usado; cold ~60s já documentado após idle longo."
+  },
+  "profiles": [
+    {
+      "email": "diretoria@servsam.com",
+      "role": "DIRETORIA",
+      "modules": {
+        "Clientes": true,
+        "Orçamentos": true,
+        "Contratações": true,
+        "Agenda": true,
+        "Financeiro": true,
+        "Usuários": true,
+        "Perfis": true
+      },
+      "ok": true
+    },
+    {
+      "email": "administrativo@servsam.com",
+      "role": "ADMINISTRATIVO",
+      "modules": {
+        "Clientes": true,
+        "Orçamentos": true,
+        "Contratações": true,
+        "Agenda": true,
+        "Financeiro": false,
+        "Usuários": false,
+        "Perfis": false
+      },
+      "ok": true
+    },
+    {
+      "email": "financeiro@servsam.com",
+      "role": "FINANCEIRO",
+      "modules": {
+        "Clientes": true,
+        "Orçamentos": true,
+        "Contratações": true,
+        "Financeiro": true,
+        "Usuários": false,
+        "Perfis": false
+      },
+      "ok": true
+    }
+  ]
+}
